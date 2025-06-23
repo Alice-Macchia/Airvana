@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  airvana_app:
+    build: .
+    ports:
+      - "5000:80"
+    environment:
+      - ENV=production
+
+ 
