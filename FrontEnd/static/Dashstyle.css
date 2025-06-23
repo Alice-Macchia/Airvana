@@ -57,6 +57,25 @@ body {
   background-color: var(--color-primary-dark);
 }
 
+.sidebar #exportLinePDF {
+  margin-top: 20px;
+}
+
+.sidebar .export-link {
+  display: block;
+  color: white;
+  text-decoration: none;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: var(--color-accent);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.sidebar .export-link:hover {
+  background-color: var(--color-primary-dark);
+}
+
 /* === MAIN CONTENT === */
 .main-content {
   margin-left: 240px;
@@ -116,46 +135,42 @@ header {
   position: relative;
 }
 #meteoTable {
-  width: 100%;
-  margin-top: 20px;
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 0 10px rgba(0,0,0,0.15);
-  font-size: 14px;
-  background-color: white;
+  width: 590px; /* somma larghezze colonne */
+  table-layout: fixed;
+  border-collapse: collapse;
+  border: 1px solid #ccc;
 }
 
 #meteoTable th, #meteoTable td {
-  padding: 12px 16px;
+  border: 1px solid #aaa;
+  padding: 8px;
+  text-align: right;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#meteoTable td:nth-child(1) { width: 60px; }
+#meteoTable td:nth-child(2) { width: 80px; }
+#meteoTable td:nth-child(3) { width: 80px; }
+#meteoTable td:nth-child(4) { width: 90px; }
+#meteoTable td:nth-child(5) { width: 80px; }
+#meteoTable td:nth-child(6) { width: 100px; }
+#meteoTable td:nth-child(7) { width: 100px; }
+
+
+#totalEmissionSection {
+  background-color: #198754;
+  color: white;
+  padding: 15px 25px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1.3rem;
+  max-width: 400px;
+  margin: 20px auto;
   text-align: center;
 }
-
-#meteoTable th {
-  background-color: #218838;
-  color: #fff;
-}
-
-#meteoTable tr:nth-child(even) {
-  background-color: #f7f7f7;
-}
-
-/* Dark theme */
-body.dark-theme #meteoTable {
-  background-color: #2e2e2e;
-}
-
-body.dark-theme #meteoTable th {
-  background-color: #3c3c3c;
-  color: #fff;
-}
-
-body.dark-theme #meteoTable td {
-  background-color: #2e2e2e;
-  color: #ccc;
-}
-
+/* === DASHBOARD === */
 .dashboard-content {
   padding: 20px;
   display: grid;
@@ -319,7 +334,20 @@ body.dark-theme .user-name {
   background-color: var(--color-primary-dark);
 }
 
-/* === DARK THEME TABLE FIXES === */
+body.dark-theme #meteoTable {
+  background-color: #2e2e2e;
+}
+
+body.dark-theme #meteoTable th {
+  background-color: #3c3c3c;
+  color: #fff;
+}
+
+body.dark-theme #meteoTable td {
+  background-color: #2e2e2e;
+  color: #ccc;
+}
+
 body.dark-theme table {
   background-color: #2a2a2a;
   color: #ffffff;
@@ -359,12 +387,11 @@ body.dark-theme .form-control:focus {
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 
-/* === CHARTS DARK THEME TEXT COLOR === */
 body.dark-theme canvas {
   color: #ffffff !important;
-
-
 }
+
+/* === FILTER FORM === */
 #plantFilterForm {
   max-height: 250px;
   overflow-y: auto;
@@ -379,29 +406,4 @@ body.dark-theme #plantFilterForm {
   background-color: #2a2a2a;
   border-color: #444;
   color: #e0e0e0;
-}
-.sidebar #exportLinePDF {
-  margin-top: 20px;
-}
-.sidebar .export-link {
-  display: block;
-  color: white;
-  padding: 10px 15px;
-  margin-top: 10px;
-  border-radius: 8px;
-  text-decoration: none;
-  transition: background 0.3s;
-}
-
-.sidebar .export-link:hover {
-  background-color: var(--color-primary-dark);
-}
-
-.sidebar.collapsed .export-link {
-  text-align: center;
-  padding: 10px 5px;
-}
-
-.sidebar.collapsed .export-link span {
-  display: none;
 }

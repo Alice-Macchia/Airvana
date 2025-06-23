@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Query, Depends, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,12 +27,6 @@ from BackEnd.app.co2_o2_calculator import (
 )
 from BackEnd.app.get_meteo import fetch_and_save_weather_day
 
-
-
-
-
-
-
 # .env
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -57,6 +51,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as conn:
@@ -66,6 +61,13 @@ async def startup():
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse("homepagedefinitiva.html", {"request": request})
+
+@router.get("/logout")
+async def logout():
+    response = RedirectResponse(url="/logreg")
+    response.delete_cookie("access_token")
+    return response
+
 
 def decode_token(token: str):
     try:
@@ -84,13 +86,12 @@ async def get_current_user(access_token: str = Cookie(None)):
     except JWTError:
         raise HTTPException(status_code=403, detail="Token non valido")
 
-
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request):
+async def dashboard(request: Request, user=Depends(get_current_user)):
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "user_id": '1',
-        "email": 'user@example.com'
+        "user_id": user["id"],
+        "email": user["mail"]
     })
 
 @app.post("/save-coordinates", response_model=SaveCoordinatesResponse)

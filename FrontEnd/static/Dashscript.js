@@ -11,7 +11,7 @@ async function dataOggi() {
 // Carica dati CO2/O2 dal backend e aggiorna grafico
 async function caricaDatiCO2O2(plotId = 1, giorno = "2025-05-29") {
   try {
-    const url = `http://165.22.75.145:5000/calcola_co2/${plotId}?giorno=${giorno}`;
+    const url = `http://127.0.0.1:8000/calcola_co2/${plotId}?giorno=${giorno}`;
     const response = await fetch(url);
     const dati = await response.json();
 
@@ -66,24 +66,40 @@ const datiPianteEsempio = [
   { categoria: "Altro", valore: 11 }
 ];
 
-async function aggiornaGraficoLine(dati) {
-  const labels = dati.map(row => row.datetime.slice(11, 16)); // "HH:MM"
-  const co2 = dati.map(row => row.co2_kg_hour);
-  const o2  = dati.map(row => row.o2_kg_hour);
+function aggiornaGraficoLine(dati) {
+  const labels = dati.map(row => row.datetime?.slice(11, 16) || '--');
+  const co2 = dati.map(row => Number(row.co2_kg_hour) || 0);
+  const o2 = dati.map(row => Number(row.o2_kg_hour) || 0);
 
-  if (window.lineChart) {
-    window.lineChart.data.labels = labels;
-    window.lineChart.data.datasets[0].data = co2;
-    window.lineChart.data.datasets[1].data = o2;
-    window.lineChart.update();
+  lineChart.data.labels = labels;
+  lineChart.data.datasets[0].data = co2;
+  lineChart.data.datasets[1].data = o2;
 
-    // Aggiorna display valori finali
-    document.getElementById('co2Display').textContent = `CO₂: ${co2[co2.length - 1]} kg`;
-    document.getElementById('o2Display').textContent = `O₂: ${o2[o2.length - 1]} kg`;
-  }
+  lineChart.update();
 }
 
+
 // Popola la tabella meteo
+const format = val => {
+  const num = Number(val);
+  return Number.isFinite(num) ? num.toFixed(2) : '--';
+};
+// Esempio: prendi il valore da backend o calcolato
+const totaleEmissioniUtente = 1234.56;
+
+// Aggiorna il box appena la pagina carica
+document.addEventListener('DOMContentLoaded', () => {
+    const logoutBtn = document.querySelector('.logout-btn');
+  logoutBtn?.addEventListener('click', () => {
+    window.location.href = "/logout";
+  });
+  const totalEmissionSection = document.getElementById('totalEmissionSection');
+  if (totalEmissionSection) {
+    totalEmissionSection.textContent = `Totale emissioni utente: ${totaleEmissioniUtente.toFixed(2)} kg CO₂`;
+  }
+});
+
+
 async function popolaTabellaMeteo(dati) {
   const tbody = document.getElementById('meteoTableBody');
   if (!tbody) return;
@@ -91,13 +107,13 @@ async function popolaTabellaMeteo(dati) {
   dati.forEach(row => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${row.datetime.slice(11, 16)}</td>
-      <td>${row.precipitazioni_mm || '--'}</td>
-      <td>${row.temperatura_c || '--'}</td>
-      <td>${row.radiazione || '--'}</td>
-      <td>${row.umidita || '--'}</td>
-      <td>${row.co2_kg_hour || '--'}</td>
-      <td>${row.o2_kg_hour || '--'}</td>
+      <td>${row.datetime?.slice(11, 16) || '--'}</td>
+      <td>${format(row.precipitazioni_mm)}</td>
+      <td>${format(row.temperatura_c)}</td>
+      <td>${format(row.radiazione)}</td>
+      <td>${format(row.umidita)}</td>
+      <td>${format(row.co2_kg_hour)}</td>
+      <td>${format(row.o2_kg_hour)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -106,6 +122,11 @@ async function popolaTabellaMeteo(dati) {
 // === GESTIONE UI E GRAFICI ===
 window.addEventListener('DOMContentLoaded', () => {
   console.log("Dashboard JS pronto!");
+    // 👇 QUI metti il codice logout:
+  document.querySelector('.logout-btn')?.addEventListener('click', () => {
+    window.location.href = "/logout";
+  });
+
 
   // Inizializza Chart.js Line (grafico CO2/O2)
   const ctxLine = document.getElementById('lineChart')?.getContext('2d');

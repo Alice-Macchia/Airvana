@@ -20,20 +20,31 @@
       color: #0d6efd;
       font-weight: bold;
     }
+
+    /* Stile box totale emissioni */
+    #totalEmissionSection {
+      background-color: #198754;
+      color: white;
+      padding: 15px 25px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 1.3rem;
+      max-width: 400px;
+      margin: 20px auto;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
   </style>
 
   <!-- <script defer src="/static/Dashscript.js"></script> -->
 </head>
 
-
-</head>
 <body>
   <aside class="sidebar" id="sidebar" role="navigation" aria-label="Navigazione principale">
     <button id="toggleSidebar" class="btn btn-light mb-4" aria-label="Toggle menu">☰</button>
     <h4>Dashboard</h4>
     <nav>
-       <!-- class="btn btn-primary" -->
-      <a href="/home"  aria-label="Home">🏠 <span>Home</span></a>  
+      <a href="/home" aria-label="Home">🏠 <span>Home</span></a>  
       <a href="/inserisciterreno" aria-label="Aggiungi Terreno">🌱 <span>Aggiungi Terreno</span></a>
       <a href="#" id="exportLinePDF" class="export-link" aria-label="Esporta PDF">📄 <span>Esporta PDF</span></a>
       <a href="#" aria-label="Impostazioni">⚙️ <span>Impostazioni</span></a>
@@ -55,6 +66,11 @@
       <h1>Controlla assorbimento CO₂ e Emissione O₂</h1>
     </section>
 
+    <!-- BOX TOTALE EMISSIONI UTENTE -->
+    <section id="totalEmissionSection">
+      Totale assorbimento utente: -- kg CO₂
+    </section>
+
     <div class="d-flex gap-2 my-3 justify-content-center" id="terrainButtons">
       <button class="btn btn-outline-secondary btn-sm active" data-terreno="1">Terreno 1</button>
       <button class="btn btn-outline-secondary btn-sm" data-terreno="2">Terreno 2</button>
@@ -64,13 +80,13 @@
         <input type="date" id="giornoInput" required>
         <button type="submit">Calcola CO₂/O₂</button>
       </form>
-
     </div>
+    
     <section class="dashboard-content">
       <article class="summary" aria-labelledby="summary-title">
         <h2 id="summary-title">Dati Meteo (giornata attuale)</h2>
         <div class="table-responsive">
-          <table class="table table-sm table-bordered text-left align-middle">
+          <table class="table table-sm table-bordered text-end align-middle">
             <thead class="table-light">
               <tr>
                 <th>Ora</th>
@@ -102,10 +118,6 @@
         <p>Totale Specie: 333</p>
         <p>Distribuzione per categoria</p>
       </article>
-
-      <!-- <article class="tickets" aria-labelledby="plants-title">
-        
-      </article> -->
     </section>
   </main>
 
@@ -129,7 +141,15 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
+  <script>
+    // esempio aggiornamento valore totale emissioni (da backend o calcolo JS)
+    document.addEventListener('DOMContentLoaded', () => {
+      const totaleEmissioniUtente = 1234.56; // <-- qui metti il valore reale
+      const totalEmissionSection = document.getElementById('totalEmissionSection');
+      if (totalEmissionSection) {
+        totalEmissionSection.textContent = `Totale assorbimento utente: ${totaleEmissioniUtente.toFixed(2)} kg CO₂`;
+      }
+    });
+  </script>
 </body>
 </html>
-
-

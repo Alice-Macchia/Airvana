@@ -213,6 +213,26 @@
             </div>
         </div>
     </div>
+    <script>
+        document.getElementById("loginFormReal").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+
+        const response = await fetch("/login", {
+            method: "POST",
+            body: formData, // 👈 FORM DATA, non JSON
+        });
+
+        if (response.ok) {
+            window.location.href = "/dashboard";
+        } else {
+            const data = await response.json();
+            alert(data.detail || "Login fallito");
+        }
+        });
+
+    </script>
 
     <script src="static/login_scripts.js" defer></script>
 </body>

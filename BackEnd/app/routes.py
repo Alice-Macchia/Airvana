@@ -11,15 +11,22 @@ from BackEnd.app.get_meteo import fetch_and_save_weather_day, fetch_weather_week
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from BackEnd.app.utils import aggiorna_nome_plot, elimina_plot
+from BackEnd.app.database import AsyncSessionLocal
 ###############
 
 router = APIRouter()
 security = HTTPBearer()  # definisce il tipo di security scheme Bearer
 templates = Jinja2Templates(directory="FrontEnd/templates")
-async def get_db():
-    async with SessionLocal() as session:
-        yield session
 
+
+async def get_db():
+    async_session = AsyncSessionLocal()
+    try:
+        yield async_session
+    finally:
+        if async_session:
+            await async_session.close()
+            
 @router.get("/logreg", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse("login_main.html", {"request": request})
@@ -46,25 +53,32 @@ async def login(
     loginPassword: str = Form(...),
     db: AsyncSession = Depends(get_db)
 ):
+    print("📥 Login ricevuto")
+    print("📧 Email:", loginEmail)
+    print("🔐 Password:", loginPassword)
+
     result = await db.execute(select(User).where(User.email == loginEmail))
     db_user = result.scalar_one_or_none()
+    print("👤 Utente trovato:", db_user)
 
     if not db_user or not verify_password(loginPassword, db_user.password):
+        print("❌ Password errata o utente non trovato")
         raise HTTPException(status_code=401, detail="Credenziali non valide")
 
     token = create_access_token({"id": db_user.id, "mail": db_user.email})
+    print("🔑 Token creato:", token)
 
-    # restituisce il token al client invece di restituire la index
     response = JSONResponse(content={"message": "Login OK"})
     response.set_cookie(
         key="access_token",
         value=token,
-        httponly=True,  # importante: impedisce accesso via JS
-        max_age=1800,   # 30 minuti (esempio)
-        secure=False,   # metti True in produzione (HTTPS)
+        httponly=True,
+        max_age=1800,
+        secure=False,
         samesite="lax"
     )
     return response
+
 
 
 
