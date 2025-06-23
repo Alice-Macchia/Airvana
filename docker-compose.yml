@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   airvana_app:
-    image: airvana_app: 1.0
+    image: airvana_app:1.0
     build: .
     ports:
       - "5000:80"

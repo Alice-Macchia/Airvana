@@ -27,5 +27,5 @@ CMD ["uvicorn", "BackEnd.app.main:app", "--host", "0.0.0.0", "--port", "80"]
 # git clone https://github.com/Alice-Macchia/Airvana.git
 # cd AIRVANA
 # docker compose up --build -d
-# docker compose up -d airvana_app -> comando di Fabio
+# docker compose up -d airvana_app --build  -> comando di Fabio
 
