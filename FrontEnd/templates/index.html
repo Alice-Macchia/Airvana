@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard CO₂ & O₂</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="static/Dashstyle.css" />
+
+  <style>
+    #terrainButtons .btn {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      transition: all 0.2s ease-in-out;
+    }
+    #terrainButtons .btn.active {
+      border: 2px solid #0d6efd;
+      background-color: #e7f1ff;
+      color: #0d6efd;
+      font-weight: bold;
+    }
+  </style>
+
+  <!-- <script defer src="/static/Dashscript.js"></script> -->
+</head>
+
+
+</head>
+<body>
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Navigazione principale">
+    <button id="toggleSidebar" class="btn btn-light mb-4" aria-label="Toggle menu">☰</button>
+    <h4>Dashboard</h4>
+    <nav>
+       <!-- class="btn btn-primary" -->
+      <a href="/home"  aria-label="Home">🏠 <span>Home</span></a>  
+      <a href="/inserisciterreno" aria-label="Aggiungi Terreno">🌱 <span>Aggiungi Terreno</span></a>
+      <a href="#" id="exportLinePDF" class="export-link" aria-label="Esporta PDF">📄 <span>Esporta PDF</span></a>
+      <a href="#" aria-label="Impostazioni">⚙️ <span>Impostazioni</span></a>
+      <a href="#" aria-label="Aiuto">❓ <span>Aiuto</span></a>
+    </nav>
+  </aside>
+
+  <main class="main-content" id="mainContent">
+    <header>
+      <div></div>
+      <section class="user-info" aria-label="Informazioni utente">
+        <button class="btn btn-outline-light" id="themeToggle" aria-label="Cambia tema">🌙</button>
+        <div class="user-name">Utente: Maccio Capatonda</div>
+        <button class="logout-btn" aria-label="Logout">Logout</button>
+      </section>
+    </header>
+
+    <section class="top-bar" role="banner">
+      <h1>Controlla assorbimento CO₂ e Emissione O₂</h1>
+    </section>
+
+    <div class="d-flex gap-2 my-3 justify-content-center" id="terrainButtons">
+      <button class="btn btn-outline-secondary btn-sm active" data-terreno="1">Terreno 1</button>
+      <button class="btn btn-outline-secondary btn-sm" data-terreno="2">Terreno 2</button>
+      <button class="btn btn-outline-secondary btn-sm" data-terreno="3">Terreno 3</button>
+
+      <form id="calcolaForm">
+        <input type="date" id="giornoInput" required>
+        <button type="submit">Calcola CO₂/O₂</button>
+      </form>
+
+    </div>
+    <section class="dashboard-content">
+      <article class="summary" aria-labelledby="summary-title">
+        <h2 id="summary-title">Dati Meteo (giornata attuale)</h2>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered text-left align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Ora</th>
+                <th>Precipitazioni (mm)</th>
+                <th>Temperatura (°C)</th>
+                <th>Radiazione</th>
+                <th>Umidità</th>
+                <th>CO₂ (kg)</th>
+                <th>O₂ (kg)</th>
+              </tr>
+            </thead>
+            <tbody id="meteoTableBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="income" aria-labelledby="gas-title">
+        <h2 id="gas-title">Assorbimento CO₂ e Emissione O₂</h2>
+        <div class="d-flex gap-2 mb-2"></div>
+        <canvas id="lineChart" class="chart-canvas" width="800" height="400" style="max-width: 100%;" aria-label="Grafico CO₂ e O₂" role="img"></canvas>
+        <p id="co2Display">CO₂: -- kg</p>
+        <p id="o2Display">O₂: -- kg</p>
+        <h2 id="plants-title">Tipi di Piante</h2>
+        <form class="mb-2" id="plantFilterWrapper">
+          <label for="plantFilter">Filtra categorie:</label>
+          <div id="plantFilterForm"></div>
+        </form>
+        <canvas id="pieChart" class="chart-canvas" width="800" height="400" style="max-width: 100%;" aria-label="Distribuzione Specie Piante" role="img"></canvas>
+        <p>Totale Specie: 333</p>
+        <p>Distribuzione per categoria</p>
+      </article>
+
+      <!-- <article class="tickets" aria-labelledby="plants-title">
+        
+      </article> -->
+    </section>
+  </main>
+
+  <button class="chat-bubble" id="chatBubble" aria-label="Apri chat">💬</button>
+
+  <section class="chat-box" id="chatBox" aria-label="Chat di supporto">
+    <header class="chat-header">Assistenza</header>
+    <div class="chat-body">
+      <p><strong>Operatore:</strong> Ciao! Come posso aiutarti?</p>
+    </div>
+    <footer class="chat-footer">
+      <label for="chatInput" class="visually-hidden">Scrivi un messaggio</label>
+      <input type="text" id="chatInput" class="chat-input" placeholder="Scrivi un messaggio..." />
+      <button class="chat-send" aria-label="Invia messaggio">➤</button>
+    </footer>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="static/Dashscript.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+</body>
+</html>
+
+

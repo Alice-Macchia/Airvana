@@ -1,0 +1,808 @@
+/* Stili globali */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    overflow-x: hidden; /* Previene lo scroll orizzontale */
+}
+
+/* Stili della pagina di login */
+.login-page {
+    min-height: 100vh;
+    background: linear-gradient(45deg, #2d5a27, #ffffff, #4a7c59, #ffffff);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.login-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Rimosse le forme SVG e l'opacità */
+    /* background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path d="M100,300 Q200,200 300,300 T500,300" stroke="rgba(45,90,39,0.1)" stroke-width="3" fill="none"/><path d="M600,600 Q700,500 800,600 T1000,600" stroke="rgba(45,90,39,0.1)" stroke-width="3" fill="none"/><circle cx="150" cy="150" r="20" fill="rgba(76,175,80,0.1)"/><circle cx="850" cy="750" r="15" fill="rgba(76,175,80,0.1)"/><polygon points="200,800 220,760 240,800 220,840" fill="rgba(45,90,39,0.1)"/><polygon points="800,200 820,160 840,200 820,240" fill="rgba(45,90,39,0.1)"/></svg>') no-repeat; */
+    /* background-size: cover; */
+    /* opacity: 0.3; */
+    z-index: 0; /* Assicura che sia dietro il contenuto */
+}
+
+.auth-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px); /* Per compatibilità Safari */
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    width: 750px;
+    height: 450px; /* Altezza fissa per desktop */
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    display: flex;
+    transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.login-section,
+.register-panel-wrapper, /* Nuovo wrapper per i form di registrazione */
+.register-section {
+    flex: 1;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); /* Transizione per i pannelli principali */
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    top: 0;
+}
+
+.login-section {
+    background: white;
+    left: 0;
+    z-index: 2;
+    justify-content: center;
+}
+
+.register-panel-wrapper {
+    left: 100%; /* Inizialmente fuori schermo a destra */
+    background: white;
+    z-index: 1; /* Sarà sotto register-section inizialmente */
+    overflow-y: auto;
+    justify-content: flex-start;
+    display: flex; /* Per gestire i figli internamente */
+    flex-direction: column;
+}
+
+.register-section {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    align-items: center;
+    text-align: center;
+    right: 0;
+    z-index: 3; /* Deve essere sopra .register-panel-wrapper inizialmente */
+    justify-content: center;
+}
+
+.register-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Rimosse le forme SVG e l'animazione */
+    /* background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="30" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="70" r="2.5" fill="rgba(255,255,255,0.1)"/><circle cx="70" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>'); */
+    /* animation: float 10s infinite ease-in-out; */
+    z-index: -1; /* Dietro il contenuto di .register-section */
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.form-title {
+    font-size: 2.2rem;
+    color: #2d5a27;
+    font-weight: 300; 
+}
+
+/* Regola per i titoli dei form di registrazione e della scelta */
+.register-form-container .form-title,
+.register-choice-container .form-title {
+    padding-top: 50px; /* Spazio per il pulsante circolare "Indietro" */
+    margin-bottom: 0.3rem; /* Ridotto il margine inferiore per ravvicinare il sottotitolo */
+}
+
+
+.form-subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem; /* Ridotto il margine inferiore per ravvicinare i campi */
+    color: #666;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+    position: relative; 
+}
+
+.form-group-inline {
+    display: flex;
+    gap: 15px;
+}
+.form-group-inline .input-field {
+    flex: 1;
+}
+
+.input-field {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    transition: border-color 0.3s ease, background-color 0.3s ease; 
+    background: #f8f9fa;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background: white;
+}
+
+.input-field::placeholder {
+    color: #999;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px;
+    color: #999;
+    font-size: 1.1rem;
+    z-index: 2; 
+}
+
+.input-with-icon .input-field {
+    padding-left: 3rem; /* Spazio generico per l'icona a sinistra */
+}
+
+.btn-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+}
+
+.register-form-container .btn-group {
+    justify-content: flex-start; 
+    gap: 1rem; /* Spazio tra i bottoni "Indietro" e "Registrati" */
+}
+
+.btn {
+    padding: 0.7rem 1.2rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    color: white;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    padding: 0.9rem 1.8rem;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.btn-secondary { /* Nuovo stile per i bottoni di scelta */
+    background: #f0f0f0;
+    color: #4CAF50;
+    border: 2px solid #4CAF50;
+    padding: 0.9rem 1.8rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+.btn-back { /* Stile per il bottone "Indietro" */
+    background: #6c757d; /* Grigio scuro */
+    color: white;
+    border: none;
+    padding: 0.9rem 1.8rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.btn-back:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+/* Stili per i nuovi bottoni "Indietro" circolari */
+.btn-back-main,
+.btn-back-form {
+    position: absolute;
+    top: 20px; /* Distanza dal bordo superiore */
+    left: 20px; /* Distanza dal bordo sinistro */
+    width: 40px; /* Dimensione del pulsante */
+    height: 40px;
+    border-radius: 50%; /* Rende il pulsante circolare */
+    background-color: white;
+    border: 2px solid #4CAF50; /* Bordo verde */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    z-index: 10; /* Assicurati che sia sopra gli altri elementi */
+}
+
+.btn-back-main svg,
+.btn-back-form svg {
+    width: 20px; /* Dimensione della freccia */
+    height: 20px;
+    stroke: #4CAF50; /* Colore verde per la freccia */
+}
+
+.btn-back-main:hover,
+.btn-back-form:hover {
+    transform: scale(1.05); /* Piccolo ingrandimento all'hover */
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+/* Contenitore per il pulsante "Torna alla homepage" e il testo */
+.back-to-main-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center; /* Allinea verticalmente il pulsante e il testo */
+    gap: 10px; /* Spazio tra il pulsante e il testo */
+    z-index: 10;
+    /* Rimosso padding, border, background-color, box-shadow da qui */
+    transition: all 0.3s ease; /* Mantenuto per fluidità generale */
+}
+
+/* Stile per il pulsante "back-to-main-page-button" */
+.back-to-main-page-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: white;
+    border: 2px solid #4CAF50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.back-to-main-page-button svg {
+    width: 20px;
+    height: 20px;
+    stroke: #4CAF50;
+}
+
+.back-to-main-page-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+/* Stile per la casella che contorna il testo "Torna alla homepage" */
+.back-to-main-text-box {
+    padding: 8px 12px; /* Padding interno per la casella */
+    border: 2px solid #4CAF50; /* Bordo verde */
+    border-radius: 10px; /* Bordi arrotondati per la casella */
+    background-color: rgba(255, 255, 255, 0.8); /* Sfondo leggermente trasparente */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Ombra per la casella */
+    display: inline-block; /* Per applicare padding e bordo correttamente */
+    transition: all 0.3s ease; /* Transizione per effetti hover */
+}
+
+.back-to-main-text-box:hover {
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); /* Ombra più pronunciata all'hover */
+    background-color: rgba(255, 255, 255, 0.95); /* Sfondo meno trasparente all'hover */
+}
+
+/* Stile per il testo "Torna alla homepage" (contenuto all'interno della casella) */
+.back-to-main-text {
+    color: #2d5a27; /* Colore del testo verde scuro */
+    font-size: 1.1rem; /* Leggermente più grande */
+    font-weight: 700; /* Più spesso */
+    letter-spacing: 0.03em; /* Spaziatura tra le lettere */
+    white-space: nowrap; /* Impedisce al testo di andare a capo */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* Ombra leggera */
+    /* Rimosso transition per effetti hover qui, gestiti sulla casella esterna */
+}
+
+
+.forgot-password {
+    color: #4CAF50;
+    text-decoration: none;
+    font-size: 0.8rem;
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
+}
+
+.register-content h2 {
+    font-size: 2.2rem;
+    margin-bottom: 0.8rem;
+    font-weight: 300;
+}
+
+.register-content p {
+    font-size: 1rem;
+    line-height: 1.5;
+    opacity: 0.9;
+    margin-bottom: 1.5rem;
+}
+
+.btn-register {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid white;
+    padding: 0.9rem 1.6rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn-register:hover {
+    background: white;
+    color: #4CAF50;
+}
+
+/* Contenitori dei form di registrazione e scelta all'interno del wrapper */
+.register-choice-container,
+.register-form-container {
+    position: absolute; /* Permette di sovrapporsi */
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    padding: 2.5rem; /* Mantieni il padding interno */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    transition: opacity 0.6s cubic-bezier(0.4, 0.0, 0.2, 1); /* Transizione per fade in/out */
+    opacity: 0; /* Inizialmente nascosto */
+    pointer-events: none; /* Non intercettare eventi quando nascosto */
+    background: white; /* Assicurati che abbiano uno sfondo */
+    overflow-y: auto; /* Permetti lo scroll se il contenuto è troppo lungo */
+}
+
+/* Stili per gli elementi interni dei form */
+.register-form-container .form-group label { 
+    display: inline-block; 
+    margin-bottom: 0.3rem; 
+    color: #333;
+    font-size: 0.9rem;
+}
+.register-form-container .form-group .radio-group label { 
+    margin-right: 15px;
+    font-weight: normal; 
+}
+
+.register-form-container .form-group input[type="radio"] {
+    margin-right: 5px;
+    width: auto; 
+    padding: 0;
+    border: none;
+    background: none;
+    vertical-align: middle; 
+}
+
+.phone-group {
+    display: flex;
+    gap: 10px; /* Reintroduco il gap per separare i campi */
+    align-items: center; /* Allinea verticalmente gli elementi */
+    /* Rimosso bordo unificato e background qui */
+    width: 100%; /* Occupa tutta la larghezza disponibile */
+    overflow: hidden; /* Assicura che i contenuti non escano dai bordi arrotondati */
+    /* Rimosso transition per focus qui, gestito sui singoli input */
+}
+
+/* Stile per il campo +39 */
+.phone-prefix-field { 
+    flex: 0 0 50px; /* Larghezza fissa per il prefisso */
+    text-align: center;
+    color: #333;
+    cursor: default; 
+    background-color: #f8f9fa; /* Sfondo chiaro */
+    border: 2px solid #e0e0e0; /* Bordo completo */
+    border-radius: 5px; /* Bordi arrotondati */
+    padding: 0.8rem 0.5rem; /* Padding per il testo +39 */
+    display: flex; /* Per centrare verticalmente il testo */
+    justify-content: center; /* Per centrare orizzontalmente il testo */
+    align-items: center; /* Per centrare verticalmente il testo */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Transizione per focus */
+}
+
+.phone-prefix-field:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* Stile per il campo numero di telefono */
+.phone-group .input-field[type="tel"] {
+    flex: 1; /* Si espande per occupare lo spazio rimanente */
+    padding: 0.8rem 1rem;
+    border: 2px solid #e0e0e0; /* Bordo completo */
+    border-radius: 5px; /* Bordi arrotondati */
+    background: #f8f9fa;
+    font-size: 0.95rem;
+    transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.phone-group .input-field[type="tel"]:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background: white;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+
+.password-toggle-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.password-toggle-container .input-icon { /* Icona lucchetto a sinistra */
+    left: 15px;
+    color: #999;
+    font-size: 1.1rem;
+    z-index: 2;
+    position: absolute;
+}
+
+.password-toggle-container .input-field {
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+    padding-right: 45px; /* Spazio per l'icona toggle a destra */
+    padding-left: 1rem;  /* Padding sinistro standard per fare spazio all'icona posizionata assolutamente */
+    text-indent: 2.2rem; /* Indenta il testo per iniziare dopo l'icona a sinistra. */
+}
+
+.password-toggle-icon { /* Icona occhio a destra */
+    position: absolute;
+    right: 15px;
+    color: #999;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+.password-toggle-icon svg {
+    width: 100%;
+    height: 100%;
+    stroke: currentColor;
+}
+
+.custom-dropdown {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+    max-height: 150px;
+    overflow-y: auto;
+    width: 100%; 
+    left: 0; 
+    top: 100%; 
+    z-index: 1000; 
+    display: none;
+}
+
+.custom-dropdown.active {
+    display: block;
+}
+
+.custom-dropdown-item {
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.custom-dropdown-item:hover,
+.custom-dropdown-item.highlighted { 
+    background-color: #f0f0f0;
+}
+
+/* Stili per la sezione di scelta del tipo di registrazione */
+.register-choice-container {
+    opacity: 0; /* Sarà visibile per primo nel wrapper */
+    pointer-events: none;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.register-choice-container .form-title {
+    color: #2d5a27;
+    margin-bottom: 0.5rem; /* Ridotto il margine inferiore per ravvicinare i pulsanti */
+    padding-top: 0; /* Reset per evitare doppio padding */
+}
+
+.register-choice-container .choice-buttons {
+    display: flex;
+    flex-direction: column; /* Imposta i bottoni in colonna */
+    gap: 1rem; /* Spazio tra i bottoni */
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 250px; /* Riduci la larghezza massima per centrarli meglio */
+}
+
+.register-choice-container .btn-secondary {
+    margin: 0 auto; /* Centra i bottoni individualmente */
+    width: 100%; /* Fai in modo che occupino la larghezza massima del max-width */
+}
+
+
+/* Animazioni per lo slide generale del container */
+.auth-container:not(.shifted) .login-section {
+    transform: translateX(0);
+}
+.auth-container:not(.shifted) .register-panel-wrapper {
+    transform: translateX(0); /* Stays off-screen right */
+}
+.auth-container:not(.shifted) .register-section {
+    transform: translateX(0);
+}
+
+.auth-container.shifted .login-section {
+    transform: translateX(-100%);
+    opacity: 0; /* Fade out login section */
+    pointer-events: none;
+}
+.auth-container.shifted .register-panel-wrapper {
+    transform: translateX(-100%); /* Slides into view */
+    z-index: 2; /* Bring it above login section */
+}
+.auth-container.shifted .register-section {
+    transform: translateX(-100%); /* Slides off with login section */
+    z-index: 1; /* Ensure it's behind the register-panel-wrapper */
+}
+
+/* Gestione della visibilità dei singoli form all'interno di register-panel-wrapper */
+.register-panel-wrapper #registerChoiceContainer {
+    opacity: 0;
+    pointer-events: none;
+}
+.register-panel-wrapper #registerUserFormContainer {
+    opacity: 0;
+    pointer-events: none;
+}
+.register-panel-wrapper #registerCompanyFormContainer {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Active states for internal forms */
+.register-panel-wrapper.show-choice #registerChoiceContainer {
+    opacity: 1;
+    pointer-events: auto;
+}
+.register-panel-wrapper.show-user-form #registerUserFormContainer {
+    opacity: 1;
+    pointer-events: auto;
+}
+.register-panel-wrapper.show-company-form #registerCompanyFormContainer {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+
+/* Message Box Styles */
+.message-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 10000; /* Assicurati che sia sopra tutto */
+    text-align: center;
+    max-width: 300px;
+}
+
+.message-box p {
+    margin-bottom: 15px;
+    font-size: 1rem;
+    color: #333;
+}
+
+.message-box-close {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+}
+
+.message-box-close:hover {
+    background-color: #45a049;
+}
+
+
+/* Responsive */
+@media (max-width: 950px) { 
+    .auth-container {
+        width: 90vw;
+        max-width: 750px; 
+    }
+}
+
+@media (max-width: 768px) { 
+    .login-page {
+        padding: 1rem; 
+    }
+    .auth-container {
+        width: 95vw; 
+        height: auto; 
+        min-height: 0; 
+        flex-direction: column;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+    }
+
+    .login-section,
+    .register-form-container,
+    .register-section,
+    .register-choice-container {
+        padding: 1.5rem; 
+        width: 100%;
+        position: relative; 
+        transform: none !important; 
+        left: auto;
+        right: auto;
+        opacity: 1 !important;
+        height: auto; 
+        box-shadow: none; 
+    }
+    
+    .register-form-container {
+        padding-right: 1.5rem; 
+        order: 1; 
+    }
+    .login-section {
+        order: 1; 
+    }
+
+    /* Gestione della visibilità per mobile (senza animazioni di slide) */
+    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register) .login-section {
+        display: flex; 
+    }
+    .auth-container.shifted-to-choice .login-section,
+    .auth-container.shifted-to-user-register .login-section,
+    .auth-container.shifted-to-company-register .login-section {
+        display: none; 
+    }
+
+    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register) .register-choice-container,
+    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register) #registerUserFormContainer,
+    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register) #registerCompanyFormContainer {
+        display: none;
+    }
+
+    .auth-container.shifted-to-choice .register-choice-container {
+        display: flex;
+        order: 1; /* Metti la scelta dopo la sezione verde */
+    }
+    .auth-container.shifted-to-user-register #registerUserFormContainer {
+        display: flex;
+        order: 1; /* Metti il form utente dopo la sezione verde */
+    }
+    .auth-container.shifted-to-company-register #registerCompanyFormContainer {
+        display: flex;
+        order: 1; /* Metti il form azienda dopo la sezione verde */
+    }
+
+    .auth-container.shifted-to-choice .register-section,
+    .auth-container.shifted-to-user-register .register-section,
+    .auth-container.shifted-to-company-register .register-section {
+        order: 0; /* Sposta la sezione verde in cima */
+    }
+
+    .auth-container:not(.shifted-to-choice) .register-form-container,
+    .auth-container:not(.shifted-to-user-register) .register-form-container,
+    .auth-container:not(.shifted-to-company-register) .register-form-container {
+        display: none; 
+    }
+    
+    .register-section {
+       min-height: auto; 
+       padding-bottom: 1.5rem; 
+    }
+    .form-title {
+        font-size: 1.8rem; 
+    }
+    .form-subtitle {
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+    }
+    .btn-primary, .btn-register, .btn-secondary, .btn-back {
+        padding: 0.8rem 1.5rem; 
+        font-size: 0.85rem;
+    }
+    .form-group-inline {
+        flex-direction: column; 
+        gap: 1rem; 
+    }
+    .register-choice-container .choice-buttons {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .register-choice-container .btn-secondary {
+        margin: 0; /* Rimuovi margini laterali per i bottoni in colonna */
+    }
+}
+ @media (max-width: 400px) { 
+    .login-section, .register-form-container, .register-section, .register-choice-container {
+        padding: 1rem;
+    }
+    .form-title {
+        font-size: 1.6rem;
+    }
+}

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accedi - CO₂ e O₂: Il tuo terreno respira</title>
+    <link rel="stylesheet" href="static/login_styles.css">
+</head>
+<body>
+    <div class="login-page">
+        <div class="back-to-main-container">
+            <a href="/" class="back-to-main-page-button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </a>
+            <span class="back-to-main-text-box"> <span class="back-to-main-text">Torna alla Homepage</span>
+            </span>
+        </div>
+
+        <div class="auth-container" id="authContainer">
+            <div class="login-section" id="loginSection">
+                <h1 class="form-title">Login</h1>
+                <p class="form-subtitle">Accedi alla tua area personale</p>
+
+                <form class="login-form" id="loginFormReal" method="post" action="/login">
+                    <div class="form-group">
+                        <div class="input-with-icon">
+                            <span class="input-icon">👤</span>
+                            <input type="email" id="loginEmail" name="loginEmail" placeholder="Email" required class="input-field">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-with-icon">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" id="loginPassword" name="loginPassword" placeholder="Password" required class="input-field">
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                        <a href="#" class="forgot-password">Password dimenticata?</a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="register-section" id="registerSection">
+                <div class="register-content" id="registerContent">
+                    <h2>Iscriviti</h2>
+                    <p>Per accedere all'area riservata del portale occorre registrarsi qui:</p>
+                    <button class="btn-register" id="toggleRegisterButton">
+                        Registrati!
+                    </button>
+                </div>
+            </div>
+
+            <div class="register-panel-wrapper" id="registerPanelWrapper">
+                <div class="register-choice-container" id="registerChoiceContainer">
+                    <button type="button" class="btn-back-main" id="backToRegisterToggle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <h1 class="form-title">Registrazione come:</h1>
+                    <div class="choice-buttons">
+                        <button type="button" class="btn btn-secondary" id="registerAsUserButton">Utente</button>
+                        <button type="button" class="btn btn-secondary" id="registerAsCompanyButton">Azienda/Società</button>
+                    </div>
+                </div>
+
+                <div class="register-form-container" id="registerUserFormContainer">
+                    <button type="button" class="btn-back-form" id="backToChoiceUser">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <h1 class="form-title">Registrazione Utente</h1>
+                    <p class="form-subtitle">Crea il tuo account personale</p>
+
+                    <form id="registerUserForm">
+                        <div class="form-group form-group-inline">
+                            <input type="text" id="registerNome" name="registerNome" placeholder="Nome" required class="input-field">
+                            <input type="text" id="registerCognome" name="registerCognome" placeholder="Cognome" required class="input-field">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Genere:</label><br>
+                            <div class="radio-group">
+                                <label><input type="radio" name="sesso" value="maschio" required> Maschio</label>
+                                <label><input type="radio" name="sesso" value="femmina"> Femmina</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="input-with-icon">
+                                <span class="input-icon">📧</span>
+                                <input type="email" id="registerEmail" name="registerEmail" placeholder="Email" required class="input-field">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="password-toggle-container">
+                                <span class="input-icon">🔒</span>
+                                <input type="password" id="registerPassword" name="registerPassword" placeholder="Password" required class="input-field">
+                                <span class="password-toggle-icon" id="toggleRegisterPassword"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="password-toggle-container">
+                                <span class="input-icon">🔒</span>
+                                <input type="password" id="registerConfermaPassword" name="registerConfermaPassword" placeholder="Conferma Password" required class="input-field">
+                                <span class="password-toggle-icon" id="toggleRegisterConfermaPassword"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="phone-group">
+                                <input type="text" id="phonePrefix" name="phonePrefix" value="+39" readonly class="input-field phone-prefix-field">
+                                <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="Numero di Telefono" required class="input-field">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="province">Provincia:</label>
+                            <input type="text" id="province" name="provinceInput" placeholder="Digita e seleziona una provincia" required class="input-field" autocomplete="off">
+                            <div id="provinceDropdown" class="custom-dropdown"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="city">Città/Comune residenza:</label>
+                            <input type="text" id="city" name="cityInput" placeholder="Digita e seleziona una città" required class="input-field" autocomplete="off">
+                            <div id="cityDropdown" class="custom-dropdown"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address">Indirizzo e N. Civico:</label>
+                            <input type="text" id="address" name="address" placeholder="Via Roma 10" required class="input-field">
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary">Registrati</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="register-form-container" id="registerCompanyFormContainer">
+                    <button type="button" class="btn-back-form" id="backToChoiceCompany">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <h1 class="form-title">Registrazione Azienda</h1>
+                    <p class="form-subtitle">Crea l'account della tua azienda</p>
+
+                    <form id="registerCompanyForm">
+                        <div class="form-group">
+                            <label for="companyName">Ragione Sociale:</label>
+                            <input type="text" id="companyName" name="companyName" placeholder="Nome della tua azienda" required class="input-field">
+                        </div>
+                        <div class="form-group">
+                            <label for="pIva">Partita IVA:</label>
+                            <input type="text" id="pIva" name="pIva" placeholder="Es. IT12345678901" required class="input-field">
+                        </div>
+                         <div class="form-group">
+                            <div class="input-with-icon">
+                                <span class="input-icon">📧</span>
+                                <input type="email" id="companyEmail" name="companyEmail" placeholder="Email aziendale" required class="input-field">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="password-toggle-container">
+                                <span class="input-icon">🔒</span>
+                                <input type="password" id="companyPassword" name="companyPassword" placeholder="Password" required class="input-field">
+                                <span class="password-toggle-icon" id="toggleCompanyPassword"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="password-toggle-container">
+                                <span class="input-icon">🔒</span>
+                                <input type="password" id="companyConfermaPassword" name="companyConfermaPassword" placeholder="Conferma Password" required class="input-field">
+                                <span class="password-toggle-icon" id="toggleCompanyConfermaPassword"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="phone-group">
+                                <input type="text" id="companyPhonePrefix" name="companyPhonePrefix" value="+39" readonly class="input-field phone-prefix-field">
+                                <input type="tel" id="companyPhoneNumber" name="companyPhoneNumber" placeholder="Numero di Telefono Aziendale" required class="input-field">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="companyProvince">Provincia Sede Legale:</label>
+                            <input type="text" id="companyProvince" name="companyProvinceInput" placeholder="Digita e seleziona una provincia" required class="input-field" autocomplete="off">
+                            <div id="companyProvinceDropdown" class="custom-dropdown"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="companyCity">Città/Comune Sede Legale:</label>
+                            <input type="text" id="companyCity" name="companyCityInput" placeholder="Digita e seleziona una città" required class="input-field" autocomplete="off">
+                            <div id="companyCityDropdown" class="custom-dropdown"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="companyAddress">Indirizzo e N. Civico Sede Legale:</label>
+                            <input type="text" id="companyAddress" name="companyAddress" placeholder="Via Azienda 1" required class="input-field">
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary">Registra Azienda</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/login_scripts.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,737 @@
+:root {
+    --primary-green: #28a745;
+    --dark-green: #218838;
+    --primary-blue: #007bff;
+    --dark-blue: #0056b3;
+    --light-bg: #eef1f5;
+    --white-bg: #ffffff;
+    --border-color: #e0e0e0;
+    --text-color: #333;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --border-radius: 8px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--light-bg);
+    color: var(--text-color);
+}
+
+header {
+    background-color: var(--dark-green);
+    padding: 10px 30px;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.site-title {
+    font-family: 'Merriweather', serif;
+    margin: 0;
+    color: white;
+    font-size: 1.8em;
+    font-weight: 700;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.home-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; 
+    height: 40px;
+    padding: 0; 
+    border-radius: 50%; 
+    background-color: var(--primary-green); /* Sfondo verde */
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    cursor: pointer; 
+    color: white;
+}
+
+.home-icon:hover {
+    background-color: var(--dark-green); 
+    transform: scale(1.05); 
+}
+
+.home-icon i {
+    font-size: 1.2rem;
+}
+
+.user-profile span {
+    font-weight: 700;
+    color: white;
+    font-size: 1.1em;
+    background-color: var(--primary-green); 
+    padding: 8px 15px; 
+    border-radius: 25px; 
+    transition: transform 0.2s ease; 
+    cursor: default; 
+}
+
+.user-profile span:hover {
+    transform: scale(1.03); 
+}
+
+.hamburger-button {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 25px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    padding: 0;
+    z-index: 1001;
+}
+
+.hamburger-button span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background-color: white; 
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.hamburger-button:hover span {
+    background-color: var(--primary-green);
+}
+
+#container {
+    display: flex;
+    height: calc(100vh - 70px); 
+    overflow: hidden;
+}
+
+#sidebar {
+    width: 350px;
+    background: var(--white-bg);
+    padding: 25px;
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: transform 0.3s ease, width 0.3s ease, padding 0.3s ease;
+    transform: translateX(0);
+    flex-shrink: 0;
+}
+
+#sidebar.hidden {
+    transform: translateX(-100%);
+    width: 0;
+    padding: 0;
+    border-right: none;
+    box-shadow: none;
+}
+
+#main-content-area {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 15px; 
+    padding: 15px;
+    overflow-y: auto; 
+    overflow-x: hidden; 
+}
+
+#main-map-container {
+    flex: 1 1 48%; 
+    min-width: 0; 
+    height: 500px; 
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+#main-map-container .leaflet-container {
+    height: 100%;
+    width: 100%;
+}
+
+#selected-terrain-details {
+    flex: 1 1 48%;
+    min-width: 300px;
+    background-color: var(--white-bg);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 500px; /* <-- ALTEZZA FISSA*/
+}
+
+.dashboard-section {
+    background-color: var(--white-bg);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 0; 
+    flex: 1 1 100%; 
+    min-width: 0; 
+}
+
+#coordinates-section,
+#polygon-vertices-section { 
+    background-color: var(--white-bg);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    flex: 1 1 calc(33% - 10px); 
+    min-width: 0; 
+    margin-top: 0; 
+}
+
+#coordinates-section {
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+    justify-content: flex-start; 
+    align-items: stretch; 
+}
+
+#coordinates-section button {
+    width: 100%; 
+    margin-top: auto;
+}
+
+.info-panel-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px; 
+    flex: 1 1 100%; 
+}
+
+#coordinates-section p {
+    font-size: 0.9em;
+    color: var(--text-color);
+    word-wrap: break-word;
+}
+
+#polygon-vertices-section .vertices-list {
+    max-height: 200px; 
+    overflow-y: auto; 
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 10px;
+    background-color: var(--light-bg);
+    font-size: 0.9em;
+}
+
+#polygon-vertices-section .vertices-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#polygon-vertices-section .vertices-list li {
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    border-bottom: 1px dashed rgba(0,0,0,0.1);
+}
+
+#polygon-vertices-section .vertices-list li:last-child {
+    border-bottom: none;
+}
+
+
+label {
+    font-weight: 700;
+    margin-top: 5px;
+    display: block;
+    font-size: 0.95em;
+}
+
+input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+select {
+    width: 100%;
+    padding: 10px 12px;
+    margin-top: 5px;
+    margin-bottom: 15px; 
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1em;
+    background-color: var(--white-bg); 
+}
+
+button {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--primary-green);
+    color: white;
+    font-weight: 700;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.05em;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: var(--dark-green);
+}
+
+h3 {
+    color: var(--primary-green);
+    font-size: 1.4em;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 8px;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+h4 {
+    color: var(--dark-green);
+    font-size: 1.1em;
+    margin-bottom: 10px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.summary-item {
+    background-color: var(--light-bg);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.summary-item h4 {
+    margin: 0 0 8px 0;
+    color: var(--dark-green);
+    font-size: 1.1em;
+}
+
+.summary-item p {
+    margin: 0;
+    font-size: 1.6em;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.terreno-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.terreno-input-group input {
+    flex-grow: 1;
+    margin-bottom: 0;
+}
+
+.add-terreno-button {
+    background-color: var(--primary-blue);
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.add-terreno-button:hover {
+    background-color: var(--dark-blue);
+    transform: scale(1.1);
+}
+
+.terreno-list {
+    list-style: none;
+    padding: 0;
+    margin: -5px 0 15px 0;
+}
+
+.terreno-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--light-bg);
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.terreno-item:hover {
+    background-color: #dce3e9;
+    transform: translateX(3px);
+}
+
+.terreno-item.selected {
+    background-color: var(--primary-green);
+    color: white;
+    font-weight: 700;
+    border: 1px solid var(--dark-green);
+}
+
+.terreno-item.selected .terreno-name {
+    color: white;
+}
+
+.terreno-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.terreno-actions button {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1em;
+    padding: 5px;
+    width: auto;
+    transition: color 0.2s ease;
+}
+
+.terreno-item.selected .terreno-actions button {
+    color: white;
+}
+
+.terreno-actions button:hover {
+    color: var(--dark-blue);
+}
+
+.species-list {
+    list-style: none;
+    /* padding: 0; */ /* Rimosso perché specificato sotto con più dettaglio */
+    margin-top: 10px;
+    /* Aggiunte per la barra di scorrimento */
+    max-height: 200px; /* Imposta un'altezza massima per la lista (puoi aggiustare questo valore) */
+    overflow-y: auto; /* Mostra la barra di scorrimento verticale se il contenuto eccede max-height */
+    border: 1px solid var(--border-color); /* Aggiunge un bordo per delimitare meglio l'area scrollabile */
+    border-radius: 4px; /* Arrotonda gli angoli del bordo della lista */
+    padding: 10px; /* Aggiunge un po' di padding interno alla lista */
+}
+
+.species-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0; /* Padding verticale per gli item, orizzontale gestito dal contenitore .species-list */
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.species-item:last-child {
+    border-bottom: none;
+}
+
+.species-item span {
+    flex-grow: 1;
+}
+
+.species-item button {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.9em;
+    padding: 0 5px;
+    width: auto;
+}
+
+.species-item button:hover {
+    color: var(--dark-blue);
+}
+
+.species-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center; 
+}
+
+.species-input-group input[type="text"],
+.species-input-group input[type="number"],
+.species-input-group select { /* ANCORA PRESENTE per stili generali se altri select sono usati qui */
+    flex: 1; 
+    min-width: 0; 
+    margin-bottom: 0;
+    padding: 10px 12px; 
+    border: 1px solid var(--border-color); 
+    border-radius: 5px; 
+    font-size: 1em;
+    box-sizing: border-box;  
+}
+
+/* Stili specifici per il nuovo input di testo delle specie */
+#new-species-name-input {
+    /* Eredita gli stili da .species-input-group input[type="text"] */
+    box-sizing: border-box; /* Assicura che padding e border siano inclusi nella larghezza totale */
+}
+
+/* Stili per il contenitore dei suggerimenti */
+#species-suggestions-dropdown {
+    display: none; 
+    position: absolute;
+    top: 100%; /* Posizionalo subito sotto l'input. */
+    left: 0;
+    right: 0; /* Si estenderà per tutta la larghezza del .species-name-input-wrapper */
+    background-color: var(--white-bg);
+    border: 1px solid var(--border-color);
+    border-top-width: 0; 
+    z-index: 1050; 
+    max-height: 150px; 
+    overflow-y: auto;  
+    box-sizing: border-box;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1); 
+}
+
+.suggestion-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 0.95em; 
+    color: var(--text-color);
+    border-bottom: 1px solid var(--light-bg); 
+}
+
+.suggestion-item:last-child {
+    border-bottom: none; 
+}
+
+.suggestion-item:hover {
+    background-color: var(--light-bg);
+}
+
+
+.add-species-icon-button {
+    background: none; 
+    border: none; 
+    padding: 0; 
+    width: 40px; 
+    height: 40px; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    flex-shrink: 0; 
+}
+
+.add-species-icon-button:hover {
+    transform: scale(1.1); 
+}
+
+.add-species-icon-button svg {
+    width: 100%;
+    height: 100%;
+}
+
+#selected-terrain-details input[type="text"] {
+    margin-bottom: 0;
+}
+#selected-terrain-details .info-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+#selected-terrain-details .info-group > div {
+    flex: 1 1 45%;
+    min-width: 150px;
+}
+
+.address-search-sidebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px; 
+}
+
+.address-search-sidebar input {
+    flex-grow: 1;
+    margin-bottom: 0; 
+}
+
+.address-search-sidebar .search-address-button,
+.address-search-sidebar .clear-pin-button { 
+    background-color: var(--primary-blue);
+    color: white;
+    border-radius: 50%; 
+    width: 40px; 
+    height: 40px; 
+    min-width: 40px; 
+    min-height: 40px; 
+    padding: 0; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2em; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.address-search-sidebar .search-address-button:hover,
+.address-search-sidebar .clear-pin-button:hover {
+    background-color: var(--dark-blue);
+    transform: scale(1.1);
+}
+
+.address-search-sidebar .clear-pin-button {
+    background-color: #dc3545; 
+}
+
+.address-search-sidebar .clear-pin-button:hover {
+    background-color: #c82333; 
+}
+
+#terreni-table {
+    width: 100%; 
+    table-layout: fixed; 
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+#terreni-table th,
+#terreni-table td {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    text-align: left;
+    word-wrap: break-word; 
+}
+
+#terreni-table thead tr {
+    background-color: var(--light-bg);
+}
+
+@media (max-width: 768px) {
+    #terreni-table {
+        display: block; 
+        overflow-x: auto; 
+        white-space: nowrap; 
+    }
+
+    #terreni-table thead, #terreni-table tbody, #terreni-table th, #terreni-table td, #terreni-table tr {
+        display: block; 
+    }
+
+    #terreni-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px; 
+    }
+
+    #terreni-table tr {
+        border: 1px solid var(--border-color);
+        margin-bottom: 10px;
+        border-radius: var(--border-radius);
+        overflow: hidden; 
+    }
+
+    #terreni-table td {
+        border: none; 
+        border-bottom: 1px solid var(--border-color); 
+        position: relative;
+        padding-left: 50%; 
+        text-align: right; 
+    }
+
+    #terreni-table td:before {
+        content: attr(data-label); 
+        position: absolute;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: bold;
+        color: var(--dark-green);
+    }
+}
+
+
+@media (max-width: 992px) { 
+    #container {
+        flex-direction: column;
+    }
+
+    #sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        transform: translateX(0) !important;
+        height: auto;
+    }
+
+    #sidebar.hidden {
+        transform: translateX(-100%) !important;
+        height: 0;
+        overflow: hidden;
+    }
+
+    #main-content-area {
+        padding: 10px;
+        flex-direction: column;
+    }
+
+    #main-map-container,
+    #selected-terrain-details,
+    .dashboard-section,
+    .info-panel-row { 
+        flex: 1 1 100%;
+        min-width: unset;
+        height: auto;
+    }
+
+    #main-map-container {
+        height: 50vh;
+    }
+
+    #coordinates-section,
+    #polygon-vertices-section { 
+        flex: 1 1 100%;
+    }
+}

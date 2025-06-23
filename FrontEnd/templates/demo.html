@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Airvana</title>
+    <link rel="icon" href="static/favicondemo-16x16.png" type="image/png">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        /* Stile Generale e Adattabilità */
+        :root {
+            --primary-color: #4CAF50; /* Verde brillante */
+            --secondary-color: #8BC34A; /* Verde più chiaro */
+            --accent-color: #FFC107; /* Giallo/Oro per evidenziare */
+            --text-color: #333;
+            --background-color: #f4f4f4;
+            --card-background: #ffffff;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: url('foglie.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* Overlay per migliorare la leggibilità del testo sul background, con sfocatura e trasparenza */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Modificato il gradiente per meno bianco e aggiunto un leggero blur */
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.073) 0%, rgba(255, 255, 255, 0.577) 50%, rgba(255, 255, 255, 0.626) 100%);
+            backdrop-filter: blur(2px); /* Aggiunto effetto sfocatura */
+            -webkit-backdrop-filter: blur(2px); /* Per compatibilità Safari */
+            z-index: -1;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: grid;
+            gap: 2rem;
+        }
+
+        section {
+            background-color: var(--card-background);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        /* Stile Mappa */
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .drawing-info {
+            text-align: center;
+            font-style: italic;
+            color: #555;
+            margin-bottom: 1rem;
+            min-height: 1.5em; /* Per mantenere lo spazio anche senza testo */
+        }
+        .drawing-info.error {
+            color: #d32f2f; /* Rosso per errori */
+            font-weight: bold;
+        }
+
+
+        .map-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Stile Form Specie */
+        .species-section form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .species-input-group {
+            display: flex;
+            flex-wrap: wrap; /* Permette il wrap su schermi piccoli */
+            gap: 10px;
+            align-items: center;
+            justify-content: center; /* Centra gli elementi del gruppo */
+            margin-bottom: 10px; /* Spazio tra i gruppi di input */
+        }
+
+        .species-input-group label {
+            font-weight: bold;
+            flex-basis: 100%; /* Occupano tutta la larghezza su mobile */
+            text-align: center;
+        }
+
+        .species-input-group input[type="text"],
+        .species-input-group input[type="number"] {
+            flex-grow: 1; /* Permette agli input di espandersi */
+            padding: 0.6rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 250px; /* Limita la larghezza massima per desktop */
+        }
+
+        #speciesInputs {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        #speciesForm button {
+            margin-top: 1.5rem;
+            width: fit-content; /* Adatta la larghezza al contenuto */
+            align-self: center; /* Centra i pulsanti all'interno del flex container */
+        }
+
+
+
+        .charts-container-wrapper { /* Nuovo wrapper per i grafici */
+            display: flex;
+            flex-wrap: wrap; /* Permette ai grafici di andare a capo su schermi piccoli */
+            justify-content: space-around; /* Distribuisce lo spazio tra i grafici */
+            gap: 1.5rem; /* Spazio tra i grafici */
+            margin-top: 1.5rem; /* Spazio dal titolo della sezione */
+        }
+
+        .chart-container {
+            background-color: var(--card-background);
+            padding: 1rem; /* Padding ridotto */
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            flex: 1; /* Permette ai container di occupare spazio equamente */
+            min-width: 280px; /* Larghezza minima per evitare che si comprimano troppo */
+            max-width: 350px; /* Larghezza massima desiderata per un buon allineamento */
+            max-height: 350px; /* Limita l'altezza dei container dei grafici */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .chart-container h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 0.8rem; /* Margine ridotto */
+            font-size: 1.2em; /* Dimensione del titolo ridotta */
+        }
+
+        .chart-container canvas {
+            max-height: 250px; /* Limita l'altezza del canvas stesso */
+            width: 100% !important; /* Forza la larghezza completa */
+            height: auto !important; /* Adatta l'altezza automaticamente */
+        }
+
+
+        /* Utilità */
+        .hidden {
+            display: none;
+        }
+        .disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .disabled:hover {
+            background-color: var(--primary-color);
+            transform: none;
+        }
+
+        .bottone-container {
+            display: flex;
+            justify-content: center; /* centra orizzontalmente */
+            margin-top: auto;
+            margin-bottom: 40px; /* distanza dal fondo */
+        }
+
+        .btn-home {
+            background-color: rgb(43, 96, 187);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            width: 180px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .btn-home:hover {
+            background-color: rgb(118, 196, 241);
+            transform: translateY(-2px);
+        }
+
+        .h4-container {
+            max-width: 600px;     /* Limita la larghezza */
+            margin: 0 auto;       /* Centra orizzontalmente */
+            text-align: center;
+        }
+
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            margin-top: 3rem;
+            background-color: var(--text-color);
+            color: white;
+            font-size: 0.9em;
+        }
+
+        /* Media Queries per la Responsiveness */
+        @media (min-width: 768px) {
+            main {
+                padding: 0 2rem;
+            }
+
+            .species-input-group label {
+                flex-basis: auto; /* Ripristina il comportamento normale su desktop */
+                text-align: left;
+            }
+
+            .species-input-group input[type="text"],
+            .species-input-group input[type="number"] {
+                max-width: none; /* Rimuove il limite di larghezza su desktop */
+            }
+
+            .species-input-group {
+                justify-content: flex-start; /* Allinea a sinistra su desktop */
+            }
+        }
+
+        @media (min-width: 1024px) {
+            header h1 {
+                font-size: 3em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="hero-section">
+        <div class="title-container">
+            <img src="static/airvanalogotondo.png" alt="Logo del sito" class="logo" style="width: 120px; height: auto;">
+            <h1>Prova Airvana!</h1>
+            <p>La demo gratuita ti permette di disegnare, analizzare e gestire il tuo terreno.</p>
+        </div> 
+    </header>
+
+    <main>
+        <section class="map-section">
+            <h2>1. Disegna il tuo terreno</h2>
+            <div id="map"></div>
+            <div class="drawing-info">
+                <p id="drawingInstructions">Clicca sulla mappa per aggiungere punti al tuo confine. Doppio clic o "Fatto" per chiudere la forma.</p>
+            </div>
+            <div class="map-buttons">
+                <button id="doneDrawing" class="disabled">Fatto</button>
+                <button id="clearMap">Cancella</button>
+                <button id="editPolygon" class="hidden">Modifica</button>
+            </div>
+        </section>
+
+        <section class="species-section hidden">
+            <h2>2. Inserisci le specie vegetali</h2>
+            <form id="speciesForm">
+                <div id="speciesInputs">
+                    <div class="species-input-group">
+                        <label for="plantSpecies1">Specie Vegetale:</label>
+                        <input type="text" id="plantSpecies1" class="plant-species-input" placeholder="Es: Quercia" required>
+                        <label for="plantQuantity1">Quantità:</label>
+                        <input type="number" id="plantQuantity1" class="plant-quantity-input" min="1" value="1" required>
+                    </div>
+                </div>
+                <button type="button" id="addSpecies">Aggiungi Specie</button>
+                <button type="submit">Visualizza Analisi</button>
+            </form>
+        </section>
+
+        <section class="charts-section hidden">
+            <h2>3. Analisi Dati del Terreno</h2>
+            <div class="charts-container-wrapper"> <div class="chart-container">
+                    <h3>Condizioni Meteo (Oggi e Settimana)</h3>
+                    <canvas id="weatherChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Emissioni CO2 e Produzione O2</h3>
+                    <canvas id="ecoChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Distribuzione Specie Vegetali</h3>
+                    <canvas id="speciesPieChart"></canvas>
+                </div>
+                <div class="h4-container">
+                <p>⚠️ I risultati mostrati in questa demo sono generati su dati casuali a scopo illustrativo. Per ottenere risultati reali basati sui tuoi dati, è necessario effettuare la registrazione.</p>
+                </div>
+            </div>
+        </section>
+        <div class="bottone-container">
+        <button class="btn-home" onclick="window.location.href='/'">Torna alla Home</button>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Demo Gestione Terreno. Tutti i diritti riservati.</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mapElement = document.getElementById('map');
+            const speciesSection = document.querySelector('.species-section');
+            const chartsSection = document.querySelector('.charts-section');
+            const speciesForm = document.getElementById('speciesForm');
+            const addSpeciesButton = document.getElementById('addSpecies');
+            const speciesInputsDiv = document.getElementById('speciesInputs');
+            const clearMapButton = document.getElementById('clearMap');
+            const doneDrawingButton = document.getElementById('doneDrawing');
+            const editPolygonButton = document.getElementById('editPolygon');
+            const drawingInstructions = document.getElementById('drawingInstructions');
+
+            // Inizializzazione Mappa Leaflet
+            // Limiti geografici per l'Italia (bbox approssimativo)
+            const southWest = L.latLng(35, 6);
+            const northEast = L.latLng(47, 19);
+            const italyBounds = L.latLngBounds(southWest, northEast);
+
+            const map = L.map('map', {
+                center: [41.9028, 12.4964], // Centro Italia (Roma)
+                zoom: 6,
+                minZoom: 5, // Impedisce di zoomare troppo fuori dall'Italia
+                maxBounds: italyBounds, // Limita la mappa ai confini italiani
+                maxBoundsViscosity: 1.0 // Impedisce di trascinare la mappa fuori dai limiti
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            let drawnItems = new L.FeatureGroup().addTo(map);
+            let currentPolygon = null;
+            let isDrawing = false; // Flag per lo stato del disegno
+
+            // Definizione di un'area approssimativa dell'Italia per il controllo dei click
+            const ITALY_CENTER_LAT = 41.9028;
+            const ITALY_CENTER_LNG = 12.4964;
+            const ITALY_RADIUS_KM = 800; // Un raggio che copre bene l'Italia
+
+            // Funzione per calcolare la distanza in km tra due punti lat/lng (formula Haversine semplificata)
+            function getDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371; // Raggio della Terra in km
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a =
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const d = R * c;
+                return d;
+            }
+
+            // Funzione per controllare se un punto è "dentro" l'area approssimativa dell'Italia
+            const isPointWithinItalyApprox = (lat, lng) => {
+                const distance = getDistance(ITALY_CENTER_LAT, ITALY_CENTER_LNG, lat, lng);
+                return distance <= ITALY_RADIUS_KM;
+            };
+
+            // Funzione per abilitare il disegno
+            const enableDrawing = () => {
+                isDrawing = true;
+                drawingInstructions.textContent = 'Clicca sulla mappa per aggiungere punti al tuo confine. Doppio clic o "Fatto" per chiudere la forma.';
+                drawingInstructions.classList.remove('error');
+                doneDrawingButton.classList.add('disabled');
+                editPolygonButton.classList.add('hidden');
+                map.on('click', handleMapClick);
+                map.on('dblclick', handleMapDblClick);
+            };
+
+            // Funzione per disabilitare il disegno
+            const disableDrawing = () => {
+                isDrawing = false;
+                map.off('click', handleMapClick);
+                map.off('dblclick', handleMapDblClick);
+                drawingInstructions.textContent = 'Confine disegnato. Ora puoi inserire i dati o modificarlo.';
+            };
+
+            const handleMapClick = function(e) {
+                if (isDrawing) {
+                    if (!isPointWithinItalyApprox(e.latlng.lat, e.latlng.lng)) {
+                        drawingInstructions.textContent = 'Punto fuori dall\'Italia! Disegna all\'interno dei confini.';
+                        drawingInstructions.classList.add('error');
+                        return; // Non aggiunge il punto
+                    }
+                    drawingInstructions.textContent = 'Clicca sulla mappa per aggiungere punti al tuo confine. Doppio clic o "Fatto" per chiudere la forma.';
+                    drawingInstructions.classList.remove('error');
+
+                    if (!currentPolygon) {
+                        currentPolygon = L.polygon([e.latlng], { color: 'green', weight: 3, opacity: 0.7, fillOpacity: 0.3 }).addTo(drawnItems);
+                    } else {
+                        const latlngs = currentPolygon.getLatLngs()[0];
+                        latlngs.push(e.latlng);
+                        currentPolygon.setLatLngs(latlngs);
+                    }
+                    if (currentPolygon.getLatLngs()[0].length >= 3) { // Abilita "Fatto" dopo almeno 3 punti
+                        doneDrawingButton.classList.remove('disabled');
+                    }
+                }
+            };
+
+            const handleMapDblClick = function(e) {
+                if (isDrawing && currentPolygon && currentPolygon.getLatLngs()[0].length >= 3) { // Minimo 3 punti per chiudere
+                    const latlngs = currentPolygon.getLatLngs()[0];
+                    if (latlngs[0] !== latlngs[latlngs.length - 1]) {
+                        latlngs.push(latlngs[0]); // Chiudi il poligono collegando l'ultimo al primo punto
+                        currentPolygon.setLatLngs(latlngs);
+                    }
+                    doneDrawingButton.click(); // Simula il click sul pulsante "Fatto"
+                } else if (isDrawing && (!currentPolygon || currentPolygon.getLatLngs()[0].length < 3)) {
+                       drawingInstructions.textContent = 'Per chiudere un poligono, servono almeno 3 punti!';
+                       drawingInstructions.classList.add('error');
+                }
+            };
+
+            // Inizializza il disegno all'avvio
+            enableDrawing();
+
+            doneDrawingButton.addEventListener('click', () => {
+                if (!doneDrawingButton.classList.contains('disabled')) {
+                    disableDrawing();
+                    speciesSection.classList.remove('hidden');
+                    editPolygonButton.classList.remove('hidden');
+                    chartsSection.classList.add('hidden'); // Nascondi i grafici finché non si invia il form specie
+                }
+            });
+
+            clearMapButton.addEventListener('click', () => {
+                drawnItems.clearLayers();
+                currentPolygon = null;
+                speciesSection.classList.add('hidden');
+                chartsSection.classList.add('hidden');
+                editPolygonButton.classList.add('hidden');
+                doneDrawingButton.classList.add('disabled');
+                // Reset del form specie
+                speciesInputsDiv.innerHTML = `
+                    <div class="species-input-group">
+                        <label for="plantSpecies1">Specie Vegetale:</label>
+                        <input type="text" id="plantSpecies1" class="plant-species-input" placeholder="Es: Quercia" required>
+                        <label for="plantQuantity1">Quantità:</label>
+                        <input type="number" id="plantQuantity1" class="plant-quantity-input" min="1" value="1" required>
+                    </div>
+                `;
+                speciesCount = 1; // Resetta il contatore delle specie
+                enableDrawing(); // Riabilita il disegno
+            });
+
+            editPolygonButton.addEventListener('click', () => {
+                if (currentPolygon) {
+                    alert('La funzione "Modifica" in questa demo ti permette di ridisegnare completamente il poligono. In un\'applicazione reale, un plugin come Leaflet.Editable permetterebbe di trascinare i singoli punti.');
+                    drawnItems.clearLayers();
+                    currentPolygon = null;
+                    speciesSection.classList.add('hidden');
+                    chartsSection.classList.add('hidden');
+                    editPolygonButton.classList.add('hidden');
+                    enableDrawing();
+                }
+            });
+
+            // Aggiungi nuovi campi per le specie
+            let speciesCount = 1;
+            addSpeciesButton.addEventListener('click', () => {
+                speciesCount++;
+                const newSpeciesGroup = document.createElement('div');
+                newSpeciesGroup.classList.add('species-input-group');
+                newSpeciesGroup.innerHTML = `
+                    <label for="plantSpecies${speciesCount}">Specie Vegetale:</label>
+                    <input type="text" id="plantSpecies${speciesCount}" class="plant-species-input" placeholder="Es: Olivo" required>
+                    <label for="plantQuantity${speciesCount}">Quantità:</label>
+                    <input type="number" id="plantQuantity${speciesCount}" class="plant-quantity-input" min="1" value="1" required>
+                `;
+                speciesInputsDiv.appendChild(newSpeciesGroup);
+            });
+
+            // Funzione per generare colori casuali per il grafico a torta
+            const getRandomColor = () => {
+                const letters = '0123456789ABCDEF';
+                let color = '#';
+                for (let i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            };
+
+            // Gestione invio form specie e generazione grafici
+            speciesForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                chartsSection.classList.remove('hidden'); // Rendi visibile la sezione dei grafici
+                // Aggiorna i grafici DOPO che la sezione è diventata visibile
+                setTimeout(() => {
+                    const plantsData = getPlantsData();
+                    updateCharts(plantsData);
+                }, 100); // Piccolo ritardo di 100ms
+            });
+
+            const getPlantsData = () => {
+                const plantSpeciesInputs = document.querySelectorAll('.plant-species-input');
+                const plantQuantityInputs = document.querySelectorAll('.plant-quantity-input');
+                const plants = {};
+                plantSpeciesInputs.forEach((input, index) => {
+                    const species = input.value ? input.value.trim() : `Specie ${index + 1}`;
+                    const quantity = parseInt(plantQuantityInputs[index].value, 10) || 0;
+                    if (species && quantity > 0) {
+                        plants[species] = (plants[species] || 0) + quantity;
+                    }
+                });
+                return plants;
+            };
+
+            // Funzione per generare dati randomici per i grafici
+            const generateRandomChartData = (areaInfluence = 1) => {
+                const today = new Date();
+                const dates = [];
+                const temps = [];
+                const precipitations = [];
+                const windSpeeds = [];
+                const co2Emissions = [];
+                const o2Production = [];
+
+                // Dati meteo (oggi + 7 giorni)
+                for (let i = 0; i < 8; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    dates.push(date.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }));
+                    temps.push(Math.floor(Math.random() * (30 - 15) + 15) + areaInfluence * 0.5); // Temp tra 15 e 30
+                    precipitations.push(parseFloat((Math.random() * 10).toFixed(1))); // Precipitazioni tra 0 e 10 mm
+                    windSpeeds.push(parseFloat((Math.random() * 20).toFixed(1))); // Vento tra 0 e 20 km/h
+                }
+
+                // Dati eco (ipotetici per un'area)
+                for (let i = 0; i < 7; i++) { // Dati per 7 giorni per co2/o2
+                    co2Emissions.push(parseFloat((Math.random() * 50 * areaInfluence).toFixed(2)));
+                    o2Production.push(parseFloat((Math.random() * 80 * areaInfluence).toFixed(2)));
+                }
+
+                return { dates, temps, precipitations, windSpeeds, co2Emissions, o2Production };
+            };
+
+            let weatherChartInstance;
+            let ecoChartInstance;
+            let speciesPieChartInstance;
+
+            const updateCharts = (plantsData) => {
+                // La dimensione dell'area influenza i dati randomici
+                let areaApproximation = currentPolygon ? currentPolygon.getLatLngs()[0].length * 1000 + Math.random() * 5000 : 10000;
+                const areaInfluence = Math.max(0.5, areaApproximation / 50000); // Normalizza l'area per l'influenza, min 0.5 per non avere dati troppo bassi
+
+                const randomData = generateRandomChartData(areaInfluence);
+
+                // Grafico Condizioni Meteo (Barre)
+                const weatherCtx = document.getElementById('weatherChart').getContext('2d');
+                if (weatherChartInstance) {
+                    weatherChartInstance.destroy();
+                }
+                weatherChartInstance = new Chart(weatherCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: randomData.dates,
+                        datasets: [
+                            {
+                                label: 'Temperatura Media (°C)',
+                                data: randomData.temps,
+                                backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Precipitazioni (mm)',
+                                data: randomData.precipitations,
+                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Velocità Vento (km/h)',
+                                data: randomData.windSpeeds,
+                                backgroundColor: 'rgba(255, 206, 86, 0.6)',
+                                borderColor: 'rgba(255, 206, 86, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Grafico Emissioni CO2 e Produzione O2 (Linee)
+                const ecoCtx = document.getElementById('ecoChart').getContext('2d');
+                if (ecoChartInstance) {
+                    ecoChartInstance.destroy();
+                }
+                ecoChartInstance = new Chart(ecoCtx, {
+                    type: 'line',
+                    data: {
+                        labels: randomData.dates.slice(0, 7),
+                        datasets: [
+                            {
+                                label: 'Emissioni CO2 (kg)',
+                                data: randomData.co2Emissions,
+                                borderColor: '#FF5722',
+                                backgroundColor: 'rgba(255, 87, 34, 0.2)',
+                                fill: true,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Produzione O2 (kg)',
+                                data: randomData.o2Production,
+                                borderColor: '#4CAF50',
+                                backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                                fill: true,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Grafico Torta Specie Vegetali
+                const speciesCtx = document.getElementById('speciesPieChart').getContext('2d');
+                if (speciesPieChartInstance) {
+                    speciesPieChartInstance.destroy();
+                }
+                const speciesLabels = Object.keys(plantsData);
+                const speciesQuantities = Object.values(plantsData);
+
+                if (speciesLabels.length === 0 || speciesQuantities.every(q => q === 0)) {
+                    // Mostra un grafico a torta vuoto con un messaggio "Nessun dato"
+                    speciesPieChartInstance = new Chart(speciesCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['Nessuna specie inserita'],
+                            datasets: [{
+                                data: [1],
+                                backgroundColor: ['#cccccc'],
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: { enabled: false },
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { font: { size: 10 }, boxWidth: 10 }
+                                }
+                            }
+                        }
+                    });
+                    return;
+                }
+
+                const speciesColors = speciesLabels.map(() => getRandomColor());
+
+                speciesPieChartInstance = new Chart(speciesCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: speciesLabels,
+                        datasets: [{
+                            data: speciesQuantities,
+                            backgroundColor: speciesColors,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            },
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        size: 10
+                                    },
+                                    boxWidth: 10
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+        });
+    </script>
+</body>
+</html>

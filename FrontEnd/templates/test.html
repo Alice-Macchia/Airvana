@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard CO₂ & O₂</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="static/Dashstyle.css" />
+  <style>
+  #terrainButtons .btn {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    transition: all 0.2s ease-in-out;
+  }
+
+  #terrainButtons .btn.active {
+    border: 2px solid #0d6efd;
+    background-color: #e7f1ff;
+    color: #0d6efd;
+    font-weight: bold;
+  }
+</style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+  <script>
+  // window.USER_DATA = {
+  //   id: "{{ user_id }}",
+  //   email: "{{ email }}"
+  // };
+  function plot(){
+    console.log("Bottone cliccato");
+  }
+
+
+</script>
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Navigazione principale">
+    <button id="toggleSidebar" class="btn btn-light mb-4" aria-label="Toggle menu">☰</button>
+    <h4>Dashboard</h4>
+    <nav>
+      <form action="/home" method="get">
+            <button type="submit" aria-label="Home" class="btn btn-primary">🏠 <span>Home</span></button>
+      </form>
+      
+      <!-- <a href="#" id="inserisci-terreno" aria-label="Aggiungi Terreno">🌱 <span>Aggiungi Terreno</span></a> -->
+      <form action="/inserisciterreno" method="post">
+        <input type="hidden" name="id" value="{{ user_id }}">
+        <input type="hidden" name="email" value="{{ email }}">
+        <button type="submit" class="btn btn-primary">🌱 Aggiungi Terreno</button>
+      </form>
+      <a href="#" id="exportLinePDF" class="export-link" aria-label="Esporta PDF">📄 <span>Esporta PDF</span></a>
+      <a href="#" aria-label="Impostazioni">⚙️ <span>Impostazioni</span></a>
+      <a href="#" aria-label="Aiuto">❓ <span>Aiuto</span></a>
+      
+
+    </nav>
+    
+  </aside>
+
+  <main class="main-content" id="mainContent">
+    <header>
+      <div></div>
+      <section class="user-info" aria-label="Informazioni utente">
+        <button class="btn btn-outline-light" id="themeToggle" aria-label="Cambia tema">🌙</button>
+        <div class="user-name">Utente: Maccio Capatonda</div>
+        <form action="/home" method="get">
+            <button type="submit" class="logout-btn" aria-label="Logout">Logout </button>
+        </form>
+       
+      </section>
+    </header>
+
+    <section class="top-bar" role="banner">
+  <h1>Controlla assorbimento CO₂ e Emissione O₂</h1>
+</section>
+
+    <div class="d-flex gap-2 my-3 justify-content-center" id="terrainButtons">
+  <button class="btn btn-outline-secondary btn-sm active" data-terreno="1">Terreno 1</button>
+  <button class="btn btn-outline-secondary btn-sm" data-terreno="2">Terreno 2</button>
+  <button class="btn btn-outline-secondary btn-sm" data-terreno="3">Terreno 3</button>
+</div>
+<script>
+  const terrainData = {
+    1: {
+      meteo: [
+        [10, 12, 300, 75], [12, 8, 350, 72], [14, 10, 400, 70], [15, 15, 420, 68], [13, 9, 390, 73], [16, 6, 360, 78], [17, 7, 380, 80]
+      ]
+    },
+    2: {
+      meteo: [
+        [11, 10, 320, 70], [13, 6, 340, 74], [15, 12, 410, 69], [16, 14, 430, 67], [14, 8, 385, 72], [17, 5, 355, 76], [18, 6, 375, 79]
+      ]
+    },
+    3: {
+      meteo: [
+        [9, 14, 280, 78], [10, 12, 300, 75], [12, 13, 370, 74], [13, 11, 390, 72], [11, 10, 360, 77], [14, 7, 350, 80], [15, 9, 365, 81]
+      ]
+    }
+  };
+
+  const updateMeteoTable = (dataset) => {
+  const rows = document.querySelectorAll(".summary table tbody tr");
+  rows.forEach((tr, i) => {
+    const cells = tr.querySelectorAll("td");
+    const data = dataset[i];
+    if (data && cells.length >= 5) {
+      cells[1].textContent = data[0];
+      cells[2].textContent = data[1];
+      cells[3].textContent = data[2];
+      cells[4].textContent = data[3];
+    }
+  });
+};
+
+const filterMeteoTable = (startDay, endDay) => {
+  const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+  const startIdx = days.indexOf(startDay);
+  const endIdx = days.indexOf(endDay);
+  const rows = document.querySelectorAll(".summary table tbody tr");
+  rows.forEach((tr, i) => {
+    tr.style.display = (i >= startIdx && i <= endIdx) ? '' : 'none';
+  });
+};
+
+document.getElementById('filterBarChart')?.addEventListener('click', () => {
+  const startDay = document.getElementById('startDay').value;
+  const endDay = document.getElementById('endDay').value;
+  filterMeteoTable(startDay, endDay);
+});
+
+  document.querySelectorAll('#terrainButtons button').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('#terrainButtons button').forEach(btn => btn.classList.remove('active'));
+      button.classList.add('active');
+
+      const selected = button.getAttribute('data-terreno');
+      console.log('Terreno selezionato:', selected);
+
+      if (terrainData[selected]) {
+        updateMeteoTable(terrainData[selected].meteo);
+      }
+    });
+  });
+</script>
+
+<section class="dashboard-content">
+<article class="summary" aria-labelledby="summary-title">
+  <h2 id="summary-title">Dati Meteo</h2>
+
+  <div class="d-flex gap-2 mb-2">
+    <label for="startDay" class="visually-hidden">Giorno iniziale</label>
+    <select id="startDay" class="form-select form-select-sm w-auto">
+      <option>Lun</option><option>Mar</option><option>Mer</option>
+      <option>Gio</option><option>Ven</option><option>Sab</option><option>Dom</option>
+    </select>
+    <label for="endDay" class="visually-hidden">Giorno finale</label>
+    <select id="endDay" class="form-select form-select-sm w-auto">
+      <option>Lun</option><option>Mar</option><option>Mer</option>
+      <option>Gio</option><option>Ven</option><option>Sab</option><option>Dom</option>
+    </select>
+    <button id="filterBarChart" class="btn btn-sm btn-outline-primary">Filtra</button>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-sm table-bordered text-center align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>📅 Giorno</th>
+          <th>🌧️ Precipitazioni (mm)</th>
+          <th>🌡️ Temperatura (°C)</th>
+          <th>☀️ Soleggiato</th>
+          <th>💧 Umidità</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Lun</td><td>12</td><td>3</td><td>4</td><td>2</td></tr>
+        <tr><td>Mar</td><td>8</td><td>2</td><td>5</td><td>3</td></tr>
+        <tr><td>Mer</td><td>10</td><td>4</td><td>3</td><td>2</td></tr>
+        <tr><td>Gio</td><td>15</td><td>5</td><td>2</td><td>3</td></tr>
+        <tr><td>Ven</td><td>9</td><td>2</td><td>5</td><td>1</td></tr>
+        <tr><td>Sab</td><td>6</td><td>1</td><td>6</td><td>0</td></tr>
+        <tr><td>Dom</td><td>7</td><td>3</td><td>4</td><td>2</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <canvas id="barChart" class="chart-canvas" width="800" height="400" style="max-width: 100%;" aria-label="Grafico Dati Meteo" role="img"></canvas>
+</article>
+
+      <article class="income" aria-labelledby="gas-title">
+        <h2 id="gas-title">Assorbimento CO₂ e Emissione O₂</h2>
+        <div class="d-flex gap-2 mb-2">
+          <label for="startTime" class="visually-hidden">Ora iniziale</label>
+          <select id="startTime" class="form-select form-select-sm w-auto">
+            <option>00:00</option><option>01:00</option><option>02:00</option><option>03:00</option>
+            <option>04:00</option><option>05:00</option><option>06:00</option><option>07:00</option>
+            <option>08:00</option><option>09:00</option><option>10:00</option><option>11:00</option>
+            <option>12:00</option><option>13:00</option><option>14:00</option><option>15:00</option>
+            <option>16:00</option><option>17:00</option><option>18:00</option><option>19:00</option>
+            <option>20:00</option><option>21:00</option><option>22:00</option><option>23:00</option>
+          </select>
+          <label for="endTime" class="visually-hidden">Ora finale</label>
+          <select id="endTime" class="form-select form-select-sm w-auto">
+            <option>00:00</option><option>01:00</option><option>02:00</option><option>03:00</option>
+            <option>04:00</option><option>05:00</option><option>06:00</option><option>07:00</option>
+            <option>08:00</option><option>09:00</option><option>10:00</option><option>11:00</option>
+            <option>12:00</option><option>13:00</option><option>14:00</option><option>15:00</option>
+            <option>16:00</option><option>17:00</option><option>18:00</option><option>19:00</option>
+            <option>20:00</option><option>21:00</option><option>22:00</option><option>23:00</option>
+          </select>
+          <button id="filterChart" class="btn btn-sm btn-outline-primary">Filtra</button>
+        </div>
+        <canvas id="lineChart" class="chart-canvas" width="800" height="400" style="max-width: 100%;" aria-label="Grafico CO₂ e O₂" role="img"></canvas>
+        <p id="co2Display">CO₂: -- kg</p>
+        <p id="o2Display">O₂: -- kg</p>
+        
+      </article>
+
+      <article class="tickets" aria-labelledby="plants-title">
+        <h2 id="plants-title">Tipi di Piante</h2>
+        <form class="mb-2" id="plantFilterWrapper">
+          <label for="plantFilter">Filtra categorie:</label>
+
+          <div id="plantFilterForm"></div> <!-- I checkbox vengono inseriti qui via JS -->
+        </form>
+
+
+        <canvas id="pieChart" class="chart-canvas" width="800" height="400" style="max-width: 100%;" aria-label="Distribuzione Specie Piante" role="img"></canvas>
+        <p>Totale Specie: 333</p>
+        <p>Distribuzione per categoria</p>
+      </article>
+
+
+      
+    </section>
+    
+  </main>
+
+  <button class="chat-bubble" id="chatBubble" aria-label="Apri chat">💬</button>
+
+  <section class="chat-box" id="chatBox" aria-label="Chat di supporto">
+    <header class="chat-header">Assistenza</header>
+    <div class="chat-body">
+      <p><strong>Operatore:</strong> Ciao! Come posso aiutarti?</p>
+    </div>
+    <footer class="chat-footer">
+      <label for="chatInput" class="visually-hidden">Scrivi un messaggio</label>
+      <input type="text" id="chatInput" class="chat-input" placeholder="Scrivi un messaggio..." />
+      <button class="chat-send" aria-label="Invia messaggio">➤</button>
+    </footer>
+  </section>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="static/Dashscript.js" defer></script>
+
+</body>
+</html>
+
