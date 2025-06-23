@@ -11,7 +11,7 @@ async function dataOggi() {
 // Carica dati CO2/O2 dal backend e aggiorna grafico
 async function caricaDatiCO2O2(plotId = 1, giorno = "2025-05-29") {
   try {
-    const url = `http://127.0.0.1:8000/calcola_co2/${plotId}?giorno=${giorno}`;
+    const url = `http://165.22.75.145:5000/calcola_co2/${plotId}?giorno=${giorno}`;
     const response = await fetch(url);
     const dati = await response.json();
 
