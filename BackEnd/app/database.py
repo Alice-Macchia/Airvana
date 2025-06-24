@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
@@ -17,8 +17,7 @@ AsyncSessionLocal = sessionmaker(
 )
 
 # Engine e session sync per moduli che lo richiedono
-sync_engine = create_engine(DATABASE_URL.replace("postgresql+asyncpg", "postgresql"), echo=True)
-SessionLocal = sessionmaker(bind=sync_engine)
+SessionLocal = async_sessionmaker(bind=async_engine, expire_on_commit=False)
 
 # Dependency async per FastAPI
 async def get_db():

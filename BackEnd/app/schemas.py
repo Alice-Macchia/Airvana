@@ -109,6 +109,10 @@ class SpeciesBase(BaseModel):
 class SpeciesCreate(SpeciesBase):
     pass
 
+class SpeciesSave(BaseModel):
+    name: str
+    quantity: int 
+
 class SpeciesOut(SpeciesBase):
     id: int
     class Config:
@@ -119,7 +123,7 @@ class SpeciesOut(SpeciesBase):
 class PlotSpeciesBase(BaseModel):
     plot_id: int
     species_id: int
-    surface_area: Optional[float] = None
+    quantity: Optional[int] = None
 
 class PlotSpeciesCreate(PlotSpeciesBase):
     pass
@@ -188,8 +192,9 @@ class SaveCoordinatesRequest(BaseModel):
     centroid: Centroid
     vertices: List[Coordinate]
     created_at: datetime
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class SaveCoordinatesResponse(BaseModel):
     message : str
