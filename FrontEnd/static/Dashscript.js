@@ -44,9 +44,6 @@ function aggiornaGraficoLine(dati) {
   lineChart.update();
 }
 
-
-
-
 // Popola la tabella meteo
 const format = val => {
   const num = Number(val);

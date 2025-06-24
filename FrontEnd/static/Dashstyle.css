@@ -209,7 +209,6 @@ header {
   gap: 20px;
 }
 
-
 .summary, .income, .tickets {
   background: white;
   border-radius: 8px;
@@ -225,7 +224,6 @@ header {
   width: 100% !important;
 }
 
-/* === CHAT === */
 .chat-bubble {
   position: fixed;
   bottom: 25px;
