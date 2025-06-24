@@ -170,7 +170,7 @@ function onMapPolygonCreated(e) {
         // Aggiorna le coordinate del terreno
         selectedTerreno.coordinate = selectedTerreno.leafletLayer.getLatLngs()[0].map(latlng => ({
             lat: latlng.lat,
-            long: latlng.long
+            long: latlng.lng
         }));
 
         // Calcola e aggiorna area e perimetro
@@ -201,7 +201,7 @@ function onMapLayerEdited(e) {
             // Aggiorna le coordinate del terreno
             terreno.coordinate = layer.getLatLngs()[0].map(latlng => ({
                 lat: latlng.lat,
-                long: latlng.long
+                long: latlng.lng
             }));
 
             // Ricalcola area e perimetro
@@ -550,11 +550,11 @@ function addSpeciesToSelectedTerrain() {
     let quantityValue;
     const rawQuantity = newSpeciesQuantityInput.value;
     if (rawQuantity.trim() === '') {
-        showCustomAlert("La quantità (m²) è obbligatoria."); newSpeciesQuantityInput.focus(); return;
+        showCustomAlert("La quantità (n) è obbligatoria."); newSpeciesQuantityInput.focus(); return;
     }
     quantityValue = parseInt(rawQuantity, 10);
-    if (isNaN(quantityValue) || quantityValue < 0 || quantityValue !== parseFloat(rawQuantity)) { // Valida intero non negativo
-        showCustomAlert("Inserisci un valore numerico valido (intero, non negativo) per m².");
+    if (isNaN(quantityValue) || quantityValue < 0 || quantityValue !== parseInt(rawQuantity)) { // Valida intero non negativo
+        showCustomAlert("Inserisci un valore numerico valido (intero, non negativo) per n.");
         newSpeciesQuantityInput.value = ""; newSpeciesQuantityInput.focus(); return;
     }
 
@@ -568,7 +568,7 @@ function addSpeciesToSelectedTerrain() {
     const selectedTerreno = terreni.find(t => t.id === selectedTerrenoId);
     if (selectedTerreno) {
         // Usa il nome con la formattazione corretta dalla lista ALL_SPECIES_NAMES
-        selectedTerreno.species.push({ name: correctlyCasedName, quantity });
+        selectedTerreno.species.push({ name: correctlyCasedName, quantity: quantityValue });
 
         newSpeciesNameInput.value = ''; // Pulisce l'input del nome specie
         newSpeciesQuantityInput.value = ''; // Pulisce l'input della quantità
@@ -671,47 +671,48 @@ async function saveData() {
     showCustomAlert(`Dati per "${terreno.name}" aggiornati localmente e pronti per l'invio al backend!`);
 
     // Preparazione dati per il backend
-    const backendUrl = 'http://localhost:8000/save-coordinates'; // Assicurarsi che l'URL sia corretto
+    const backendUrl = 'http://localhost:8000/save-coordinates';
+
     let centroidCoords = null;
     const centroidDisplay = document.getElementById("centroid-display").textContent;
     const centroidMatch = centroidDisplay.match(/Lat ([\d.]+), Lon ([\d.]+)/);
     if (centroidMatch) {
         centroidCoords = {
             lat: parseFloat(centroidMatch[1]),
-            long: parseFloat(centroidMatch[2]) /////////////////////////
+            long: parseFloat(centroidMatch[2])
         };
+    } else {
+        // Aggiungi un log o un alert se il centroide non viene estratto
+        console.warn("Impossibile estrarre le coordinate del centroide dal testo.");
+        // Potresti voler generare un centroide di fallback qui
+        // O mostrare un errore che impedisce l'invio
+        showCustomAlert("Errore: Impossibile salvare il terreno. Il centroide non è disponibile.");
+        return; // Blocca il salvataggio qui
     }
-
+    if (!centroidCoords) {
+        console.error("Errore critico: Il centroide del poligono non è stato calcolato o estratto correttamente.");
+        showCustomAlert("Errore: Impossibile salvare il terreno. Le coordinate del centroide sono mancanti.");
+        return; // Interrompi la funzione se il centroide è obbligatorio per il backend
+    }
     const polygonVertices = terreno.coordinate; // Vertici del poligono
 
+    // Controlla se polygonVertices contiene effettivamente le longitudini
+    // Questo è un punto critico, assicurati che 'terreno.coordinate' contenga 'long' per ogni vertice
+    if (!polygonVertices || polygonVertices.length === 0 || typeof polygonVertices[0].long === 'undefined') {
+        console.error("Errore: I dati dei vertici del poligono sono incompleti o malformati (manca 'long').");
+        showCustomAlert("Errore: Impossibile salvare. I dati dei vertici sono incompleti.");
+        return; // Interrompe la funzione se i dati sono incompleti
+    }
 
-    // Creazione del payload con struttura annidata come richiesto
-    /*const dataToSend = {
-        userId: currentUserId,
-        userEmail: currentUserEmail,
-        terreno: {
-            id: terreno.id.toString(), // Convertito ID in stringa
-            terrainName: terreno.name,
-            species: terreno.species,  
-            area_ha: terreno.area_ha, // Aggiunto
-            perimeter_m: terreno.perimetro_m, // Aggiunto
-            co2_kg_year: parseFloat(terreno.co2_kg_annuo), // Aggiunto e parsato
-            centroid: centroidCoords,
-            vertices: polygonVertices
-        }
-    };*/
-
-    // Dentro la funzione saveData, prima del blocco try:
 
     const dataToSend = {
-        idutente: parseInt(currentUserId), // Assicura che sia un intero
+        idutente: parseInt(currentUserId),
         terrainName: terreno.name,
-        //chiedere se effettivamente vogliono di restituire emailutente
-        species: terreno.species.map(s => ({ 
-            name: s.name, 
-            quantity: s.quantity // s.quantity è GIA' un intero (m²)
+        species: terreno.species.map(s => ({
+            name: s.name,
+            quantity: parseFloat(s.quantity)
         })),
-        
+        // Includi il centroide solo se è stato estratto correttamente
         ...(centroidCoords && {
             centroid: {
                 lat: centroidCoords.lat,
@@ -720,15 +721,12 @@ async function saveData() {
         }),
         vertices: polygonVertices.map(v => ({
             lat: v.lat,
-            long: v.long // Mappato lng a long per ogni vertice
+            long: v.long // Qui v.long deve essere definito!
         })),
         created_at: new Date().toISOString()
     };
 
-    // ... poi nel corpo della fetch:
-    // body: JSON.stringify(dataToSend)
-
-    console.log(JSON.stringify(dataToSend)); // 👈 Aggiungi questa riga prima della fetch
+    console.log("Payload inviato al backend:", JSON.stringify(dataToSend, null, 2)); // Formattato per leggibilità
 
     try {
         const response = await fetch(backendUrl, {
@@ -736,15 +734,23 @@ async function saveData() {
             credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
-                // Aggiungi qui eventuali header di autenticazione se necessari, es:
-                // 'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}` // Decommenta se usi token di autenticazione
             },
-            body: JSON.stringify(dataToSend)  //// Utilizza dataToSend che è il payload
+            body: JSON.stringify(dataToSend)
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Errore salvataggio dati backend: ${response.status} - ${errorText}`);
+            let errorMessage = `Errore salvataggio dati backend: ${response.status} - ${errorText}`;
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.detail) {
+                    errorMessage = `Errore salvataggio dati backend: ${response.status} - ${JSON.stringify(errorJson.detail)}`;
+                }
+            } catch (e) {
+                // Non è un JSON valido, usa l'errore completo
+            }
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
@@ -823,7 +829,7 @@ function calculateAndDisplayCentroid(polygonLayer) {
     }
 
     // Turf.js richiede che il primo e l'ultimo punto di un anello poligonale siano identici
-    let geoJsonCoords = latlngsOuterRing.map(l => [l.long, l.lat]); // Converte in formato [lon, lat]
+    let geoJsonCoords = latlngsOuterRing.map(l => [l.lng, l.lat]); // Converte in formato [lon, lat]
     if (!latlngsOuterRing[0].equals(latlngsOuterRing[latlngsOuterRing.length - 1])) {
         geoJsonCoords.push(geoJsonCoords[0]); // Chiude il poligono se non lo è
     }
@@ -856,7 +862,7 @@ function updateAddressAndCoordinates() {
         // Tenta la geocodifica inversa usando il centroide (se Turf è disponibile e il poligono è valido)
         if (typeof turf !== 'undefined' && polygon.getLatLngs().length > 0 && polygon.getLatLngs()[0].length >= 3) {
             const latlngsForAddress = polygon.getLatLngs()[0];
-            let geoJsonCoordsForAddress = latlngsForAddress.map(l => [l.long, l.lat]);
+            let geoJsonCoordsForAddress = latlngsForAddress.map(l => [l.lng, l.lat]);
             if (!latlngsForAddress[0].equals(latlngsForAddress[latlngsForAddress.length - 1])) {
                 geoJsonCoordsForAddress.push(geoJsonCoordsForAddress[0]);
             }
@@ -885,8 +891,8 @@ function updateAddressAndCoordinates() {
     }
 }
 
-async function reverseGeocode(lat, long) {
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${long}&accept-language=it`);
+async function reverseGeocode(lat, lng) {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=it`);
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
