@@ -1,32 +1,26 @@
-from fastapi import FastAPI, Request, Query, Depends, HTTPException
+from fastapi import FastAPI, Request, Query, Depends, HTTPException, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from jose import JWTError, jwt
-from datetime import date
+from datetime import date, datetime
 import pandas as pd
 import os
-from fastapi import Cookie
 from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import create_async_engine
-from BackEnd.app.models import Base
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from geoalchemy2.shape import to_shape
+from BackEnd.app.models import Base, Plot
 from BackEnd.app.routes import router
-from BackEnd.app.schemas import (
-    SaveCoordinatesRequest, SaveCoordinatesResponse,
-    ClassificaRequest, ClassificaResponse,
-    EsportaRequest, EsportaResponse
-)
-from BackEnd.app.utils import (
-    inserisci_terreno, mostra_classifica,
-    Esporta, get_species_distribution_by_plot
-)
-from BackEnd.app.co2_o2_calculator import (
-    calculate_co2_o2_hourly, get_coefficients_from_db,
-    get_weather_data_from_db, get_species_from_db
-)
+from BackEnd.app.schemas import (SaveCoordinatesRequest, SaveCoordinatesResponse, ClassificaRequest, ClassificaResponse, EsportaRequest, EsportaResponse)
+from BackEnd.app.utils import (inserisci_terreno, mostra_classifica, Esporta, get_species_distribution_by_plot)
+from BackEnd.app.co2_o2_calculator import (calculate_co2_o2_hourly, get_coefficients_from_db, get_weather_data_from_db, get_species_from_db, aggiorna_weatherdata_con_assorbimenti)
 from BackEnd.app.get_meteo import fetch_and_save_weather_day
 from BackEnd.app.auth import get_current_user
+from BackEnd.app.database import SessionLocal, get_db
+from fastapi.concurrency import run_in_threadpool
+
 # .env
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -76,16 +70,6 @@ def decode_token(token: str):
     except JWTError:
         raise HTTPException(status_code=403, detail="Token non valido")
 
-
-# async def get_current_user(access_token: str = Cookie(None)):
-#     if not access_token:
-#         raise HTTPException(status_code=401, detail="Token mancante")
-#     try:
-#         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-#         return payload
-#     except JWTError:
-#         raise HTTPException(status_code=403, detail="Token non valido")
-
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, user=Depends(get_current_user)):
     return templates.TemplateResponse("index.html", {
@@ -111,14 +95,66 @@ async def demo(request: Request):
     return templates.TemplateResponse("demo.html", {"request": request})
 
 @app.post("/get_open_meteo/{plot_id}")
-async def get_open_meteo(plot_id: int):
-    success = fetch_and_save_weather_day(plot_id)
-    if not success:
-        return {"success": False, "msg": "Errore nel salvataggio meteo"}
-    return {"success": True, "msg": "Dati meteo salvati con successo"}
+async def get_open_meteo(plot_id: int, db: AsyncSession = Depends(get_db)):
+    try:
+        # --- 1. Recupera il plot dal database ---
+        result = await db.execute(select(Plot).where(Plot.id == plot_id))
+        plot = result.scalar_one_or_none()
+
+        if not plot:
+            raise HTTPException(status_code=404, detail=f"Plot con ID {plot_id} non trovato.")
+
+        # --- 2. Estrai le coordinate dal centroide ---
+        centroid_point = to_shape(plot.centroid)
+        lat = centroid_point.y
+        lon = centroid_point.x
+
+        print(f"📍 Coordinate trovate per il plot {plot_id}: Lat={lat}, Lon={lon}")
+
+        # --- 3. Chiama la funzione con i 3 parametri corretti ---
+        success = await run_in_threadpool(fetch_and_save_weather_day, plot_id, lat, lon)
+
+        if not success:
+            raise HTTPException(status_code=502, detail="Errore durante il recupero dei dati da Open-Meteo.")
+
+        print(f"✅ Dati meteo per il plot {plot_id} salvati con successo.")
+
+        # --- 3. AGGIUNTA: Avvia il calcolo di CO2 e O2 ---
+        oggi = datetime.today().strftime("%Y-%m-%d")
+        print(f"📅 Avvio calcolo CO2/O2 per il plot {plot_id} per il giorno {oggi}...")
+        
+        # Chiama la funzione per aggiornare i dati con i calcoli di CO2 e O2
+        aggiorna_weatherdata_con_assorbimenti(plot_id, oggi)
+        
+        print(f"✅ Calcolo CO2/O2 per il plot {plot_id} completato.")
+
+        return {"success": True, "msg": f"Dati meteo e calcoli CO2/O2 per il plot {plot_id} aggiornati con successo"}
+
+    except Exception as e:
+        print(f"💥 ERRORE CRITICO nell'endpoint /get_open_meteo: {e}")
+        # Aggiungi questo per vedere il traceback completo nel log in caso di altri errori
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
+
 
 @app.get("/calcola_co2/{plot_id}")
-async def calcola_co2(plot_id: int, giorno: str = None):
+async def calcola_co2(plot_id: int, giorno: str = None, user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    
+    # --- 3. VERIFICA DI PROPRIETÀ ---
+    user_id = user["id"]
+    query = select(Plot).where(Plot.id == plot_id, Plot.user_id == user_id)
+    result = await db.execute(query)
+    plot = result.scalar_one_or_none()
+
+    if not plot:
+        # Se il plot non esiste O non appartiene all'utente, restituisci un errore.
+        # Questo impedisce a un utente di vedere i dati di un altro.
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Terreno con ID {plot_id} non trovato o non appartenente all'utente."
+        )
+    
     giorno = giorno or date.today().isoformat()
     print(f"📅 Calcolo CO2 per plot {plot_id} nel giorno {giorno}")
     try:

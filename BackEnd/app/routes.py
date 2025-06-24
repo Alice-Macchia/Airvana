@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from BackEnd.app.auth import create_access_token, decode_access_token, get_current_user
 from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest, NaturalPersonBase, SocietyBase
-from BackEnd.app.models import User, NaturalPerson, Society
+from BackEnd.app.models import User, NaturalPerson, Society, PlotInfo, Plot
 from BackEnd.app.security import hash_password, verify_password
 from BackEnd.app.database import SessionLocal
 from BackEnd.app.get_meteo import fetch_and_save_weather_day, fetch_weather_week
@@ -12,6 +12,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from BackEnd.app.utils import aggiorna_nome_plot, elimina_plot
 from BackEnd.app.database import AsyncSessionLocal
+from typing import List
+from pydantic import BaseModel
 
 
 router = APIRouter()
@@ -171,10 +173,6 @@ async def inserisciterreno(request: Request, user: dict = Depends(get_current_us
         "email": user.get("mail")
     })
 
-# @router.post("/todashboard", response_class=HTMLResponse)
-# async def dashboard(request: Request):
-#     return templates.TemplateResponse("index.html", {"request": request})
-
 @router.post("/rename-plot")
 async def rename_plot(payload: RenamePlotRequest):
     try:
@@ -201,12 +199,18 @@ async def fetch_weather(plot_id: str):
 async def home(request: Request):
     return templates.TemplateResponse("homepagedefinitiva.html", {"request": request})
 
-#@router.get("/utente-protetto")
-#async def protected_route(
-#    credentials: HTTPAuthorizationCredentials = Security(security)
-#):
-#    token = credentials.credentials
-#    payload = decode_access_token(token)
-#    if not payload:
-#        raise HTTPException(status_code=401, detail="Token non valido")
-#    return {"message": f"Benvenuto {payload['sub']}!"}
+@router.get("/api/users/me/plots", response_model=List[PlotInfo])
+async def get_user_plots(user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """
+    Restituisce una lista di tutti i terreni (plots)
+    appartenenti all'utente attualmente autenticato.
+    """
+    user_id = user["id"]
+    query = select(Plot).where(Plot.user_id == user_id).order_by(Plot.name)
+    result = await db.execute(query)
+    plots = result.scalars().all()
+    
+    if not plots:
+        return []
+        
+    return plots

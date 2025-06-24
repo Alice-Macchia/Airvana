@@ -671,7 +671,7 @@ async function saveData() {
     showCustomAlert(`Dati per "${terreno.name}" aggiornati localmente e pronti per l'invio al backend!`);
 
     // Preparazione dati per il backend
-    const backendUrl = 'http://localhost:8000/save-coordinates';
+    const backendUrl = '/save-coordinates';
 
     let centroidCoords = null;
     const centroidDisplay = document.getElementById("centroid-display").textContent;
@@ -694,6 +694,7 @@ async function saveData() {
         showCustomAlert("Errore: Impossibile salvare il terreno. Le coordinate del centroide sono mancanti.");
         return; // Interrompi la funzione se il centroide è obbligatorio per il backend
     }
+
     const polygonVertices = terreno.coordinate; // Vertici del poligono
 
     // Controlla se polygonVertices contiene effettivamente le longitudini
@@ -723,6 +724,9 @@ async function saveData() {
             lat: v.lat,
             long: v.long // Qui v.long deve essere definito!
         })),
+        //alternativa da provare
+        // centroid: { lat: centroidCoords.lat, long: centroidCoords.long },
+        // vertices: terreno.coordinate.map(v => ({ lat: v.lat, long: v.long })),
         created_at: new Date().toISOString()
     };
 
@@ -741,21 +745,51 @@ async function saveData() {
 
         if (!response.ok) {
             const errorText = await response.text();
-            let errorMessage = `Errore salvataggio dati backend: ${response.status} - ${errorText}`;
-            try {
-                const errorJson = JSON.parse(errorText);
-                if (errorJson.detail) {
-                    errorMessage = `Errore salvataggio dati backend: ${response.status} - ${JSON.stringify(errorJson.detail)}`;
-                }
-            } catch (e) {
-                // Non è un JSON valido, usa l'errore completo
-            }
-            throw new Error(errorMessage);
+            // let errorMessage = `Errore salvataggio dati backend: ${response.status} - ${errorText}`;
+            // try {
+            //     const errorJson = JSON.parse(errorText);
+            //     if (errorJson.detail) {
+            //         errorMessage = `Errore salvataggio dati backend: ${response.status} - ${JSON.stringify(errorJson.detail)}`;
+            //     }
+            // } catch (e) {
+            //     // Non è un JSON valido, usa l'errore completo
+            // }
+            throw new Error(`Errore salvataggio dati backend: ${response.status} - ${errorText}`);
         }
 
         const result = await response.json();
         console.log('Dati inviati al backend con successo:', result);
         showCustomAlert(result.message || 'Dati terreno inviati al backend con successo!');
+
+        // --- SECONDO STEP: CHIAMATA A OPEN METEO ---
+        //  LA MODIFICA È QUI vvv
+        const newTerrainId = result.terrain_id; // Usa "terrain_id" come restituito dal backend Python
+        //  LA MODIFICA È QUI ^^^
+
+        if (newTerrainId) {
+            showCustomAlert(`Terreno salvato. Richiesta dei dati meteo per il nuovo terreno (ID: ${newTerrainId}) in corso...`);
+            
+            try {
+                const meteoUrl = `/get_open_meteo/${newTerrainId}`;
+                const meteoResponse = await fetch(meteoUrl, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+
+                if (!meteoResponse.ok) {
+                    const meteoErrorText = await meteoResponse.text();
+                    throw new Error(`Errore richiesta meteo: ${meteoResponse.status} - ${meteoErrorText}`);
+                }
+
+                const meteoResult = await meteoResponse.json();
+                showCustomAlert(meteoResult.msg || 'Dati meteo aggiornati!');
+
+            } catch (meteoError) {
+                showCustomAlert(`Il terreno è stato salvato, ma si è verificato un errore durante la richiesta dei dati meteo: ${meteoError.message}`);
+            }
+        } else {
+            showCustomAlert("Terreno salvato, ma non è stato possibile avviare l'aggiornamento meteo (ID mancante).");
+        }
 
     } catch (error) {
         console.error('Errore durante l\'invio dei dati al backend:', error);

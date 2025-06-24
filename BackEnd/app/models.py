@@ -135,7 +135,8 @@ class WeatherData(Base):
     total_co2_absorption = Column(Float)
     total_o2_production = Column(Float)
 
-
-    # se vuoi puoi aggiungere questi campi, ma nel DB li hai commentati
-    # total_co2_absorption = Column(Float)
-    # total_o2_production = Column(Float)
+class PlotInfo(BaseModel):
+    id: int
+    name: str
+    class Config:
+        orm_mode = True # Permette di creare il modello da un oggetto SQLAlchemy

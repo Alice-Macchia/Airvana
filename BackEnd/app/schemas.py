@@ -197,7 +197,7 @@ class SaveCoordinatesRequest(BaseModel):
 
 class SaveCoordinatesResponse(BaseModel):
     message : str
-    terrain_id: int
+    terrain_id: Optional[int] = None
 
 class ClassificaRequest(BaseModel):
     criterio: str
