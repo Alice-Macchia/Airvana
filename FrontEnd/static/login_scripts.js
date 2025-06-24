@@ -387,6 +387,8 @@ function handleFormSubmit(event) {
            formData.append('loginEmail', data.loginEmail);
            formData.append('loginPassword', data.loginPassword);
 
+          // console.log("Payload inviato a /register-person:", payload); 
+
             fetch('http://localhost:8000/login', {
                 method: 'POST',
                 body: formData,
@@ -434,7 +436,7 @@ function handleFormSubmit(event) {
             showMessage("Per favore, inserisci email e password.");
         }
 
-    } else if (form.id === 'registerUserForm') {
+   /* } else if (form.id === 'registerUserForm') {
         console.log('Tentativo di Registrazione Utente:', data);
 
         if (data.registerPassword !== data.registerConfermaPassword) {
@@ -489,6 +491,109 @@ function handleFormSubmit(event) {
         showMessage(`Registrazione Azienda completata (simulata) con successo!\nRagione Sociale: ${data.companyName}\nPartita IVA: ${data.pIva}\nEmail: ${data.companyEmail}\nTel: ${data.companyPhonePrefix}${data.companyPhoneNumber}\nIndirizzo: ${data.companyAddress}, ${data.companyCity} (${data.companyProvince})`);
         // Qui andrebbe la vera logica di registrazione azienda
     }
+}*/
+    
+} else if (form.id === 'registerUserForm') {
+    console.log('Tentativo di Registrazione Utente:', data);
+
+    if (data.registerPassword !== data.registerConfermaPassword) {
+        showMessage("Le password non corrispondono.");
+        return;
+    }
+
+    const sessoChecked = document.querySelector('input[name="sesso"]:checked');
+    if (!sessoChecked) {
+        showMessage("Seleziona il sesso.");
+        return;
+    }
+    data.gender = sessoChecked.value;  // Cambiato da "sesso" a "gender" per coerenza col backend
+
+    const selectedProvince = document.getElementById('province').value;
+    const selectedCity = document.getElementById('city').value;
+
+    if (!locationData[selectedProvince] || !locationData[selectedProvince].includes(selectedCity)) {
+        showMessage("Provincia o Città non valide.");
+        return;
+    }
+    data.province = selectedProvince;
+    data.city = selectedCity;
+
+    // Mappa i campi dal form a quelli del backend
+    const payload = {
+        username: data.registerUsername,       // Assicurati che l'input abbia id="registerUsername"
+        first_name: data.registerNome,
+        last_name: data.registerCognome,
+        gender: data.gender,
+        email: data.registerEmail,
+        password: data.registerPassword,
+        phone_number: data.phoneNumber,
+        province: data.province,
+        city: data.city,
+        address: data.address,
+    };
+
+    // Chiamata fetch POST JSON
+    fetch("http://localhost:8000/register-person", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Registrazione fallita");
+        return res.json();
+    })
+    .then(data => {
+        showMessage("Registrazione completata con successo!");
+        // opzionale: redirect o reset form
+    })
+    .catch(err => {
+        showMessage("Errore durante la registrazione: " + err.message);
+    });
+  } else if (form.id === 'registerCompanyForm') {
+    console.log('Tentativo di Registrazione Azienda:', data);
+
+    if (data.companyPassword !== data.companyConfermaPassword) {
+        showMessage("Le password non corrispondono.");
+        return;
+    }
+
+    const selectedCompanyProvince = document.getElementById('companyProvince').value;
+    const selectedCompanyCity = document.getElementById('companyCity').value;
+
+    if (!locationData[selectedCompanyProvince] || !locationData[selectedCompanyProvince].includes(selectedCompanyCity)) {
+        showMessage("Provincia o Città della sede legale non valide. Assicurati di selezionarle dalle liste suggerite.");
+        return;
+    }
+
+    // Costruisci il payload con i nomi esatti che il backend aspetta
+    const payload = {
+        username: data.companyUsername,            // controlla che l'input abbia id="companyUsername"
+        ragione_sociale: data.companyRagioneSociale,
+        sede_legale: data.companyAddress,
+        partita_iva: data.companyPIVA,
+        email: data.companyEmail,
+        password: data.companyPassword,
+        province: selectedCompanyProvince,
+        city: selectedCompanyCity,
+    };
+
+    fetch("http://localhost:8000/register-society", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Registrazione azienda fallita");
+        return res.json();
+    })
+    .then(data => {
+        showMessage("Registrazione azienda completata con successo!");
+        // opzionale: redirect o reset form
+    })
+    .catch(err => {
+        showMessage("Errore durante la registrazione azienda: " + err.message);
+    });
+}
 }
 
 // Event listener che si attiva quando il DOM è completamente caricato e parsato.

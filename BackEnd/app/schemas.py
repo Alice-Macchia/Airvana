@@ -56,8 +56,7 @@ class SocietyBase(BaseModel):
     username: str
     ragione_sociale: str
     sede_legale: Optional[str] = None
-    partita_IVA: str
-    COD_FIS: str
+    partita_iva: str
     email: EmailStr
     password: str
     province: Optional[str] = None

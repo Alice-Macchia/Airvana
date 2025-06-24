@@ -79,6 +79,7 @@
 
                     <form id="registerUserForm">
                         <div class="form-group form-group-inline">
+                            <input type="text" id="registerUsername" name="registerUsername" placeholder="Username" required class="input-field">
                             <input type="text" id="registerNome" name="registerNome" placeholder="Nome" required class="input-field">
                             <input type="text" id="registerCognome" name="registerCognome" placeholder="Cognome" required class="input-field">
                         </div>
@@ -155,12 +156,13 @@
 
                     <form id="registerCompanyForm">
                         <div class="form-group">
-                            <label for="companyName">Ragione Sociale:</label>
-                            <input type="text" id="companyName" name="companyName" placeholder="Nome della tua azienda" required class="input-field">
+                            <input type="text" id="companyUsername" name="companyUsername" placeholder="Username" required class="input-field">
+                            <label for="companyRagioneSociale">Ragione Sociale:</label>
+                            <input type="text" id="companyRagioneSociale" name="companyRagioneSociale" placeholder="Nome della tua azienda" required class="input-field">
                         </div>
                         <div class="form-group">
-                            <label for="pIva">Partita IVA:</label>
-                            <input type="text" id="pIva" name="pIva" placeholder="Es. IT12345678901" required class="input-field">
+                            <label for="companyPIVA">Partita IVA:</label>
+                            <input type="text" id="companyPIVA" name="companyPIVA" placeholder="Es. IT12345678901" required class="input-field">
                         </div>
                          <div class="form-group">
                             <div class="input-with-icon">
