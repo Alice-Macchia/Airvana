@@ -41,7 +41,6 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="FrontEnd/static"), name="static")
 templates = Jinja2Templates(directory="FrontEnd/templates")
 
-app.include_router(router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -51,6 +50,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(router)
 
 @app.on_event("startup")
 async def startup():

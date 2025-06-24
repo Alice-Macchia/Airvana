@@ -170,7 +170,7 @@ function onMapPolygonCreated(e) {
         // Aggiorna le coordinate del terreno
         selectedTerreno.coordinate = selectedTerreno.leafletLayer.getLatLngs()[0].map(latlng => ({
             lat: latlng.lat,
-            lng: latlng.lng
+            long: latlng.long
         }));
 
         // Calcola e aggiorna area e perimetro
@@ -201,7 +201,7 @@ function onMapLayerEdited(e) {
             // Aggiorna le coordinate del terreno
             terreno.coordinate = layer.getLatLngs()[0].map(latlng => ({
                 lat: latlng.lat,
-                lng: latlng.lng
+                long: latlng.long
             }));
 
             // Ricalcola area e perimetro
@@ -266,7 +266,7 @@ function displayPolygonVertices(coordinates) {
 
     coordinates.forEach((coord, index) => {
         const li = document.createElement('li');
-        li.textContent = `Vertice ${index + 1}: Latitudine ${coord.lat.toFixed(6)}, Longitudine ${coord.lng.toFixed(6)}`;
+        li.textContent = `Vertice ${index + 1}: Latitudine ${coord.lat.toFixed(6)}, Longitudine ${coord.long.toFixed(6)}`;
         li.style.marginBottom = '5px'; // Spaziatura tra i vertici
         ul.appendChild(li);
     });
@@ -678,7 +678,7 @@ async function saveData() {
     if (centroidMatch) {
         centroidCoords = {
             lat: parseFloat(centroidMatch[1]),
-            lng: parseFloat(centroidMatch[2]) /////////////////////////
+            long: parseFloat(centroidMatch[2]) /////////////////////////
         };
     }
 
@@ -711,14 +711,16 @@ async function saveData() {
             name: s.name, 
             quantity: s.quantity // s.quantity è GIA' un intero (m²)
         })),
-
-        centroid: centroidCoords ? { 
-            lat: centroidCoords.lat, 
-            long: centroidCoords.lng // Mappato lng a long
-        } : null,
+        
+        ...(centroidCoords && {
+            centroid: {
+                lat: centroidCoords.lat,
+                long: centroidCoords.long
+            }
+        }),
         vertices: polygonVertices.map(v => ({
             lat: v.lat,
-            long: v.lng // Mappato lng a long per ogni vertice
+            long: v.long // Mappato lng a long per ogni vertice
         })),
         created_at: new Date().toISOString()
     };
@@ -726,10 +728,12 @@ async function saveData() {
     // ... poi nel corpo della fetch:
     // body: JSON.stringify(dataToSend)
 
+    console.log(JSON.stringify(dataToSend)); // 👈 Aggiungi questa riga prima della fetch
 
     try {
         const response = await fetch(backendUrl, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
                 // Aggiungi qui eventuali header di autenticazione se necessari, es:
@@ -819,7 +823,7 @@ function calculateAndDisplayCentroid(polygonLayer) {
     }
 
     // Turf.js richiede che il primo e l'ultimo punto di un anello poligonale siano identici
-    let geoJsonCoords = latlngsOuterRing.map(l => [l.lng, l.lat]); // Converte in formato [lon, lat]
+    let geoJsonCoords = latlngsOuterRing.map(l => [l.long, l.lat]); // Converte in formato [lon, lat]
     if (!latlngsOuterRing[0].equals(latlngsOuterRing[latlngsOuterRing.length - 1])) {
         geoJsonCoords.push(geoJsonCoords[0]); // Chiude il poligono se non lo è
     }
@@ -852,7 +856,7 @@ function updateAddressAndCoordinates() {
         // Tenta la geocodifica inversa usando il centroide (se Turf è disponibile e il poligono è valido)
         if (typeof turf !== 'undefined' && polygon.getLatLngs().length > 0 && polygon.getLatLngs()[0].length >= 3) {
             const latlngsForAddress = polygon.getLatLngs()[0];
-            let geoJsonCoordsForAddress = latlngsForAddress.map(l => [l.lng, l.lat]);
+            let geoJsonCoordsForAddress = latlngsForAddress.map(l => [l.long, l.lat]);
             if (!latlngsForAddress[0].equals(latlngsForAddress[latlngsForAddress.length - 1])) {
                 geoJsonCoordsForAddress.push(geoJsonCoordsForAddress[0]);
             }
@@ -881,8 +885,8 @@ function updateAddressAndCoordinates() {
     }
 }
 
-async function reverseGeocode(lat, lng) {
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=it`);
+async function reverseGeocode(lat, long) {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${long}&accept-language=it`);
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }

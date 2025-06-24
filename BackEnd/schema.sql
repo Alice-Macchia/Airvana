@@ -54,8 +54,7 @@ CREATE TABLE plots (
     geom GEOMETRY(POLYGON, 4326),           -- Polygon
     centroid GEOMETRY(POINT, 4326),         -- Centroid point
     created_at TIMESTAMP DEFAULT NOW()
-    --total_co2_absorption FLOAT DEFAULT 0,
-    --total_o2_production FLOAT DEFAULT 0
+   
 );
 
 -- Plant Species
@@ -75,8 +74,7 @@ CREATE TABLE plot_species (
     plot_id INTEGER REFERENCES plots(id),
     species_id INTEGER REFERENCES species(id),
     surface_area FLOAT              -- Area occupied by the species (e.g., m² per unit)
-    -- actual_co2_absorption FLOAT,    -- Total CO2 absorption by this quantity
-    -- actual_o2_production FLOAT      -- Total O2 production by this quantity
+
 );
 
 -- Weather Data

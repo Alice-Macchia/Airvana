@@ -12,7 +12,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from BackEnd.app.utils import aggiorna_nome_plot, elimina_plot
 from BackEnd.app.database import AsyncSessionLocal
-###############
+
 
 router = APIRouter()
 security = HTTPBearer()  # definisce il tipo di security scheme Bearer
