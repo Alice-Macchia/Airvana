@@ -107,6 +107,7 @@ async def elimina_plot(user_id: int, plot_name: str) -> dict:
         await db.commit()
 
         return {"message": f"Terreno '{plot_name}' eliminato correttamente"}
+    
 
 def mostra_classifica():
     pass

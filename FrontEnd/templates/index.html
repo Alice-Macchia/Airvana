@@ -39,7 +39,7 @@
   <!-- <script defer src="/static/Dashscript.js"></script> -->
 </head>
 
-<body>
+<body data-user-id="{{ user_id }}" data-user-email="{{ email }}">
   <aside class="sidebar" id="sidebar" role="navigation" aria-label="Navigazione principale">
     <button id="toggleSidebar" class="btn btn-light mb-4" aria-label="Toggle menu">☰</button>
     <h4>Dashboard</h4>
@@ -57,7 +57,7 @@
       <div></div>
       <section class="user-info" aria-label="Informazioni utente">
         <button class="btn btn-outline-light" id="themeToggle" aria-label="Cambia tema">🌙</button>
-        <div class="user-name">Utente: Maccio Capatonda</div>
+        <div class="user-name">Utente: {{ email }}</div>
         <button class="logout-btn" aria-label="Logout">Logout</button>
       </section>
     </header>

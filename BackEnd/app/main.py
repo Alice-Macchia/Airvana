@@ -26,7 +26,7 @@ from BackEnd.app.co2_o2_calculator import (
     get_weather_data_from_db, get_species_from_db
 )
 from BackEnd.app.get_meteo import fetch_and_save_weather_day
-
+from BackEnd.app.auth import get_current_user
 # .env
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -77,14 +77,14 @@ def decode_token(token: str):
         raise HTTPException(status_code=403, detail="Token non valido")
 
 
-async def get_current_user(access_token: str = Cookie(None)):
-    if not access_token:
-        raise HTTPException(status_code=401, detail="Token mancante")
-    try:
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
-        raise HTTPException(status_code=403, detail="Token non valido")
+# async def get_current_user(access_token: str = Cookie(None)):
+#     if not access_token:
+#         raise HTTPException(status_code=401, detail="Token mancante")
+#     try:
+#         payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+#         return payload
+#     except JWTError:
+#         raise HTTPException(status_code=403, detail="Token non valido")
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, user=Depends(get_current_user)):

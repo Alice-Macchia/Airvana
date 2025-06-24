@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Security, Request, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from BackEnd.app.auth import create_access_token, decode_access_token
+from BackEnd.app.auth import create_access_token, decode_access_token, get_current_user
 from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest
 from BackEnd.app.models import User
 from BackEnd.app.security import hash_password, verify_password
@@ -79,47 +79,22 @@ async def login(
     )
     return response
 
-
-
-
-
 @router.get("/inserisciterreno", response_class=HTMLResponse)
-async def inserisciterreno(request: Request):
-    return templates.TemplateResponse("Aggiungi_Terreno_index.html",{"request":request})
+async def inserisciterreno(request: Request, user: dict = Depends(get_current_user)):
+    """
+    Questa rotta ora è protetta. 
+    'user' conterrà il payload del token (es. {'id': 1, 'mail': 'test@test.com'}).
+    """
+    # Ora puoi passare i dati dell'utente al template
+    return templates.TemplateResponse("Aggiungi_Terreno_index.html", {
+        "request": request,
+        "user_id": user.get("id"),
+        "email": user.get("mail")
+    })
 
-#     id: str = Form(),
-#     email: str = Form()
-#     ):
-#    # data = await request.json()  # <-- JSON manuale
-#     # user_id = data.get("id")
-#     # email = data.get("email")
-        
-#     token = create_access_token({"id":id, "mail": email})
-
-#     return templates.TemplateResponse(
-#         "Aggiungi_Terreno_index.html",
-#         {
-#             "request": request,
-#             "user_id": id,
-#             "email": email,
-#             "token": token
-#         }
-#     )
-
-
-@router.post("/todashboard", response_class=HTMLResponse)
-async def dashboard(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-#     id: str = Form(...),
-#     Email: str = Form(...)
-# ):
-#     token = create_access_token({"id": id, "email": Email})
-#     return templates.TemplateResponse("index.html", {
-#         "request": request,
-#         "user_id": id,
-#         "email": Email,
-#         "token": token
-#     })
+# @router.post("/todashboard", response_class=HTMLResponse)
+# async def dashboard(request: Request):
+#     return templates.TemplateResponse("index.html", {"request": request})
 
 @router.post("/rename-plot")
 async def rename_plot(payload: RenamePlotRequest):

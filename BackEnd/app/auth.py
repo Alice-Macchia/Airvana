@@ -2,6 +2,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+from fastapi import APIRouter, HTTPException, Depends, Security, Request, Form, Cookie
 ###
 # Carica le variabili da .env
 load_dotenv()
@@ -29,3 +30,35 @@ def decode_access_token(token: str):
         return payload
     except JWTError:
         return None
+
+
+async def get_current_user(request: Request):
+    """
+    Dipendenza per ottenere l'utente corrente dal token nel cookie.
+    Protegge le rotte richiedendo un token valido.
+    """
+    # 1. Prova a estrarre il token dal cookie 'access_token'
+    token = request.cookies.get("access_token")
+    
+    # 2. Se il cookie non esiste, l'utente non è autorizzato
+    if not token:
+        raise HTTPException(
+            status_code=401, 
+            detail="Non autorizzato: token mancante",
+            headers={"WWW-Authenticate": "Bearer"},
+        )   
+    
+     # 3. Prova a decodificare il token
+    payload = decode_access_token(token)
+    
+    # 4. Se il token non è valido o scaduto, la decodifica fallisce
+    if not payload:
+        raise HTTPException(
+            status_code=401, 
+            detail="Token non valido o scaduto",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    # 5. Se tutto è andato a buon fine, restituisce i dati dell'utente (payload)
+    return payload
+
