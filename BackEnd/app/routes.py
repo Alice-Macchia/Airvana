@@ -3,8 +3,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from BackEnd.app.auth import create_access_token, decode_access_token
-from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest
-from BackEnd.app.models import User
+from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest, NaturalPersonBase, SocietyBase
+from BackEnd.app.models import User, NaturalPerson, Society
 from BackEnd.app.security import hash_password, verify_password
 from BackEnd.app.database import SessionLocal
 from BackEnd.app.get_meteo import fetch_and_save_weather_day, fetch_weather_week
@@ -31,19 +31,98 @@ async def get_db():
 async def root(request: Request):
     return templates.TemplateResponse("login_main.html", {"request": request})
 
-@router.post("/register")
-async def register(request: Request,user: UserCreate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.email == user.email))
-    existing_user = result.scalar_one_or_none()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email già registrata")
-    new_user = User(
-        email=user.email,
-        password=hash_password(user.password)
+#@router.post("/register")
+#async def register(request: Request,user: UserCreate, db: AsyncSession = Depends(get_db)):
+#    result = await db.execute(select(User).where(User.email == user.email))
+#    existing_user = result.scalar_one_or_none()
+ #   if existing_user:
+ #       raise HTTPException(status_code=400, detail="Email già registrata")
+ #   new_user = User(
+ #       email=user.email,
+  #      password=hash_password(user.password)
+  #  )
+  #  db.add(new_user)
+  #  await db.commit()
+   # return {"message": "Registrazione completata"}
+
+
+@router.post("/register-person")
+async def register_person(person: NaturalPersonBase, db: AsyncSession = Depends(get_db)):
+    # 1. Controllo esistenza email
+    result = await db.execute(select(NaturalPerson).where(NaturalPerson.email == person.email))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email già usata")
+
+    # 2. Crea il record in NaturalPerson (senza user_id per ora)
+    natural_person = NaturalPerson(
+        username=person.username,
+        first_name=person.first_name,
+        last_name=person.last_name,
+        gender=person.gender,
+        email=person.email,
+        password=hash_password(person.password),
+        phone_number=person.phone_number,
+        province=person.province,
+        city=person.city,
+        address=person.address
     )
-    db.add(new_user)
-    await db.commit()
-    return {"message": "Registrazione completata"}
+    db.add(natural_person)
+    await db.flush()  # Serve per ottenere `natural_person.id`
+
+    # 3. Crea il record in User
+    user = User(
+        email=person.email,
+        password=hash_password(person.password),
+    )
+    db.add(user)
+    await db.flush()
+
+    # 4. Collega `natural_person` a `user`
+    natural_person.user_id = user.id
+
+    try:
+        await db.commit()
+        return {"message": "Registrazione completata"}
+    except Exception as e:
+        await db.rollback()
+        print(f"❌ Commit fallito: {e}")
+        raise HTTPException(status_code=500, detail="Errore durante la registrazione")
+
+@router.post("/register-society")
+async def register_society(data: SocietyBase, db: AsyncSession = Depends(get_db)):
+    # Controllo email o partita IVA esistenti
+    existing = await db.execute(select(Society).where(Society.email == data.email))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email già registrata")
+
+    # Crea Society
+    society = Society(
+        username=data.username,
+        ragione_sociale=data.ragione_sociale,
+        sede_legale=data.sede_legale,
+        partita_iva=data.partita_iva,
+        email=data.email,
+        password=hash_password(data.password),
+        province=data.province,
+        city=data.city,
+    )
+    db.add(society)
+    await db.flush()
+
+    # Crea User
+    user = User(email=data.email, password=hash_password(data.password))
+    db.add(user)
+    await db.flush()
+
+    # Collega i due
+    society.user_id = user.id
+
+    try:
+        await db.commit()
+        return {"message": "Registrazione società completata"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Errore durante la registrazione")
 
 
 @router.post("/login", response_class=HTMLResponse)

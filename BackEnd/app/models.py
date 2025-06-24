@@ -45,7 +45,7 @@ class NaturalPerson(Base):
     __tablename__ = "natural_person"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
-    username = Column(String(50), unique=True, nullable=False)
+    username = Column(String(50), unique=True, nullable=False) 
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     gender = Column(String(10))
@@ -65,11 +65,10 @@ class Society(Base):
     __tablename__ = "society"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
-    username = Column(String(50), unique=True, nullable=False)
+    username = Column(String(50), unique=True, nullable=False) 
     ragione_sociale = Column(String(150), nullable=False)
     sede_legale = Column(String(200))
-    partita_IVA = Column(String(20), unique=True, nullable=False)
-    COD_FIS = Column(String(20), unique=True, nullable=False)
+    partita_iva = Column(String(20), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     password = Column(String(100), nullable=False)
     province = Column(String(100))
