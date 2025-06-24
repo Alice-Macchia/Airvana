@@ -1,5 +1,4 @@
 
-// === FUNZIONI GLOBALI PER DATA E FETCH ===
 async function dataOggi() {
   const oggi = new Date();
   const yyyy = oggi.getFullYear();
@@ -9,7 +8,10 @@ async function dataOggi() {
 }
 
 // Carica dati CO2/O2 dal backend e aggiorna grafico
-async function caricaDatiCO2O2(plotId = 1, giorno = "2025-05-29") {
+async function caricaDatiCO2O2(plotId = 1, giorno = null) {
+  if (!giorno) {
+    giorno = await dataOggi();
+  }
   try {
     const url = `http://127.0.0.1:8000/calcola_co2/${plotId}?giorno=${giorno}`;
     const response = await fetch(url);
@@ -17,54 +19,18 @@ async function caricaDatiCO2O2(plotId = 1, giorno = "2025-05-29") {
 
     console.log("CO2/O2 dati ricevuti:", dati);
 
-    aggiornaGraficoLine(dati);
-
-    // Popola tabella meteo (aggiungibile qui)
-    popolaTabellaMeteo(dati);
+    if (Array.isArray(dati)) {
+      aggiornaGraficoLine(dati);
+      popolaTabellaMeteo(dati);
+    } else {
+      console.warn("⚠️ Il backend ha restituito un oggetto, non una lista di dati:", dati);
+      alert("Nessun dato disponibile per oggi.");
+    }
   } catch (error) {
     alert("Errore nel caricamento dati CO2/O2");
     console.error(error);
   }
 }
-
-
-// Funzione per la Pie Chart
-function creaPieChart(datiPiante) {
-  const ctxPie = document.getElementById('pieChart')?.getContext('2d');
-  if (!ctxPie) return;
-  // CHIAMA destroy() SOLO se esiste davvero una chart e ha la funzione!
-  if (window.pieChart && typeof window.pieChart.destroy === "function") {
-    window.pieChart.destroy();
-  }
-  window.pieChart = new Chart(ctxPie, {
-    type: 'pie',
-    data: {
-      labels: datiPiante.map(d => d.categoria),
-      datasets: [{
-        label: 'Specie',
-        data: datiPiante.map(d => d.valore),
-        backgroundColor: [
-          '#FF6384', '#36A2EB', '#FFCE56', '#8AFF33', '#AA33FF'
-        ]
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'bottom' }
-      }
-    }
-  });
-}
-
-// Dati di esempio
-const datiPianteEsempio = [
-  { categoria: "Querce", valore: 45 },
-  { categoria: "Pini", valore: 27 },
-  { categoria: "Betulle", valore: 13 },
-  { categoria: "Olmi", valore: 7 },
-  { categoria: "Altro", valore: 11 }
-];
 
 function aggiornaGraficoLine(dati) {
   const labels = dati.map(row => row.datetime?.slice(11, 16) || '--');
@@ -164,7 +130,11 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   // Carica i dati reali dal backend appena la pagina è pronta (plot 1, data odierna)
-  dataOggi().then(date => caricaDatiCO2O2(1, date));
+  dataOggi().then(date => {
+    console.log("📆 Carico dati per il giorno:", date);  // LOG UTILE
+    caricaDatiCO2O2(1, date);
+  });
+
 
 
   // Gestione bottoni terreno: aggiorna grafico con dati diversi se cliccato
@@ -173,7 +143,11 @@ window.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('#terrainButtons button').forEach(btn => btn.classList.remove('active'));
       button.classList.add('active');
       const plotId = button.getAttribute('data-terreno');
-      caricaDatiCO2O2(plotId, dataOggi());
+
+      dataOggi().then(date => {
+        console.log(`📍 Bottone terreno ${plotId} cliccato → data: ${date}`);
+        caricaDatiCO2O2(plotId, date);
+      });
     });
   });
 
