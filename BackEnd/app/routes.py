@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from BackEnd.app.auth import create_access_token, decode_access_token, get_current_user
-from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest
+from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest, NaturalPersonBase, SocietyBase
 from BackEnd.app.models import User, NaturalPerson, Society
 from BackEnd.app.security import hash_password, verify_password
 from BackEnd.app.database import SessionLocal
