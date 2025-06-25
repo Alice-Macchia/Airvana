@@ -56,9 +56,9 @@ async def startup():
 async def root(request: Request):
     return templates.TemplateResponse("homepagedefinitiva.html", {"request": request})
 
-@router.get("/logout")
+@app.get("/logout")
 async def logout():
-    response = RedirectResponse(url="/logreg")
+    response = RedirectResponse(url="/")
     response.delete_cookie("access_token")
     return response
 
