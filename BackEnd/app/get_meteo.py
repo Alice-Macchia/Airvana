@@ -111,6 +111,6 @@ def fetch_weather_week(lat, lon):
 
 
 # === ESECUZIONE COMPLETA ===
-fetch_and_save_weather_day(plot_id, latitude, longitude)
-aggiorna_weatherdata_con_assorbimenti(plot_id, oggi)
-print("✅ Meteo e CO₂/O₂ aggiornati con successo.")
+# fetch_and_save_weather_day(plot_id, latitude, longitude)
+# aggiorna_weatherdata_con_assorbimenti(plot_id, oggi)
+# print("✅ Meteo e CO₂/O₂ aggiornati con successo.")

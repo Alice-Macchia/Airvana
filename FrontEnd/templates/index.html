@@ -54,6 +54,7 @@
 
   <main class="main-content" id="mainContent">
     <header>
+    </div>
       <div></div>
       <section class="user-info" aria-label="Informazioni utente">
         <button class="btn btn-outline-light" id="themeToggle" aria-label="Cambia tema">🌙</button>
@@ -72,16 +73,16 @@
     </section>
 
     <div class="d-flex gap-2 my-3 justify-content-center" id="terrainButtons">
-      <button class="btn btn-outline-secondary btn-sm active" data-terreno="1">Terreno 1</button>
+      <!-- <button class="btn btn-outline-secondary btn-sm active" data-terreno="1">Terreno 1</button>
       <button class="btn btn-outline-secondary btn-sm" data-terreno="2">Terreno 2</button>
-      <button class="btn btn-outline-secondary btn-sm" data-terreno="3">Terreno 3</button>
+      <button class="btn btn-outline-secondary btn-sm" data-terreno="3">Terreno 3</button> --> 
 
-      <form id="calcolaForm">
+      <!-- <form id="calcolaForm">
         <input type="date" id="giornoInput" required>
         <button type="submit">Calcola CO₂/O₂</button>
-      </form>
+      </form>  -->
     </div>
-    
+
     <section class="dashboard-content">
       <article class="summary" aria-labelledby="summary-title">
         <h2 id="summary-title">Dati Meteo (giornata attuale)</h2>
@@ -102,9 +103,18 @@
           </table>
         </div>
       </article>
-
       <article class="income" aria-labelledby="gas-title">
-        <h2 id="gas-title">Assorbimento CO₂ e Emissione O₂</h2>
+
+        <div class="main-content">
+    <div class="chart-section">
+       <h2 id="gas-title">Assorbimento CO₂ e Emissione O₂</h2>
+        <div id="chart-container">
+            <canvas id="lineChart"></canvas>
+        </div>
+    </div>
+
+    </div>
+        
         <div class="d-flex gap-2 mb-2"></div>
         <canvas id="lineChart" class="chart-canvas" width="800" height="400" style="max-width: 100%;" aria-label="Grafico CO₂ e O₂" role="img"></canvas>
         <p id="co2Display">CO₂: -- kg</p>
