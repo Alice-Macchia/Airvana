@@ -635,165 +635,94 @@ function deleteSpeciesFromSelectedTerrain(index) {
     });
 }
 
+// In Aggiungi_Terreno_script.js
+
+// In Aggiungi_Terreno_script.js
+
 async function saveData() {
-    if (!selectedTerrenoId) {
-        showCustomAlert("Nessun terreno selezionato per il salvataggio dei dati. Aggiungi o seleziona un terreno.");
-        return;
-    }
-
-    const terreno = terreni.find(t => t.id === selectedTerrenoId);
-    if (!terreno) {
-        showCustomAlert("Errore: Terreno selezionato non trovato.");
-        return;
-    }
-
-    // Aggiorna area e perimetro dal DOM (se modificati manualmente, anche se sconsigliato)
-    const areaVal = document.getElementById("area").value.replace(' ha', '');
-    const perimetroVal = document.getElementById("perimetro").value.replace(' m', '');
-
-    terreno.area_ha = parseFloat(areaVal) || 0;
-    terreno.perimetro_m = parseFloat(perimetroVal) || 0;
-
-    // Ricalcola stima CO2
-    terreno.co2_kg_annuo = stimaCO2(terreno.species, terreno.area_ha);
-
-    // Aggiorna il popup del layer sulla mappa
-    if (terreno.leafletLayer) {
-        const popupContent = `<strong>Nome:</strong> ${terreno.name}<br>` +
-                             `<strong>Specie:</strong> ${terreno.species.map(s => `${s.name} (${s.quantity})`).join(', ') || 'N/A'}<br>` +
-                             `<strong>Area:</strong> ${terreno.area_ha} ha<br>` +
-                             `<strong>Perimetro:</strong> ${terreno.perimetro_m} m<br>` +
-                             `<strong>Stima CO₂:</strong> ${terreno.co2_kg_annuo} kg/anno`;
-        terreno.leafletLayer.bindPopup(popupContent);
-    }
-
-    updateDashboard(); // Aggiorna il dashboard con i nuovi dati
-    showCustomAlert(`Dati per "${terreno.name}" aggiornati localmente e pronti per l'invio al backend!`);
-
-    // Preparazione dati per il backend
-    const backendUrl = '/save-coordinates';
-
-    let centroidCoords = null;
-    const centroidDisplay = document.getElementById("centroid-display").textContent;
-    const centroidMatch = centroidDisplay.match(/Lat ([\d.]+), Lon ([\d.]+)/);
-    if (centroidMatch) {
-        centroidCoords = {
-            lat: parseFloat(centroidMatch[1]),
-            long: parseFloat(centroidMatch[2])
-        };
-    } else {
-        // Aggiungi un log o un alert se il centroide non viene estratto
-        console.warn("Impossibile estrarre le coordinate del centroide dal testo.");
-        // Potresti voler generare un centroide di fallback qui
-        // O mostrare un errore che impedisce l'invio
-        showCustomAlert("Errore: Impossibile salvare il terreno. Il centroide non è disponibile.");
-        return; // Blocca il salvataggio qui
-    }
-    if (!centroidCoords) {
-        console.error("Errore critico: Il centroide del poligono non è stato calcolato o estratto correttamente.");
-        showCustomAlert("Errore: Impossibile salvare il terreno. Le coordinate del centroide sono mancanti.");
-        return; // Interrompi la funzione se il centroide è obbligatorio per il backend
-    }
-
-    const polygonVertices = terreno.coordinate; // Vertici del poligono
-
-    // Controlla se polygonVertices contiene effettivamente le longitudini
-    // Questo è un punto critico, assicurati che 'terreno.coordinate' contenga 'long' per ogni vertice
-    if (!polygonVertices || polygonVertices.length === 0 || typeof polygonVertices[0].long === 'undefined') {
-        console.error("Errore: I dati dei vertici del poligono sono incompleti o malformati (manca 'long').");
-        showCustomAlert("Errore: Impossibile salvare. I dati dei vertici sono incompleti.");
-        return; // Interrompe la funzione se i dati sono incompleti
-    }
-
-
-    const dataToSend = {
-        idutente: parseInt(currentUserId),
-        terrainName: terreno.name,
-        species: terreno.species.map(s => ({
-            name: s.name,
-            quantity: parseFloat(s.quantity)
-        })),
-        // Includi il centroide solo se è stato estratto correttamente
-        ...(centroidCoords && {
-            centroid: {
-                lat: centroidCoords.lat,
-                long: centroidCoords.long
-            }
-        }),
-        vertices: polygonVertices.map(v => ({
-            lat: v.lat,
-            long: v.long // Qui v.long deve essere definito!
-        })),
-        //alternativa da provare
-        // centroid: { lat: centroidCoords.lat, long: centroidCoords.long },
-        // vertices: terreno.coordinate.map(v => ({ lat: v.lat, long: v.long })),
-        created_at: new Date().toISOString()
-    };
-
-    console.log("Payload inviato al backend:", JSON.stringify(dataToSend, null, 2)); // Formattato per leggibilità
+    // Mostra SUBITO il modal di caricamento
+    showLoadingModal('Verifica dei dati in corso...');
+    let isSuccess = false; // Variabile per tracciare il successo dell'operazione
 
     try {
-        const response = await fetch(backendUrl, {
+        // --- 1. Controlli di validazione ---
+        if (!selectedTerrenoId) {
+            throw new Error("Nessun terreno selezionato per il salvataggio.");
+        }
+        const terreno = terreni.find(t => t.id === selectedTerrenoId);
+        if (!terreno) {
+             throw new Error("Errore: il terreno selezionato non è stato trovato.");
+        }
+        if (!terreno.coordinate || terreno.coordinate.length < 3) {
+            throw new Error("Disegna un poligono valido sulla mappa prima di salvare.");
+        }
+        const centroidDisplay = document.getElementById("centroid-display").textContent;
+        const centroidMatch = centroidDisplay.match(/Lat ([\d.-]+), Lon ([\d.-]+)/);
+        if (!centroidMatch) {
+            throw new Error("Impossibile salvare. Il centroide non è disponibile.");
+        }
+
+        // --- 2. Preparazione dei dati ---
+        showLoadingModal('Salvataggio del terreno...');
+        const centroidCoords = { lat: parseFloat(centroidMatch[1]), long: parseFloat(centroidMatch[2]) };
+        const dataToSend = {
+            idutente: parseInt(currentUserId),
+            terrainName: terreno.name,
+            species: terreno.species.map(s => ({ name: s.name, quantity: parseFloat(s.quantity) })),
+            centroid: centroidCoords,
+            vertices: terreno.coordinate.map(v => ({ lat: v.lat, long: v.long })),
+            created_at: new Date().toISOString()
+        };
+
+        // --- 3. Prima Chiamata: Salva il terreno ---
+        const response = await fetch('/save-coordinates', {
             method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}` // Decommenta se usi token di autenticazione
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dataToSend)
         });
-
         if (!response.ok) {
             const errorText = await response.text();
-            // let errorMessage = `Errore salvataggio dati backend: ${response.status} - ${errorText}`;
-            // try {
-            //     const errorJson = JSON.parse(errorText);
-            //     if (errorJson.detail) {
-            //         errorMessage = `Errore salvataggio dati backend: ${response.status} - ${JSON.stringify(errorJson.detail)}`;
-            //     }
-            // } catch (e) {
-            //     // Non è un JSON valido, usa l'errore completo
-            // }
-            throw new Error(`Errore salvataggio dati backend: ${response.status} - ${errorText}`);
+            throw new Error(`Errore salvataggio terreno: ${response.status} - ${errorText}`);
         }
-
         const result = await response.json();
-        console.log('Dati inviati al backend con successo:', result);
-        showCustomAlert(result.message || 'Dati terreno inviati al backend con successo!');
-
-        // --- SECONDO STEP: CHIAMATA A OPEN METEO ---
-        //  LA MODIFICA È QUI vvv
-        const newTerrainId = result.terrain_id; // Usa "terrain_id" come restituito dal backend Python
-        //  LA MODIFICA È QUI ^^^
-
-        if (newTerrainId) {
-            showCustomAlert(`Terreno salvato. Richiesta dei dati meteo per il nuovo terreno (ID: ${newTerrainId}) in corso...`);
-            
-            try {
-                const meteoUrl = `/get_open_meteo/${newTerrainId}`;
-                const meteoResponse = await fetch(meteoUrl, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-                });
-
-                if (!meteoResponse.ok) {
-                    const meteoErrorText = await meteoResponse.text();
-                    throw new Error(`Errore richiesta meteo: ${meteoResponse.status} - ${meteoErrorText}`);
-                }
-
-                const meteoResult = await meteoResponse.json();
-                showCustomAlert(meteoResult.msg || 'Dati meteo aggiornati!');
-
-            } catch (meteoError) {
-                showCustomAlert(`Il terreno è stato salvato, ma si è verificato un errore durante la richiesta dei dati meteo: ${meteoError.message}`);
-            }
-        } else {
-            showCustomAlert("Terreno salvato, ma non è stato possibile avviare l'aggiornamento meteo (ID mancante).");
+        
+        // --- 4. Seconda Chiamata: Scarica meteo e calcola ---
+        showLoadingModal('Download dati meteo e calcoli...');
+        const newTerrainId = result.terrain_id;
+        const meteoResponse = await fetch(`/get_open_meteo/${newTerrainId}`, { method: 'POST' });
+        if (!meteoResponse.ok) {
+            const meteoErrorText = await meteoResponse.text();
+            throw new Error(`Errore richiesta meteo/calcoli: ${meteoResponse.status} - ${meteoErrorText}`);
         }
+        await meteoResponse.json();
+        
+        // --- 5. Se arriviamo qui, tutto è andato a buon fine ---
+        isSuccess = true; // Imposta il flag di successo
 
     } catch (error) {
-        console.error('Errore durante l\'invio dei dati al backend:', error);
-        showCustomAlert(`Errore durante il salvataggio dei dati nel backend: ${error.message}. Controlla la console per i dettagli.`);
+        // In caso di qualsiasi errore, mostra subito un alert
+        showCustomAlert(`Operazione fallita: ${error.message}`);
+        console.error('Errore durante il processo di salvataggio:', error);
+    } finally {
+        // Questo blocco viene eseguito SEMPRE, sia dopo il successo che dopo l'errore
+        // Nasconde il modal di caricamento
+        hideLoadingModal();
+    }
+
+    // --- 6. Mostra il messaggio di successo FINALE, solo se l'operazione è riuscita ---
+    if (isSuccess) {
+        showCustomAlert('Salvataggio e calcoli iniziali completati con successo!');
+
+        // Aggiungi il link per andare alla dashboard
+        const resultContainer = document.getElementById('save-result-container');
+        if (resultContainer) {
+            resultContainer.innerHTML = '';
+            const link = document.createElement('a');
+            link.href = '/dashboard';
+            link.textContent = 'Ottimo! Vai alla Dashboard per vedere i risultati';
+            link.className = 'btn-success'; // Applica uno stile per renderlo più visibile
+            resultContainer.appendChild(link);
+        }
     }
 }
 
@@ -1270,6 +1199,52 @@ function initializeSpeciesAutosuggest() {
     });
 }
 
+// In Aggiungi_Terreno_script.js, vicino alle altre funzioni createModal...
+
+/**
+ * Mostra un modal di caricamento non chiudibile con un messaggio.
+ * @param {string} message - Il messaggio da visualizzare.
+ */
+function showLoadingModal(message) {
+    const existingModal = document.getElementById('custom-modal');
+    if (existingModal) { existingModal.remove(); } // Rimuove modali precedenti
+
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'custom-modal'; // Usiamo lo stesso ID per coerenza
+    modalOverlay.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 10000;`;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); text-align: center; font-family: 'Roboto', sans-serif; color: #333; display: flex; flex-direction: column; align-items: center; gap: 20px;`;
+    
+    // Aggiungiamo uno spinner per un feedback visivo migliore
+    const spinner = document.createElement('div');
+    spinner.style.cssText = `border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;`;
+    
+    // Keyframes per l'animazione dello spinner
+    const styleSheet = document.createElement("style");
+    styleSheet.type = "text/css";
+    styleSheet.innerText = `@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
+    document.head.appendChild(styleSheet);
+
+    const messagePara = document.createElement('p');
+    messagePara.textContent = message;
+    messagePara.style.cssText = `font-size: 1.1em; line-height: 1.4; margin: 0;`;
+    
+    modalContent.appendChild(spinner);
+    modalContent.appendChild(messagePara);
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+}
+
+/**
+ * Rimuove il modal di caricamento dal DOM.
+ */
+function hideLoadingModal() {
+    const existingModal = document.getElementById('custom-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     // Recupera i dati dell'utente dagli attributi data-* del body

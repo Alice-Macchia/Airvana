@@ -18,8 +18,7 @@ from BackEnd.app.utils import (inserisci_terreno, mostra_classifica, Esporta, ge
 from BackEnd.app.co2_o2_calculator import (calculate_co2_o2_hourly, get_coefficients_from_db, get_weather_data_from_db, get_species_from_db, aggiorna_weatherdata_con_assorbimenti)
 from BackEnd.app.get_meteo import fetch_and_save_weather_day
 from BackEnd.app.auth import get_current_user
-from BackEnd.app.database import SessionLocal, get_db
-from fastapi.concurrency import run_in_threadpool
+from BackEnd.app.database import get_db
 
 # .env
 load_dotenv()
@@ -104,21 +103,6 @@ async def get_open_meteo(plot_id: int, db: AsyncSession = Depends(get_db)):
         plot = result.scalar_one_or_none()
         if not plot:
             raise HTTPException(status_code=404, detail=f"Plot con ID {plot_id} non trovato.")
-        
-        centroid_point = to_shape(plot.centroid)
-        lat, lon = centroid_point.y, centroid_point.x
-        print(f"📍 Coordinate per plot {plot_id}: Lat={lat}, Lon={lon}")
-
-        # --- 2. Scarica e salva i dati meteo ---
-        success = await run_in_threadpool(fetch_and_save_weather_day, plot_id, lat, lon)
-        if not success:
-            raise HTTPException(status_code=502, detail="Errore durante il recupero dei dati da Open-Meteo.")
-        print(f"✅ Dati meteo per plot {plot_id} salvati.")
-
-        # --- 3. Esegui i calcoli CO2/O2 ---
-        oggi = datetime.today().strftime("%Y-%m-%d")
-        print(f"📅 Eseguo calcoli CO2/O2 per plot {plot_id} per il giorno {oggi}...")
-        
         species = await get_species_from_db(db, plot_id)
         
         # --- NUOVO CONTROLLO: Verifica se ci sono specie associate al terreno ---
@@ -127,6 +111,28 @@ async def get_open_meteo(plot_id: int, db: AsyncSession = Depends(get_db)):
                 status_code=404, 
                 detail=f"Nessuna specie di pianta trovata per il terreno {plot_id}. Impossibile calcolare CO₂/O₂."
             )
+        
+        centroid_point = to_shape(plot.centroid)
+        lat, lon = centroid_point.y, centroid_point.x
+        print(f"📍 Coordinate per plot {plot_id}: Lat={lat}, Lon={lon}")
+
+        # --- 2. Scarica e salva i dati meteo ---
+        success = await fetch_and_save_weather_day(db, plot_id, lat, lon)
+        if not success:
+            raise HTTPException(status_code=502, detail="Errore durante il recupero dei dati da Open-Meteo.")
+        print(f"✅ Dati meteo per plot {plot_id} salvati.")
+
+        # --- 3. Esegui i calcoli CO2/O2 ---
+        oggi = datetime.today().strftime("%Y-%m-%d")
+        print(f"📅 Eseguo calcoli CO2/O2 per plot {plot_id} per il giorno {oggi}...")
+        
+         # Questa funzione aggiornerà gli stessi oggetti WeatherData nella stessa sessione
+        await aggiorna_weatherdata_con_assorbimenti(db, plot_id, oggi)
+        
+        # Ora facciamo il commit di TUTTE le operazioni (INSERT + UPDATE)
+        await db.commit()
+        print(f"✅ Commit eseguito. Dati meteo e CO2/O2 salvati per plot {plot_id}.")
+
 
         weather = await get_weather_data_from_db(db, plot_id, oggi)
         coefs = await get_coefficients_from_db(db)
@@ -225,31 +231,32 @@ async def calcola_co2(plot_id: int, giorno: str = None, user: dict = Depends(get
 
 
 @app.get("/weather/{plot_id}")
-def get_weather(plot_id: int, giorno: str = Query(...)):
-    return {"meteo": get_weather_data_from_db(plot_id, giorno)}
+async def get_weather(plot_id: int, giorno: str = Query(...), db: AsyncSession = Depends(get_db)):
+    # Ora usiamo await e passiamo la sessione db
+    weather_data = await get_weather_data_from_db(db, plot_id, giorno)
+    return {"meteo": weather_data}
 
 @app.get("/species/{plot_id}")
-def species_distribution(plot_id: int):
-    return {"species": get_species_distribution_by_plot(plot_id)}
+async def species_distribution(plot_id: int, db: AsyncSession = Depends(get_db)):
+    # Assumendo che la funzione get_species... sia stata corretta per accettare 'db'
+    species_data = await get_species_from_db(db, plot_id)
+    return {"species": species_data}
 
 @app.get("/api/weather/exists")
 async def check_weather_data_exists(plot_id: int, giorno: str = Query(...), db: AsyncSession = Depends(get_db)):
     """
     Verifica in modo efficiente se esistono già dati meteo per un dato terreno e giorno.
-    Questo endpoint è usato dal frontend per decidere se avviare un nuovo download da Open-Meteo.
     """
     try:
-        # Usiamo la funzione esistente per recuperare i dati meteo.
-        # È una funzione sincrona, quindi la eseguiamo in un threadpool per non bloccare l'event loop.
-        weather_data = await run_in_threadpool(get_weather_data_from_db, plot_id, giorno)
+        # --- MODIFICA QUI ---
+        # Ora che la funzione è async, la chiamiamo direttamente con await.
+        weather_data = await get_weather_data_from_db(db, plot_id, giorno)
         
-        # Se la funzione restituisce una lista con dei dati, significa che esistono.
         if weather_data:
             return {"exists": True}
         else:
             return {"exists": False}
             
     except Exception as e:
-        # In caso di qualsiasi errore (es. plot non trovato), consideriamo che i dati non esistano.
         print(f"Errore durante la verifica dell'esistenza dei dati meteo per plot {plot_id}: {e}")
         return {"exists": False}
