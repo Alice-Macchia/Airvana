@@ -1,11 +1,7 @@
-// ===================================================================================
-//
-//                       AIRVANA - DASHSCRIPT.JS (VERSIONE FINALE)
-//
-// ===================================================================================
 
 // Variabile globale per l'istanza del grafico, per potervi accedere da più funzioni.
 let myLineChart = null;
+let pieChart = null;
 
 /**
  * Restituisce la data corrente nel formato YYYY-MM-DD.
@@ -106,6 +102,81 @@ function popolaTabellaMeteo(dati) {
 }
 
 /**
+ * Crea o aggiorna il grafico a torta con la distribuzione delle specie.
+ * @param {Array} speciesData - Dati delle specie, es. [{species: 'Quercia', area_m2: 500}, ...]
+ */
+function creaOAggiornaGraficoTorta(speciesData) {
+    const container = document.getElementById('pieChart');
+    if (!container) return; // Se il canvas non esiste, non fare nulla
+
+    // Prepara i dati per Chart.js
+    const labels = speciesData.map(s => s.species);
+    const data = speciesData.map(s => s.area_m2);
+
+    // Se il grafico esiste già, aggiorniamo i suoi dati
+    if (pieChart) {
+        pieChart.data.labels = labels;
+        pieChart.data.datasets[0].data = data;
+        pieChart.update();
+        return;
+    }
+
+    // Se il grafico non esiste, lo creiamo
+    const ctx = container.getContext('2d');
+    pieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Quantità (m²)',
+                data: data,
+                backgroundColor: [ // Aggiungi più colori se hai più specie
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)'
+                ],
+                borderColor: 'rgba(255, 255, 255, 0.8)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: 'Ripartizione Specie per Quantità (m²)'
+                },
+                // Configurazione per mostrare le percentuali
+                datalabels: {
+                    formatter: (value, ctx) => {
+                        let sum = 0;
+                        let dataArr = ctx.chart.data.datasets[0].data;
+                        dataArr.map(data => {
+                            sum += data;
+                        });
+                        let percentage = (value * 100 / sum).toFixed(1) + '%';
+                        return percentage;
+                    },
+                    color: '#fff',
+                    font: {
+                        weight: 'bold'
+                    }
+                }
+            }
+        },
+        // Registriamo il plugin che abbiamo aggiunto
+        plugins: [ChartDataLabels]
+    });
+}
+
+/**
  * Crea dinamicamente i bottoni per ogni terreno dell'utente
  * e associa la logica di caricamento dati al click.
  * @param {Array} plots - La lista dei terreni dell'utente.
@@ -139,6 +210,11 @@ function creaBottoniTerreno(plots) {
             button.disabled = true;
 
             try {
+                const speciesResponse = await fetch(`/species/${plotId}`);
+                if (!speciesResponse.ok) throw new Error('Errore nel caricamento dati specie.');
+                const speciesResult = await speciesResponse.json();
+                creaOAggiornaGraficoTorta(speciesResult.species); // Aggiorna il grafico a torta
+               
                 const giorno = await dataOggi();
                 console.log(`🔎 Verifico dati per il terreno ${plotId} in data ${giorno}...`);
                 const checkResponse = await fetch(`/api/weather/exists?plot_id=${plotId}&giorno=${giorno}`);
