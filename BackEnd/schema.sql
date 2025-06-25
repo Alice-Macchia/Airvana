@@ -81,7 +81,7 @@ CREATE TABLE plot_species (
 DROP TABLE IF EXISTS weather_data CASCADE;
 CREATE TABLE weather_data (
     id SERIAL PRIMARY KEY,
-    plot_id INTEGER REFERENCES plots(id),
+    plot_id INTEGER REFERENCES plots(id)  ON DELETE CASCADE,
     date_time TIMESTAMP NOT NULL,
     temperature FLOAT,
     precipitation FLOAT,
