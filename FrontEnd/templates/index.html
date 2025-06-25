@@ -36,7 +36,7 @@
     }
   </style>
 
-  <!-- <script defer src="/static/Dashscript.js"></script> -->
+
 </head>
 
 <body data-user-id="{{ user_id }}" data-user-username="{{ username }}">
@@ -117,14 +117,22 @@
         
         <div class="d-flex gap-2 mb-2"></div>
         <canvas id="lineChart" class="chart-canvas" width="800" height="400" style="max-width: 100%;" aria-label="Grafico CO₂ e O₂" role="img"></canvas>
-        <p id="co2Display">CO₂: -- kg</p>
-        <p id="o2Display">O₂: -- kg</p>
+        <p id="co2Display">CO₂: -- kg/h</p>
+        <p id="o2Display">O₂: -- kg/h</p>
 
         <h2 id="plants-title">Tipi di Piante</h2>
-        <form class="mb-2" id="plantFilterWrapper">
+        <article class="income" aria-labelledby="gas-title">
+          <h2 id="plants-title">Tipi di Piante</h2>
+
+          <div id="pieChartFilters" class="pie-chart-filters-container">
+            </div>
+
+          <canvas id="pieChart" class="chart-canvas" width="800" height="400" style="max-width: 100%;" aria-label="Distribuzione Specie Piante" role="img"></canvas>
+        </article>
+        <!-- <form class="mb-2" id="plantFilterWrapper">
           <label for="plantFilter">Filtra categorie:</label>
           <div id="plantFilterForm"></div>
-        </form>
+        </form> -->
         <canvas id="pieChart" class="chart-canvas" width="800" height="400" style="max-width: 100%;" aria-label="Distribuzione Specie Piante" role="img"></canvas>
       </article>
     </section>
@@ -145,7 +153,6 @@
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script defer src="static/Dashscript.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>

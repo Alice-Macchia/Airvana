@@ -448,3 +448,23 @@ body.dark-theme #plantFilterForm {
   color: white;
   border: none;
 }
+
+/* In Dashstyle.css */
+.pie-chart-filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+    justify-content: center;
+    padding: 10px;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+}
+
+.pie-chart-filters-container label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+}

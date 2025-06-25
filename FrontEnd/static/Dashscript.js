@@ -2,6 +2,8 @@
 // Variabile globale per l'istanza del grafico, per potervi accedere da più funzioni.
 let myLineChart = null;
 let pieChart = null;
+let datiSpecieCorrenti = []; 
+let filtriSpecieAttivi = []; 
 
 /**
  * Restituisce la data corrente nel formato YYYY-MM-DD.
@@ -39,12 +41,14 @@ async function caricaDatiCO2O2(plotId, giorno) {
             // Pulisce il grafico e la tabella se non ci sono dati
             aggiornaGrafico([]);
             popolaTabellaMeteo([]);
+            aggiornaDisplayLive([]);
             return;
         }
 
         // Se i dati sono caricati con successo, aggiorna l'interfaccia
         aggiornaGrafico(data);
         popolaTabellaMeteo(data);
+        aggiornaDisplayLive(data); 
 
     } catch (error) {
         console.error(`Errore nel caricamento dati per il terreno ${plotId}:`, error);
@@ -52,6 +56,7 @@ async function caricaDatiCO2O2(plotId, giorno) {
         // Pulisce l'UI anche in caso di errore
         aggiornaGrafico([]);
         popolaTabellaMeteo([]);
+        aggiornaDisplayLive([]);
     }
 }
 
@@ -99,6 +104,37 @@ function popolaTabellaMeteo(dati) {
     `;
     tbody.appendChild(tr);
   });
+}
+
+/**
+ * Aggiorna i display 'live' di CO2 e O2 con l'ultimo dato orario disponibile.
+ * @param {Array} data - La lista di dati orari proveniente dal backend.
+ */
+function aggiornaDisplayLive(data) {
+    const co2Display = document.getElementById('co2Display');
+    const o2Display = document.getElementById('o2Display');
+
+    // Se gli elementi HTML non esistono nella pagina, non fare nulla.
+    if (!co2Display || !o2Display) {
+        return; 
+    }
+
+    // Controlla se abbiamo ricevuto dati validi e se l'array non è vuoto.
+    if (data && data.length > 0) {
+        // Prendi l'ultimo elemento dell'array, che è il più recente.
+        const ultimoDato = data[data.length - 1];
+        
+        // Formatta i numeri a 3 cifre decimali e aggiorna il testo.
+        const co2Value = Number(ultimoDato.co2_kg_hour || 0).toFixed(3);
+        const o2Value = Number(ultimoDato.o2_kg_hour || 0).toFixed(3);
+        
+        co2Display.textContent = `CO₂: ${co2Value} kg/h`;
+        o2Display.textContent = `O₂: ${o2Value} kg/h`;
+    } else {
+        // Se non ci sono dati, resetta i valori a quelli di default.
+        co2Display.textContent = 'CO₂: -- kg/h';
+        o2Display.textContent = 'O₂: -- kg/h';
+    }
 }
 
 /**
@@ -151,7 +187,7 @@ function creaOAggiornaGraficoTorta(speciesData) {
                 },
                 title: {
                     display: true,
-                    text: 'Ripartizione Specie per Quantità (m²)'
+                    text: 'Ripartizione Specie per Quantità'
                 },
                 // Configurazione per mostrare le percentuali
                 datalabels: {
@@ -173,6 +209,55 @@ function creaOAggiornaGraficoTorta(speciesData) {
         },
         // Registriamo il plugin che abbiamo aggiunto
         plugins: [ChartDataLabels]
+    });
+}
+
+/**
+ * Genera dinamicamente i checkbox per filtrare il grafico a torta.
+ * @param {Array} speciesData - La lista completa delle specie del terreno.
+ */
+function generaFiltriGraficoTorta(speciesData) {
+    const container = document.getElementById('pieChartFilters');
+    if (!container) return;
+
+    container.innerHTML = ''; // Pulisce filtri precedenti
+    filtriSpecieAttivi = []; // Resetta i filtri attivi
+
+    if (!speciesData || speciesData.length === 0) {
+        return; // Non generare filtri se non ci sono specie
+    }
+
+    speciesData.forEach(specie => {
+        // Aggiungi la specie alla lista dei filtri attivi di default
+        filtriSpecieAttivi.push(specie.species);
+
+        // Crea gli elementi HTML per il checkbox
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = specie.species;
+        checkbox.checked = true; // Di default sono tutti selezionati
+
+        // Aggiungi l'evento che aggiorna il grafico quando si spunta/de-spunta
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                // Se spuntato, aggiungi la specie ai filtri attivi
+                filtriSpecieAttivi.push(checkbox.value);
+            } else {
+                // Se de-spuntato, rimuovila
+                filtriSpecieAttivi = filtriSpecieAttivi.filter(s => s !== checkbox.value);
+            }
+
+            // Filtra i dati originali in base ai filtri attivi
+            const datiFiltrati = datiSpecieCorrenti.filter(d => filtriSpecieAttivi.includes(d.species));
+
+            // Aggiorna il grafico a torta con i dati filtrati
+            creaOAggiornaGraficoTorta(datiFiltrati);
+        });
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(specie.species)); // Aggiunge il nome della pianta
+        container.appendChild(label);
     });
 }
 
@@ -213,7 +298,13 @@ function creaBottoniTerreno(plots) {
                 const speciesResponse = await fetch(`/species/${plotId}`);
                 if (!speciesResponse.ok) throw new Error('Errore nel caricamento dati specie.');
                 const speciesResult = await speciesResponse.json();
-                creaOAggiornaGraficoTorta(speciesResult.species); // Aggiorna il grafico a torta
+                
+                // 2. Memorizza i dati completi e genera i filtri
+                datiSpecieCorrenti = speciesResult.species;
+                generaFiltriGraficoTorta(datiSpecieCorrenti);
+
+                // 3. Disegna il grafico a torta iniziale con tutti i dati
+                creaOAggiornaGraficoTorta(datiSpecieCorrenti);
                
                 const giorno = await dataOggi();
                 console.log(`🔎 Verifico dati per il terreno ${plotId} in data ${giorno}...`);
@@ -246,6 +337,7 @@ function creaBottoniTerreno(plots) {
                     // 3. Aggiorniamo direttamente grafico e tabella
                     aggiornaGrafico(data);
                     popolaTabellaMeteo(data);
+                    aggiornaDisplayLive(data); 
                 }
             } catch (error) {
                 console.error(`💥 Fallimento per il terreno ${plotId}:`, error);
@@ -253,6 +345,9 @@ function creaBottoniTerreno(plots) {
                 // Pulisce l'UI in caso di errore
                 aggiornaGrafico([]);
                 popolaTabellaMeteo([]);
+                generaFiltriGraficoTorta([]);
+                creaOAggiornaGraficoTorta([]);
+                aggiornaDisplayLive([]);
             } finally {
                 button.textContent = originalButtonText;
                 button.disabled = false;
