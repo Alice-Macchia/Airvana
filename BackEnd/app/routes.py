@@ -145,9 +145,33 @@ async def login(
     if not db_user or not verify_password(loginPassword, db_user.password):
         print("❌ Password errata o utente non trovato")
         raise HTTPException(status_code=401, detail="Credenziali non valide")
+    
+    #-----------------------------#
+    username = None
+    # Cerca in NaturalPerson
+    person_result = await db.execute(select(NaturalPerson).where(NaturalPerson.user_id == db_user.id))
+    person = person_result.scalar_one_or_none()
+    if person:
+        username = person.username
+    else:
+        # Se non è una persona, cerca in Society
+        society_result = await db.execute(select(Society).where(Society.user_id == db_user.id))
+        society = society_result.scalar_one_or_none()
+        if society:
+            username = society.username
 
-    token = create_access_token({"id": db_user.id, "mail": db_user.email})
-    print("🔑 Token creato:", token)
+    # Se non si trova un username, usa l'email come fallback
+    if not username:
+        username = db_user.email
+    #-----------------------------#
+    
+    # token = create_access_token({"id": db_user.id, "mail": db_user.email})
+    # print("🔑 Token creato:", token)
+
+    # --- MODIFICA TOKEN: Aggiungi l'username al payload ---
+    token_payload = {"id": db_user.id, "mail": db_user.email, "username": username}
+    token = create_access_token(token_payload)
+    print("🔑 Token creato con payload:", token_payload)
 
     response = JSONResponse(content={"message": "Login OK"})
     response.set_cookie(
@@ -170,7 +194,7 @@ async def inserisciterreno(request: Request, user: dict = Depends(get_current_us
     return templates.TemplateResponse("Aggiungi_Terreno_index.html", {
         "request": request,
         "user_id": user.get("id"),
-        "email": user.get("mail")
+        "email": user.get("username")
     })
 
 @router.post("/rename-plot")

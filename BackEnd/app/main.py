@@ -75,7 +75,7 @@ async def dashboard(request: Request, user=Depends(get_current_user)):
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user_id": user["id"],
-        "email": user["mail"]
+        "username": user["username"]
     })
 
 @app.post("/save-coordinates", response_model=SaveCoordinatesResponse)
