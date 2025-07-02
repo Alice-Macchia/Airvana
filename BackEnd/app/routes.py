@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, Security, Request, Form
+from fastapi import APIRouter, HTTPException, Depends, Security, Request, Form, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.exc import IntegrityError
 from BackEnd.app.auth import create_access_token, decode_access_token, get_current_user
-from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest, NaturalPersonBase, SocietyBase
-from BackEnd.app.models import User, NaturalPerson, Society, PlotInfo, Plot
+from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest, FarmerBase, SocietyBase, AgronomistCreate, AgronomistOut
+from BackEnd.app.models import User, Farmer, Society, PlotInfo, Plot, Agronomist
 from BackEnd.app.security import hash_password, verify_password
 from BackEnd.app.database import SessionLocal
 from BackEnd.app.get_meteo import fetch_and_save_weather_day, fetch_weather_week
@@ -16,6 +17,7 @@ from typing import List
 from pydantic import BaseModel
 
 
+# router = APIRouter()
 router = APIRouter()
 security = HTTPBearer()  # definisce il tipo di security scheme Bearer
 templates = Jinja2Templates(directory="FrontEnd/templates")
@@ -33,43 +35,30 @@ async def get_db():
 async def root(request: Request):
     return templates.TemplateResponse("login_main.html", {"request": request})
 
-#@router.post("/register")
-#async def register(request: Request,user: UserCreate, db: AsyncSession = Depends(get_db)):
-#    result = await db.execute(select(User).where(User.email == user.email))
-#    existing_user = result.scalar_one_or_none()
- #   if existing_user:
- #       raise HTTPException(status_code=400, detail="Email già registrata")
- #   new_user = User(
- #       email=user.email,
-  #      password=hash_password(user.password)
-  #  )
-  #  db.add(new_user)
-  #  await db.commit()
-   # return {"message": "Registrazione completata"}
 
-
-@router.post("/register-person")
-async def register_person(person: NaturalPersonBase, db: AsyncSession = Depends(get_db)):
+@router.post("/register-farmer")
+async def register_person(person: FarmerBase, db: AsyncSession = Depends(get_db)):
     # 1. Controllo esistenza email
-    result = await db.execute(select(NaturalPerson).where(NaturalPerson.email == person.email))
+    result = await db.execute(select(Farmer).where(Farmer.email == person.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email già usata")
 
-    # 2. Crea il record in NaturalPerson (senza user_id per ora)
-    natural_person = NaturalPerson(
+    # 2. Crea il record in Farmer (senza user_id per ora)
+    natural_person = Farmer(
         username=person.username,
         first_name=person.first_name,
         last_name=person.last_name,
-        gender=person.gender,
         email=person.email,
         password=hash_password(person.password),
+        cod_fid=person.cod_fis,
+        farm_name= person.farm_name,
         phone_number=person.phone_number,
         province=person.province,
         city=person.city,
         address=person.address
     )
-    db.add(natural_person)
-    await db.flush()  # Serve per ottenere `natural_person.id`
+    db.add(Farmer)
+    await db.flush()  # Serve per ottenere `Farmer.id`
 
     # 3. Crea il record in User
     user = User(
@@ -79,8 +68,8 @@ async def register_person(person: NaturalPersonBase, db: AsyncSession = Depends(
     db.add(user)
     await db.flush()
 
-    # 4. Collega `natural_person` a `user`
-    natural_person.user_id = user.id
+    # 4. Collega `farmer` a `user`
+    Farmer.user_id = user.id
 
     try:
         await db.commit()
@@ -127,6 +116,50 @@ async def register_society(data: SocietyBase, db: AsyncSession = Depends(get_db)
         raise HTTPException(status_code=500, detail="Errore durante la registrazione")
 
 
+@router.post("/register-agronomist", status_code=status.HTTP_201_CREATED, response_model=AgronomistOut)
+async def register_agronomist(agronomist_data: AgronomistCreate, db: AsyncSession = Depends(get_db)):
+    """
+    Registra un nuovo utente di tipo Agronomo.
+    Questa funzione richiede uno schema AgronomistCreate che includa email e password.
+    """
+    # 1. Controlla se l'email o il numero di albo esistono già
+    user_exists = await db.execute(select(User).where(User.email == agronomist_data.email))
+    if user_exists.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Un utente con questa email esiste già.")
+
+    agronomist_exists = await db.execute(select(Agronomist).where(Agronomist.albo_number == agronomist_data.albo_number))
+    if agronomist_exists.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Un agronomo con questo numero di albo esiste già.")
+
+    # 2. Crea l'utente e il profilo agronomo
+    hashed_pwd = hash_password(agronomist_data.password)
+    new_user = User(email=agronomist_data.email, password=hashed_pwd)
+    db.add(new_user)
+
+    try:
+        await db.flush()
+        new_agronomist = Agronomist(
+            user_id=new_user.id,
+            first_name=agronomist_data.first_name,
+            last_name=agronomist_data.last_name,
+            codice_fiscale=agronomist_data.codice_fiscale,
+            albo_number=agronomist_data.albo_number,
+            specialization=agronomist_data.specialization,
+            phone_number=agronomist_data.phone_number,
+            province=agronomist_data.province,
+            city=agronomist_data.city,
+            address=agronomist_data.address
+        )
+        db.add(new_agronomist)
+        await db.commit()
+        await db.refresh(new_agronomist)
+        return new_agronomist
+
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Errore durante la registrazione dell'agronomo: {e}")
+
+
 @router.post("/login", response_class=HTMLResponse)
 async def login(
     request: Request,
@@ -148,8 +181,8 @@ async def login(
     
     #-----------------------------#
     username = None
-    # Cerca in NaturalPerson
-    person_result = await db.execute(select(NaturalPerson).where(NaturalPerson.user_id == db_user.id))
+    # Cerca in Farmer
+    person_result = await db.execute(select(Farmer).where(Farmer.user_id == db_user.id))
     person = person_result.scalar_one_or_none()
     if person:
         username = person.username

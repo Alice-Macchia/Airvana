@@ -33,4 +33,4 @@ CMD ["uvicorn", "BackEnd.app.main:app", "--host", "0.0.0.0", "--port", "80"]
 #docker build -t airvana_app:v1.1 .
 
 
-#--forz -recreate
+#docker compose up -d airvana_app --build --force-recreate

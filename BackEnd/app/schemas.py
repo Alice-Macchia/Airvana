@@ -26,29 +26,29 @@ class UserOut(UserBase):
     class Config:
         orm_mode = True
 
-
-# ===== NATURAL PERSON =====
-class NaturalPersonBase(BaseModel):
+# --- Farmer (Agricoltore) ---
+class FarmerBase(BaseModel):
     username: str
     first_name: str
     last_name: str
-    gender: Optional[str] = None
     email: EmailStr
-    password: str
+    cod_fis: str
+    farm_name: Optional[str] = None
     phone_number: Optional[str] = None
     province: Optional[str] = None
     city: Optional[str] = None
     address: Optional[str] = None
 
-class NaturalPersonCreate(NaturalPersonBase):
-    user_id: int
+class FarmerCreate(FarmerBase):
+    password: str
 
-class NaturalPersonOut(NaturalPersonBase):
+class FarmerOut(FarmerBase):
     id: int
     user_id: int
     created_at: datetime
     class Config:
         orm_mode = True
+
 
 
 # ===== SOCIETY =====
@@ -72,11 +72,29 @@ class SocietyOut(SocietyBase):
     class Config:
         orm_mode = True
 
+# --- Agronomist (Agronomo) ---
+class AgronomistBase(BaseModel):
+    albo_number: str
+    specialization: Optional[str] = None
+    # Nota: i dati anagrafici (nome, cognome) non sono in questo modello
+    # secondo lo schema DB fornito. Potrebbe essere necessario aggiungerli qui
+    # e nella tabella 'agronomists' per un profilo completo.
 
-# ===== PLOTS =====
+class AgronomistCreate(AgronomistBase):
+    # L'utente base (email/password) deve essere creato separatamente
+    user_id: int
+
+class AgronomistOut(AgronomistBase):
+    id: int
+    user_id: int
+    is_certified: bool
+    created_at: datetime
+    class Config:
+        orm_mode = True
+
+#===== PLOTS =====
 class PlotBase(BaseModel):
     name: str
-
 class PlotCreate(PlotBase):
     user_id: int
     geom: dict  # GeoJSON
@@ -213,6 +231,14 @@ class EsportaRequest(BaseModel):
 class EsportaResponse(BaseModel):
     esito: str
     url_file: Optional[str] = None
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    id: Optional[str] = None
 
 #pip install fastapi uvicorn sqlalchemy geoalchemy2 shapely psycopg2-binary
 

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, TIMESTAMP, func
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, TIMESTAMP, func, Boolean
 from sqlalchemy.orm import relationship, declarative_base, Mapped, mapped_column
 from geoalchemy2 import Geometry
 from pydantic import BaseModel
@@ -35,29 +35,36 @@ class User(Base):
     password = Column(String(100), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    natural_person = relationship("NaturalPerson", back_populates="user", uselist=False)
-    society = relationship("Society", back_populates="user", uselist=False)
+    farmer: Mapped["Farmer"] = relationship(back_populates="user", uselist=False)
+    society: Mapped["Society"] = relationship(back_populates="user", uselist=False)
+    agronomist: Mapped["Agronomist"] = relationship(back_populates="user", uselist=False)
+    
     #plots = relationship("Plot", backref="owner")
     plots_associated: Mapped[List["Plot"]] = relationship(back_populates="user")
 
-# --- NATURAL PERSON ---
-class NaturalPerson(Base):
-    __tablename__ = "natural_person"
+# --- FARMER---
+class Farmer(Base):
+    """
+    Modello per gli Agricoltori (sostituisce NaturalPerson).
+    Rappresenta un fornitore di terreno che è una persona fisica.
+    """
+    __tablename__ = "farmers"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
-    username = Column(String(50), unique=True, nullable=False) 
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    username = Column(String(50), unique=True, nullable=False)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
-    gender = Column(String(10))
     email = Column(String(100), unique=True, nullable=False)
-    password = Column(String(100), nullable=False)
+    password = Column(String(100), nullable=False) # Nota: ridondante se la logica di auth è solo su User
+    cod_fis = Column(String(16), unique=True, nullable=False)
+    farm_name = Column(String(150))
     phone_number = Column(String(20))
     province = Column(String(100))
     city = Column(String(100))
     address = Column(String(200))
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    user = relationship("User", back_populates="natural_person")
+    user = relationship("User", back_populates="farmer")
 
 
 # --- SOCIETY ---
@@ -77,6 +84,21 @@ class Society(Base):
 
     user = relationship("User", back_populates="society")
 
+#---AGRONOMIST---
+class Agronomist(Base):
+    """
+    Modello per gli Agronomi.
+    Contiene i dati professionali specifici.
+    """
+    __tablename__ = "agronomists"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
+    albo_number = Column(String(50), unique=True, nullable=False)
+    specialization = Column(String(255))
+    is_certified = Column(Boolean, default=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    user = relationship("User", back_populates="agronomist")
 
 # --- PLOTS ---
 class Plot(Base):
