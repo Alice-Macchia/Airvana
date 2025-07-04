@@ -44,13 +44,13 @@ async def register_person(person: FarmerBase, db: AsyncSession = Depends(get_db)
         raise HTTPException(status_code=400, detail="Email già usata")
 
     # 2. Crea il record in Farmer (senza user_id per ora)
-    natural_person = Farmer(
+    Farmer = Farmer(
         username=person.username,
         first_name=person.first_name,
         last_name=person.last_name,
         email=person.email,
         password=hash_password(person.password),
-        cod_fid=person.cod_fis,
+        cod_fis=person.cod_fis,
         farm_name= person.farm_name,
         phone_number=person.phone_number,
         province=person.province,
