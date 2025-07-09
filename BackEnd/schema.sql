@@ -36,8 +36,8 @@ CREATE TABLE farmers (
     username VARCHAR(50) UNIQUE NOT NULL,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(100) NOT NULL,
+    --email VARCHAR(100) UNIQUE NOT NULL,
+    --password VARCHAR(100) NOT NULL,
     cod_fis VARCHAR(16) UNIQUE NOT NULL,
     farm_name VARCHAR(150), -- Nome dell'azienda agricola (opzionale)
     phone_number VARCHAR(20),
@@ -57,8 +57,8 @@ CREATE TABLE society (
     ragione_sociale VARCHAR(150) NOT NULL,
     sede_legale VARCHAR(200),
     partita_IVA VARCHAR(20) UNIQUE NOT NULL, 
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(100) NOT NULL,
+    --email VARCHAR(100) UNIQUE NOT NULL,
+    --password VARCHAR(100) NOT NULL,
     province VARCHAR(100),
     city VARCHAR(100),
     created_at TIMESTAMP DEFAULT NOW()
@@ -71,6 +71,8 @@ CREATE TABLE agronomists (
     id SERIAL PRIMARY KEY,
     user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     albo_number VARCHAR(50) UNIQUE NOT NULL, -- Numero di iscrizione all'albo professionale
+    --email VARCHAR(100) UNIQUE NOT NULL,
+    --password VARCHAR(100) NOT NULL,
     specialization VARCHAR(255), -- Es. 'Gestione forestale', 'Certificazione ambientale'
     is_certified BOOLEAN DEFAULT TRUE, -- Flag per indicare se l'agronomo è verificato dalla piattaforma
     created_at TIMESTAMP DEFAULT NOW()
@@ -129,9 +131,6 @@ CREATE TABLE weather_data (
 -- psql -U postgres -d co2app -f 'C:\Users\Saria\Desktop\JDE\Project Work\CO-e-O-Il-tuo-terreno-respira\BackEnd\schema.sql'
 
 
-
-
-
 --DA FARE
 -- 4. Tabella per la certificazione dei terreni (NUOVA)
 -- Collega un terreno, un agronomo e il documento di certificazione.
@@ -146,4 +145,17 @@ CREATE TABLE plot_certifications (
     notes TEXT, -- Note aggiuntive dall'agronomo o dall'admin
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- ====== MODIFICHE A TABELLE ESISTENTI (senza perdita di dati) ======
+
+-- 1. Aggiunta colonna "user_type" alla tabella users
+--ALTER TABLE users ADD COLUMN user_type VARCHAR(50) NOT NULL DEFAULT 'standard';
+
+-- 2. Rimozione di email e password da farmers
+--ALTER TABLE farmers DROP COLUMN email;
+--ALTER TABLE farmers DROP COLUMN password;
+
+-- 3. Rimozione di email e password da society
+--ALTER TABLE society DROP COLUMN email;
+--ALTER TABLE society DROP COLUMN password;
 

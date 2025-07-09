@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 from BackEnd.app.auth import create_access_token, decode_access_token, get_current_user
-from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest, FarmerBase, SocietyBase, AgronomistCreate, AgronomistOut
+from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest, FarmerBase, SocietyBase, AgronomistCreate, AgronomistOut, FarmerCreate, AgronomistBase, FarmerRegistration, SocietyRegistration, AgronomistRegistration
 from BackEnd.app.models import User, Farmer, Society, PlotInfo, Plot, Agronomist
 from BackEnd.app.security import hash_password, verify_password
 from BackEnd.app.database import SessionLocal
@@ -35,41 +35,36 @@ async def get_db():
 async def root(request: Request):
     return templates.TemplateResponse("login_main.html", {"request": request})
 
-
+    
 @router.post("/register-farmer")
-async def register_person(person: FarmerBase, db: AsyncSession = Depends(get_db)):
-    # 1. Controllo esistenza email
-    result = await db.execute(select(Farmer).where(Farmer.email == person.email))
+async def register_farmer(data: FarmerRegistration, db: AsyncSession = Depends(get_db)):
+     # 1. Controllo esistenza email
+    result = await db.execute(select(User).where(User.email == data.user.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email già usata")
-
-    # 2. Crea il record in Farmer (senza user_id per ora)
-    Farmer = Farmer(
-        username=person.username,
-        first_name=person.first_name,
-        last_name=person.last_name,
-        email=person.email,
-        password=hash_password(person.password),
-        cod_fis=person.cod_fis,
-        farm_name= person.farm_name,
-        phone_number=person.phone_number,
-        province=person.province,
-        city=person.city,
-        address=person.address
-    )
-    db.add(Farmer)
-    await db.flush()  # Serve per ottenere `Farmer.id`
-
-    # 3. Crea il record in User
+    # 2. Crea l'utente base
     user = User(
-        email=person.email,
-        password=hash_password(person.password),
+        email=data.user.email,
+        password=hash_password(data.user.password),
+        user_type=data.user.user_type
     )
     db.add(user)
     await db.flush()
 
-    # 4. Collega `farmer` a `user`
-    Farmer.user_id = user.id
+    # 3. Crea il profilo Farmer
+    farmer = Farmer(
+        user_id=user.id,
+        username=data.farmer.username,
+        first_name=data.farmer.first_name,
+        last_name=data.farmer.last_name,
+        cod_fis=data.farmer.cod_fis,
+        farm_name=data.farmer.farm_name,
+        phone_number=data.farmer.phone_number,
+        province=data.farmer.province,
+        city=data.farmer.city,
+        address=data.farmer.address
+    )
+    db.add(farmer)
 
     try:
         await db.commit()
@@ -80,85 +75,71 @@ async def register_person(person: FarmerBase, db: AsyncSession = Depends(get_db)
         raise HTTPException(status_code=500, detail="Errore durante la registrazione")
 
 @router.post("/register-society")
-async def register_society(data: SocietyBase, db: AsyncSession = Depends(get_db)):
-    # Controllo email o partita IVA esistenti
-    existing = await db.execute(select(Society).where(Society.email == data.email))
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email già registrata")
-
-    # Crea Society
-    society = Society(
-        username=data.username,
-        ragione_sociale=data.ragione_sociale,
-        sede_legale=data.sede_legale,
-        partita_iva=data.partita_iva,
-        email=data.email,
-        password=hash_password(data.password),
-        province=data.province,
-        city=data.city,
+async def register_farmer(data: SocietyRegistration, db: AsyncSession = Depends(get_db)):
+     # 1. Controllo esistenza email
+    result = await db.execute(select(User).where(User.email == data.user.email))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email già usata")
+    # 2. Crea l'utente base
+    user = User(
+        email=data.user.email,
+        password=hash_password(data.user.password),
+        user_type=data.user.user_type
     )
-    db.add(society)
-    await db.flush()
-
-    # Crea User
-    user = User(email=data.email, password=hash_password(data.password))
     db.add(user)
     await db.flush()
 
-    # Collega i due
-    society.user_id = user.id
-
+    # 3. Crea il profilo Society
+    society = Society(
+        user_id=user.id,
+        username=data.society.username,
+        ragione_sociale=data.society.ragione_sociale,
+        sede_legale=data.society.sede_legale,
+        partita_iva=data.society.partita_iva,
+        province=data.society.province,
+        city=data.society.city,
+    )
+    db.add(society)
+    
     try:
         await db.commit()
-        return {"message": "Registrazione società completata"}
+        return {"message": "Registrazione completata"}
     except Exception as e:
         await db.rollback()
+        print(f"❌ Commit fallito: {e}")
         raise HTTPException(status_code=500, detail="Errore durante la registrazione")
 
+@router.post("/register-agronomist")
+async def register_farmer(data: AgronomistRegistration, db: AsyncSession = Depends(get_db)):
+     # 1. Controllo esistenza email
+    result = await db.execute(select(User).where(User.email == data.user.email))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email già usata")
+    # 2. Crea l'utente base
+    user = User(
+        email=data.user.email,
+        password=hash_password(data.user.password),
+        user_type=data.user.user_type
+    )
+    db.add(user)
+    await db.flush()
 
-@router.post("/register-agronomist", status_code=status.HTTP_201_CREATED, response_model=AgronomistOut)
-async def register_agronomist(agronomist_data: AgronomistCreate, db: AsyncSession = Depends(get_db)):
-    """
-    Registra un nuovo utente di tipo Agronomo.
-    Questa funzione richiede uno schema AgronomistCreate che includa email e password.
-    """
-    # 1. Controlla se l'email o il numero di albo esistono già
-    user_exists = await db.execute(select(User).where(User.email == agronomist_data.email))
-    if user_exists.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Un utente con questa email esiste già.")
-
-    agronomist_exists = await db.execute(select(Agronomist).where(Agronomist.albo_number == agronomist_data.albo_number))
-    if agronomist_exists.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Un agronomo con questo numero di albo esiste già.")
-
-    # 2. Crea l'utente e il profilo agronomo
-    hashed_pwd = hash_password(agronomist_data.password)
-    new_user = User(email=agronomist_data.email, password=hashed_pwd)
-    db.add(new_user)
+    # 3. Crea il profilo Agronomist
+    agronomist = Agronomist(
+        user_id=user.id,
+        albo_number=data.agronomist.albo_number,
+        specialization=data.agronomist.specialization,
+    )
+    db.add(agronomist)
 
     try:
-        await db.flush()
-        new_agronomist = Agronomist(
-            user_id=new_user.id,
-            first_name=agronomist_data.first_name,
-            last_name=agronomist_data.last_name,
-            codice_fiscale=agronomist_data.codice_fiscale,
-            albo_number=agronomist_data.albo_number,
-            specialization=agronomist_data.specialization,
-            phone_number=agronomist_data.phone_number,
-            province=agronomist_data.province,
-            city=agronomist_data.city,
-            address=agronomist_data.address
-        )
-        db.add(new_agronomist)
         await db.commit()
-        await db.refresh(new_agronomist)
-        return new_agronomist
-
+        return {"message": "Registrazione completata"}
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Errore durante la registrazione dell'agronomo: {e}")
-
+        print(f"❌ Commit fallito: {e}")
+        raise HTTPException(status_code=500, detail="Errore durante la registrazione")
+    
 
 @router.post("/login", response_class=HTMLResponse)
 async def login(

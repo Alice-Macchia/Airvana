@@ -19,9 +19,8 @@
         <div class="auth-container" id="authContainer">
             <div class="login-section" id="loginSection">
                 <h1 class="form-title">Login</h1>
-                <p class="form-subtitle">Accedi alla tua area personale</p>
-
-                <form class="login-form" id="loginFormReal" method="post" action="/login">
+                <p class="form-subtitle">Accedi alla tua area personale</p> 
+            <form class="login-form" id="loginFormReal" method="post" action="/login"> 
                     <div class="form-group">
                         <div class="input-with-icon">
                             <span class="input-icon">👤</span>
@@ -35,10 +34,15 @@
                         </div>
                     </div>
 
-                    <div class="btn-group">
-                        <button type="submit" class="btn btn-primary">Login</button>
-                        <a href="#" class="forgot-password">Password dimenticata?</a>
-                    </div>
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary">Login</button>
+                            <!--<a href="/auth/spid-cie" class="btn btn-primary">SPID/CIE</a>-->
+                            <button type="button" class="btn btn-secondary" onclick="window.location.href='/auth/spid-cie'">SPID/CIE</button>
+                        </div>
+                        <div class="form-group">
+                            <a href="#" class="forgot-password">Password dimenticata?</a>
+                        </div>
+
                 </form>
             </div>
 
@@ -59,10 +63,12 @@
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
+                 <!--   <div id="registerChoiceContent" class="auth-content hidden">-->
                     <h1 class="form-title">Registrazione come:</h1>
                     <div class="choice-buttons">
-                        <button type="button" class="btn btn-secondary" id="registerAsUserButton">Utente</button>
+                        <button type="button" class="btn btn-secondary" id="registerAsUserButton">Agricoltori</button>
                         <button type="button" class="btn btn-secondary" id="registerAsCompanyButton">Azienda/Società</button>
+                        <button type="button" class="btn btn-secondary" id="registerAsAgroButton">Agronomo Forestale</button>
                     </div>
                 </div>
 
@@ -75,20 +81,23 @@
                     <h1 class="form-title">Registrazione Utente</h1>
                     <p class="form-subtitle">Crea il tuo account personale</p>
 
-                    <form id="registerUserForm">
-                        <div class="form-group form-group-inline">
-                            <input type="text" id="registerUsername" name="registerUsername" placeholder="Username" required class="input-field">
-                            <input type="text" id="registerNome" name="registerNome" placeholder="Nome" required class="input-field">
-                            <input type="text" id="registerCognome" name="registerCognome" placeholder="Cognome" required class="input-field">
-                        </div>
+                
 
-                        <div class="form-group">
-                            <label>Genere:</label><br>
-                            <div class="radio-group">
-                                <label><input type="radio" name="sesso" value="maschio" required> Maschio</label>
-                                <label><input type="radio" name="sesso" value="femmina"> Femmina</label>
-                            </div>
-                        </div>
+                    <form id="registerUserForm">
+                
+                    <div class="form-group">
+                        <input type="text" id="registerUsername" name="registerUsername" placeholder="Username" required class="input-field">
+                    </div>
+                    <div class="form-group form-group-inline">
+                        <input type="text" id="registerNome" name="registerNome" placeholder="Nome" required class="input-field">
+                        <input type="text" id="registerCognome" name="registerCognome" placeholder="Cognome" required class="input-field">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="registerCodiceFiscale" name="registerCodiceFiscale" placeholder="Codice Fiscale" required class="input-field">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="registerNomeAzienda" name="registerNomeAzienda" placeholder="Nome Azienda (se presente)" class="input-field">
+                    </div>
 
                         <div class="form-group">
                             <div class="input-with-icon">
@@ -153,6 +162,7 @@
                     <p class="form-subtitle">Crea l'account della tua azienda</p>
 
                     <form id="registerCompanyForm">
+
                         <div class="form-group">
                             <input type="text" id="companyUsername" name="companyUsername" placeholder="Username" required class="input-field">
                             <label for="companyRagioneSociale">Ragione Sociale:</label>
@@ -210,9 +220,52 @@
                         </div>
                     </form>
                 </div>
+
+                <div class="register-form-container" id="registerAgroFormContainer">
+                        <button type="button" class="btn-back-form" id="backToChoiceAgro">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <h1 class="form-title">Registrazione Agronomo Forestale</h1>
+                        <p class="form-subtitle">Crea l'account come professionista</p>
+                    
+                        <form id="registerAgroForm">
+                    
+                            <div class="form-group">
+                                <input type="text" id="agroNumeroAlbo" name="agroNumeroAlbo" placeholder="Numero Albo Professionale" required class="input-field">
+                            </div>
+                            <div class="form-group">
+                                <div class="input-with-icon">
+                                    <span class="input-icon">📧</span>
+                                    <input type="email" id="agroEmail" name="agroEmail" placeholder="Email" required class="input-field">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="password-toggle-container">
+                                    <span class="input-icon">🔒</span>
+                                    <input type="password" id="agroPassword" name="agroPassword" placeholder="Password" required class="input-field">
+                                    <span class="password-toggle-icon" id="toggleAgronomistPassword"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="password-toggle-container">
+                                    <span class="input-icon">🔒</span>
+                                    <input type="password" id="agroConfermaPassword" name="agroConfermaPassword" placeholder="Conferma Password" required class="input-field">
+                                    <span class="password-toggle-icon" id="toggleAgroConfermaPassword"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="agroSpecializzazione" name="agroSpecializzazione" placeholder="Specializzazione (opzionale)" class="input-field">
+                            </div>
+                            <div class="btn-group">
+                                <button type="submit" class="btn btn-primary">Registra Agronomo</button>
+                            </div>
+                        </form>
+                    </div>
             </div>
         </div>
-    </div>
+
     <script>
         document.getElementById("loginFormReal").addEventListener("submit", async function(e) {
         e.preventDefault();

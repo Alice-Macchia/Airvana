@@ -305,7 +305,7 @@ body {
     z-index: 10;
     /* Rimosso padding, border, background-color, box-shadow da qui */
     transition: all 0.3s ease; /* Mantenuto per fluidità generale */
-}
+} /*tasto torna a homepage rimosso controllare da rigo 337 a 402
 
 /* Stile per il pulsante "back-to-main-page-button" */
 .back-to-main-page-button {
@@ -633,7 +633,10 @@ body {
     opacity: 0;
     pointer-events: none;
 }
-
+.register-panel-wrapper #registerAgroFormContainer {
+    opacity: 0;
+    pointer-events: none;
+}
 /* Active states for internal forms */
 .register-panel-wrapper.show-choice #registerChoiceContainer {
     opacity: 1;
@@ -647,7 +650,10 @@ body {
     opacity: 1;
     pointer-events: auto;
 }
-
+.register-panel-wrapper.show-agro-form #registerAgroFormContainer {
+    opacity: 1;
+    pointer-events: auto;
+}
 
 /* Message Box Styles */
 .message-box {
@@ -731,18 +737,20 @@ body {
     }
 
     /* Gestione della visibilità per mobile (senza animazioni di slide) */
-    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register) .login-section {
+    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register):not(.shifted-to-agro-register) .login-section {
         display: flex; 
     }
     .auth-container.shifted-to-choice .login-section,
     .auth-container.shifted-to-user-register .login-section,
-    .auth-container.shifted-to-company-register .login-section {
+    .auth-container.shifted-to-company-register .login-section,
+    .auth-container.shifted-to-agro-register .login-section {
         display: none; 
     }
 
-    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register) .register-choice-container,
-    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register) #registerUserFormContainer,
-    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register) #registerCompanyFormContainer {
+    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register):not(.shifted-to-agro-register) .register-choice-container,
+    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register):not(.shifted-to-agro-register) #registerUserFormContainer,
+    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register):not(.shifted-to-agro-register) #registerCompanyFormContainer, 
+    .auth-container:not(.shifted-to-choice):not(.shifted-to-user-register):not(.shifted-to-company-register):not(.shifted-to-agro-register) #registerAgroFormContainer{
         display: none;
     }
 
@@ -758,16 +766,21 @@ body {
         display: flex;
         order: 1; /* Metti il form azienda dopo la sezione verde */
     }
-
+    .auth-container.shifted-to-agro-register #registerAgroFormContainer {
+        display: flex;
+        order: 1; /* Metti il form agronomo dopo la sezione verde */
+    }
     .auth-container.shifted-to-choice .register-section,
     .auth-container.shifted-to-user-register .register-section,
-    .auth-container.shifted-to-company-register .register-section {
+    .auth-container.shifted-to-company-register .register-section,
+    .auth-container.shifted-to-agro-register .register-section {
         order: 0; /* Sposta la sezione verde in cima */
     }
 
     .auth-container:not(.shifted-to-choice) .register-form-container,
     .auth-container:not(.shifted-to-user-register) .register-form-container,
-    .auth-container:not(.shifted-to-company-register) .register-form-container {
+    .auth-container:not(.shifted-to-company-register) .register-form-container, 
+    .auth-container:not(.shifted-to-agro-register) .register-form-container {
         display: none; 
     }
     
@@ -806,3 +819,4 @@ body {
         font-size: 1.6rem;
     }
 }
+

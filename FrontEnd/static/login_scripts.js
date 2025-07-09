@@ -63,7 +63,7 @@ function updateAuthContainerView() {
     container.classList.remove('shifted');
 
     // Reset delle classi del wrapper dei pannelli di registrazione
-    registerPanelWrapper.classList.remove('show-choice', 'show-user-form', 'show-company-form');
+    registerPanelWrapper.classList.remove('show-choice', 'show-user-form', 'show-company-form', 'show-agro-form');
 
     if (currentView === 'login') {
         // Nessuna classe 'shifted' per il login
@@ -72,6 +72,8 @@ function updateAuthContainerView() {
             <p>Per accedere all'area riservata del portale occorre registrarsi qui:</p>
             <button class="btn-register" id="toggleRegisterButton">Registrati!</button>
         `;
+    document.getElementById('toggleRegisterButton')
+        ?.addEventListener('click', toggleAuthView);
     } else if (currentView === 'registerChoice') {
         container.classList.add('shifted'); // Attiva lo shift principale
         registerPanelWrapper.classList.add('show-choice'); // Mostra la scelta nel wrapper
@@ -80,6 +82,8 @@ function updateAuthContainerView() {
             <p>Se hai già un account, puoi accedere direttamente utilizzando i tuoi dati:</p>
             <button class="btn-register" id="toggleRegisterButton">Accedi</button>
         `;
+    document.getElementById('toggleRegisterButton')
+        ?.addEventListener('click', toggleAuthView);
     } else if (currentView === 'registerUser') {
         container.classList.add('shifted'); // Mantieni lo shift principale
         registerPanelWrapper.classList.add('show-user-form'); // Mostra il form utente nel wrapper
@@ -88,6 +92,8 @@ function updateAuthContainerView() {
             <p>Se hai già un account, puoi accedere direttamente utilizzando i tuoi dati:</p>
             <button class="btn-register" id="toggleRegisterButton">Accedi</button>
         `;
+    document.getElementById('toggleRegisterButton')
+        ?.addEventListener('click', toggleAuthView);
     } else if (currentView === 'registerCompany') {
         container.classList.add('shifted'); // Mantieni lo shift principale
         registerPanelWrapper.classList.add('show-company-form'); // Mostra il form azienda nel wrapper
@@ -96,11 +102,23 @@ function updateAuthContainerView() {
             <p>Se hai già un account, puoi accedere direttamente utilizzando i tuoi dati:</p>
             <button class="btn-register" id="toggleRegisterButton">Accedi</button>
         `;
-    }
+    document.getElementById('toggleRegisterButton')
+        ?.addEventListener('click', toggleAuthView);
+    } else if (currentView === 'registerAgro') {
+        container.classList.add('shifted'); // Mantieni lo shift principale
+        registerPanelWrapper.classList.add('show-agro-form'); // Mostra il form agronomo nel wrapper
+        registerContent.innerHTML = `
+            <h2>Benvenuto</h2>
+            <p>Se hai già un account, puoi accedere direttamente utilizzando i tuoi dati:</p>
+            <button class="btn-register" id="toggleRegisterButton">Accedi</button>
+    `;
+    
     // Ri-assegna l'event listener al nuovo bottone creato dinamicamente
-    document.getElementById('toggleRegisterButton').addEventListener('click', toggleAuthView);
+    //document.getElementById('toggleRegisterButton').addEventListener('click', toggleAuthView);
+    document.getElementById('toggleRegisterButton')
+        ?.addEventListener('click', toggleAuthView);
+    }
 }
-
 /**
  * Gestisce il cambio di visualizzazione tra form di login e registrazione.
  */
@@ -125,6 +143,11 @@ function showUserRegistrationForm() {
 
 function showCompanyRegistrationForm() {
     currentView = 'registerCompany';
+    updateAuthContainerView();
+}
+
+function showAgroRegistrationForm() {
+    currentView = 'registerAgro';
     updateAuthContainerView();
 }
 
@@ -501,13 +524,6 @@ function handleFormSubmit(event) {
         return;
     }
 
-    const sessoChecked = document.querySelector('input[name="sesso"]:checked');
-    if (!sessoChecked) {
-        showMessage("Seleziona il sesso.");
-        return;
-    }
-    data.gender = sessoChecked.value;  // Cambiato da "sesso" a "gender" per coerenza col backend
-
     const selectedProvince = document.getElementById('province').value;
     const selectedCity = document.getElementById('city').value;
 
@@ -520,20 +536,26 @@ function handleFormSubmit(event) {
 
     // Mappa i campi dal form a quelli del backend
     const payload = {
-        username: data.registerUsername,       // Assicurati che l'input abbia id="registerUsername"
-        first_name: data.registerNome,
-        last_name: data.registerCognome,
-        gender: data.gender,
+        user: {
         email: data.registerEmail,
         password: data.registerPassword,
+        user_type: "farmer"
+        },
+        farmer: {
+        username: data.registerUsername,
+        first_name: data.registerNome,
+        last_name: data.registerCognome,
+        cod_fis: data.registerCodiceFiscale,
+        farm_name: data.registerNomeAzienda || null,
         phone_number: data.phoneNumber,
         province: data.province,
         city: data.city,
-        address: data.address,
+        address: data.address
+        }
     };
 
     // Chiamata fetch POST JSON
-    fetch("http://localhost:8000/register-person", {
+    fetch("http://127.0.0.1:8000/register-farmer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -567,14 +589,19 @@ function handleFormSubmit(event) {
 
     // Costruisci il payload con i nomi esatti che il backend aspetta
     const payload = {
-        username: data.companyUsername,            // controlla che l'input abbia id="companyUsername"
-        ragione_sociale: data.companyRagioneSociale,
-        sede_legale: data.companyAddress,
-        partita_iva: data.companyPIVA,
+        user: {
         email: data.companyEmail,
         password: data.companyPassword,
-        province: selectedCompanyProvince,
-        city: selectedCompanyCity,
+        user_type: "society"
+        },
+        society: {
+            username: data.companyUsername,            // controlla che l'input abbia id="companyUsername"
+            ragione_sociale: data.companyRagioneSociale,
+            sede_legale: data.companyAddress,
+            partita_iva: data.companyPIVA,
+            province: selectedCompanyProvince,
+            city: selectedCompanyCity
+        }
     };
 
     fetch("http://localhost:8000/register-society", {
@@ -593,6 +620,40 @@ function handleFormSubmit(event) {
     .catch(err => {
         showMessage("Errore durante la registrazione azienda: " + err.message);
     });
+} else if (form.id === 'registerAgroForm') {
+    console.log('Tentativo di Registrazione Agronomo Forestale:', data);
+
+    // Costruisci il payload con i nomi esatti che il backend aspetta
+    const payload = {
+        user: {
+        email: data.agroEmail,
+        password: data.agroPassword,
+        user_type: "agronomist"
+        },
+        agronomist: {
+            albo_number: data.agroNumeroAlbo,
+            specialization: data.agroSpecializzazione || null
+        }
+    };
+    console.log("Payload agronomo:", payload);
+    fetch("http://localhost:8000/register-agronomist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Registrazione agronomo fallita");
+        return res.json();
+    })
+    .then(data => {
+        showMessage("Registrazione agronomo completata con successo!");
+        // opzionale: redirect o reset form
+    })
+    .catch(err => {
+        showMessage("Errore durante la registrazione agronomo: " + err.message);
+    });
+
+    
 }
 }
 
@@ -605,17 +666,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loginForm = document.getElementById('loginFormReal');
     const registerUserForm = document.getElementById('registerUserForm');
     const registerCompanyForm = document.getElementById('registerCompanyForm');
+    const registerAgroForm = document.getElementById('registerAgroForm');
 
     // Aggiungi event listener per il submit dei form
     if (loginForm) loginForm.addEventListener('submit', handleFormSubmit);
     if (registerUserForm) registerUserForm.addEventListener('submit', handleFormSubmit);
     if (registerCompanyForm) registerCompanyForm.addEventListener('submit', handleFormSubmit);
-
+    if (registerAgroForm) registerAgroForm.addEventListener('submit', handleFormSubmit);
     // Resetta i form all'avvio (opzionale, ma buona pratica)
     if (loginForm) loginForm.reset();
     if (registerUserForm) registerUserForm.reset();
     if (registerCompanyForm) registerCompanyForm.reset();
-
+    if (registerAgroForm) registerAgroForm.reset();   
     // Gestione del bottone per alternare tra login e registrazione
     const toggleButton = document.getElementById('toggleRegisterButton');
     if (toggleButton) toggleButton.addEventListener('click', toggleAuthView);
@@ -623,18 +685,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Gestione dei bottoni di scelta del tipo di registrazione
     const registerAsUserButton = document.getElementById('registerAsUserButton');
     const registerAsCompanyButton = document.getElementById('registerAsCompanyButton');
+    const registerAsAgroButton = document.getElementById('registerAsAgroButton');
     const backToRegisterToggle = document.getElementById('backToRegisterToggle'); // Questo torna al login
     const backToChoiceUser = document.getElementById('backToChoiceUser'); // Questo torna alla scelta utente/azienda
     const backToChoiceCompany = document.getElementById('backToChoiceCompany'); // Questo torna alla scelta utente/azienda
+    const backToChoiceAgro = document.getElementById('backToChoiceAgro');
 
     if (registerAsUserButton) registerAsUserButton.addEventListener('click', showUserRegistrationForm);
     if (registerAsCompanyButton) registerAsCompanyButton.addEventListener('click', showCompanyRegistrationForm);
+    if (registerAsAgroButton) registerAsAgroButton.addEventListener('click', showAgroRegistrationForm);
     if (backToRegisterToggle) backToRegisterToggle.addEventListener('click', toggleAuthView);
     if (backToChoiceUser) backToChoiceUser.addEventListener('click', backToRegisterChoice);
     if (backToChoiceCompany) backToChoiceCompany.addEventListener('click', backToRegisterChoice);
+    if (backToChoiceAgro) backToChoiceAgro.addEventListener('click', backToRegisterChoice);
 
-
-    // Gestione della visibilità delle password per il form utente
+    // Gestione della visibilità delle password per il form agricoltore
     const toggleRegisterPasswordEl = document.getElementById('toggleRegisterPassword');
     const toggleRegisterConfermaPasswordEl = document.getElementById('toggleRegisterConfermaPassword');
 
@@ -667,6 +732,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             togglePasswordVisibility('companyConfermaPassword', 'toggleCompanyConfermaPassword');
         });
     }
+
+ // Gestione della visibilità delle password per il form azienda
+    const toggleAgronomistPasswordEl = document.getElementById('toggleAgronomistPassword');
+    const toggleAgroConfermaPasswordEl = document.getElementById('toggleAgroConfermaPassword');
+
+    if (toggleAgronomistPasswordEl) {
+        toggleAgronomistPasswordEl.innerHTML = hidePasswordSVG;
+        toggleAgronomistPasswordEl.addEventListener('click', () => {
+            togglePasswordVisibility('agroPassword', 'toggleAgronomistPassword');
+        });
+    }
+    if (toggleAgroConfermaPasswordEl) {
+        toggleAgroConfermaPasswordEl.innerHTML = hidePasswordSVG;
+        toggleAgroConfermaPasswordEl.addEventListener('click', () => {
+            togglePasswordVisibility('agroConfermaPassword', 'toggleAgroConfermaPassword');
+        });
+    }    
 
     // Inizializzazione campo città: disabilitato finché non si sceglie una provincia
     const userCityInput = document.getElementById('city');

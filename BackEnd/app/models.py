@@ -33,6 +33,7 @@ class User(Base):
     #id = Column(Integer, primary_key=True)
     email = Column(String(100), unique=True, nullable=False)
     password = Column(String(100), nullable=False)
+    user_type = Column(String, nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     farmer: Mapped["Farmer"] = relationship(back_populates="user", uselist=False)
@@ -54,8 +55,8 @@ class Farmer(Base):
     username = Column(String(50), unique=True, nullable=False)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
-    email = Column(String(100), unique=True, nullable=False)
-    password = Column(String(100), nullable=False) # Nota: ridondante se la logica di auth è solo su User
+    #email = Column(String(100), unique=True, nullable=False)
+    #password = Column(String(100), nullable=False) # Nota: ridondante se la logica di auth è solo su User
     cod_fis = Column(String(16), unique=True, nullable=False)
     farm_name = Column(String(150))
     phone_number = Column(String(20))
@@ -76,8 +77,8 @@ class Society(Base):
     ragione_sociale = Column(String(150), nullable=False)
     sede_legale = Column(String(200))
     partita_iva = Column(String(20), unique=True, nullable=False)
-    email = Column(String(100), unique=True, nullable=False)
-    password = Column(String(100), nullable=False)
+    #email = Column(String(100), unique=True, nullable=False)
+    #password = Column(String(100), nullable=False)
     province = Column(String(100))
     city = Column(String(100))
     created_at = Column(TIMESTAMP, server_default=func.now())
@@ -96,6 +97,8 @@ class Agronomist(Base):
     albo_number = Column(String(50), unique=True, nullable=False)
     specialization = Column(String(255))
     is_certified = Column(Boolean, default=True)
+    #email = Column(String(100), unique=True, nullable=False)
+    #password = Column(String(100), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     user = relationship("User", back_populates="agronomist")

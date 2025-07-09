@@ -2,7 +2,8 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, TIMESTAMP, func
-from typing import List
+from typing import List, Literal
+
 # ===== USER =====
 
 class UserLogin(BaseModel):
@@ -19,6 +20,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     email : str
     password : str
+    user_type: Literal["farmer", "society", "agronomist"]
 
 class UserOut(UserBase):
     id: int
@@ -31,16 +33,19 @@ class FarmerBase(BaseModel):
     username: str
     first_name: str
     last_name: str
-    email: EmailStr
     cod_fis: str
     farm_name: Optional[str] = None
     phone_number: Optional[str] = None
     province: Optional[str] = None
     city: Optional[str] = None
     address: Optional[str] = None
+class FarmerRegistration(BaseModel):
+    user: UserCreate
+    farmer: FarmerBase
 
 class FarmerCreate(FarmerBase):
-    password: str
+    #password: str
+    user_id: int
 
 class FarmerOut(FarmerBase):
     id: int
@@ -57,10 +62,13 @@ class SocietyBase(BaseModel):
     ragione_sociale: str
     sede_legale: Optional[str] = None
     partita_iva: str
-    email: EmailStr
-    password: str
     province: Optional[str] = None
     city: Optional[str] = None
+
+class SocietyRegistration(BaseModel):
+    user: UserCreate
+    society: SocietyBase
+
 
 class SocietyCreate(SocietyBase):
     user_id: int
@@ -80,9 +88,15 @@ class AgronomistBase(BaseModel):
     # secondo lo schema DB fornito. Potrebbe essere necessario aggiungerli qui
     # e nella tabella 'agronomists' per un profilo completo.
 
+class AgronomistRegistration(BaseModel):
+    user: UserCreate
+    agronomist: AgronomistBase
+
+
 class AgronomistCreate(AgronomistBase):
     # L'utente base (email/password) deve essere creato separatamente
-    user_id: int
+    user_id: int 
+
 
 class AgronomistOut(AgronomistBase):
     id: int
