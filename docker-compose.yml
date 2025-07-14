@@ -1,11 +1,71 @@
-version: '3.8'
-services:
-  airvana_app:
-    image: airvana_app:v1.1
-    build: .
-    ports:
-      - "5000:80"
-    environment:
-      - ENV=production
+version: "3.8"
 
- 
+services:
+  # 1) FastAPI backend
+  airvana_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: airvana_app
+    env_file:
+      - ./BackEnd/.env   # contiene DATABASE_URL, etc.
+    ports:
+      - "8000:80"
+    depends_on:
+      - airvana_postgres
+
+  # 2) Postgres per il FastAPI
+  airvana_postgres:
+    image: postgres:15
+    container_name: airvana_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: co2app
+    ports:
+      - "15432:5432"
+    volumes:
+      - airvana_pgdata:/var/lib/postgresql/data
+
+  # 3) Redis per Medusa
+  medusa_redis:
+    image: redis:7
+    container_name: medusa_redis
+    ports:
+      - "6379:6379"
+
+  # 4) Postgres per Medusa
+  medusa_postgres:
+    image: postgres:15
+    container_name: medusa_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: medusa_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - medusa_pgdata:/var/lib/postgresql/data
+
+  # 5) Server Medusa
+  medusa:
+    image: node:18-slim
+    container_name: medusa
+    working_dir: /usr/src/app
+    volumes:
+      - ./medusa-server:/usr/src/app
+      - /usr/src/app/node_modules
+    env_file:
+      - ./medusa-server/.env
+    command: >
+      sh -c "npm install &&
+             npx medusa develop"
+    ports:
+      - "9000:9000"
+    depends_on:
+      - medusa_postgres
+      - medusa_redis
+
+volumes:
+  airvana_pgdata:
+  medusa_pgdata:
