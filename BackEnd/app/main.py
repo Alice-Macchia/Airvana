@@ -19,6 +19,7 @@ from BackEnd.app.co2_o2_calculator import (calculate_co2_o2_hourly, get_coeffici
 from BackEnd.app.get_meteo import fetch_and_save_weather_day
 from BackEnd.app.auth import get_current_user
 from BackEnd.app.database import get_db
+from BackEnd.app.get_all_plots import get_all_plots_coords
 
 # .env
 load_dotenv()
@@ -233,6 +234,12 @@ async def calcola_co2(plot_id: int, giorno: str = None, user: dict = Depends(get
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+@router.get("/api/get_all_plots")
+async def get_all_plots(session: AsyncSession = Depends(get_db)):
+    plots = await get_all_plots_coords(session)
+    return {"data": plots}
 
 @app.get("/weather/{plot_id}")
 async def get_weather(plot_id: int, giorno: str = Query(...), db: AsyncSession = Depends(get_db)):
