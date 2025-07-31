@@ -10,6 +10,7 @@ from typing import List, Optional
 class PlotBase(BaseModel):
     id: Optional[int]
     name: Optional[str]
+    
     # Aggiungi altri campi se servono, ma evita Geometry complessi (o usa stringhe WKT/GeoJSON)
 
 class PlotSpeciesBase(BaseModel):
