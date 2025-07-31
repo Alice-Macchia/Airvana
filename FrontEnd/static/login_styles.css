@@ -15,7 +15,7 @@ body {
 /* Stili della pagina di login */
 .login-page {
     min-height: 100vh;
-    background: linear-gradient(45deg, #2d5a27, #ffffff, #4a7c59, #ffffff);
+    background: linear-gradient(45deg, #0077B6, #ffffff, #0049b6, #ffffff);
     background-size: 400% 400%;
     animation: gradientShift 15s ease infinite;
     position: relative;
@@ -92,7 +92,7 @@ body {
 }
 
 .register-section {
-    background: linear-gradient(135deg, #4CAF50, #45a049);
+    background: linear-gradient(135deg, #0077B6, #004063);
     color: white;
     align-items: center;
     text-align: center;
@@ -122,7 +122,7 @@ body {
 
 .form-title {
     font-size: 2.2rem;
-    color: #2d5a27;
+    color: #0077B6;
     font-weight: 300; 
 }
 
@@ -165,7 +165,7 @@ body {
 
 .input-field:focus {
     outline: none;
-    border-color: #4CAF50;
+    border-color: #0077B6;
     background: white;
 }
 
@@ -217,7 +217,7 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(45deg, #4CAF50, #45a049);
+    background: linear-gradient(45deg, #00a6ff, #0077B6);
     color: white;
     box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
     padding: 0.9rem 1.8rem;
@@ -230,8 +230,8 @@ body {
 
 .btn-secondary { /* Nuovo stile per i bottoni di scelta */
     background: #f0f0f0;
-    color: #4CAF50;
-    border: 2px solid #4CAF50;
+    color: #0077B6;
+    border: 2px solid #004e78;
     padding: 0.9rem 1.8rem;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
@@ -271,7 +271,7 @@ body {
     height: 40px;
     border-radius: 50%; /* Rende il pulsante circolare */
     background-color: white;
-    border: 2px solid #4CAF50; /* Bordo verde */
+    border: 2px solid #0077B6; /* Bordo verde */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -285,7 +285,7 @@ body {
 .btn-back-form svg {
     width: 20px; /* Dimensione della freccia */
     height: 20px;
-    stroke: #4CAF50; /* Colore verde per la freccia */
+    stroke: #0077B6; /* Colore verde per la freccia */
 }
 
 .btn-back-main:hover,
@@ -313,7 +313,7 @@ body {
     height: 40px;
     border-radius: 50%;
     background-color: white;
-    border: 2px solid #4CAF50;
+    border: 2px solid #0077B6;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -325,7 +325,7 @@ body {
 .back-to-main-page-button svg {
     width: 20px;
     height: 20px;
-    stroke: #4CAF50;
+    stroke: #0077B6;
 }
 
 .back-to-main-page-button:hover {
@@ -336,7 +336,7 @@ body {
 /* Stile per la casella che contorna il testo "Torna alla homepage" */
 .back-to-main-text-box {
     padding: 8px 12px; /* Padding interno per la casella */
-    border: 2px solid #4CAF50; /* Bordo verde */
+    border: 2px solid #0077B6; /* Bordo verde */
     border-radius: 10px; /* Bordi arrotondati per la casella */
     background-color: rgba(255, 255, 255, 0.8); /* Sfondo leggermente trasparente */
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Ombra per la casella */
@@ -362,7 +362,7 @@ body {
 
 
 .forgot-password {
-    color: #4CAF50;
+    color: #0077B6;
     text-decoration: none;
     font-size: 0.8rem;
 }
@@ -398,7 +398,7 @@ body {
 
 .btn-register:hover {
     background: white;
-    color: #4CAF50;
+    color: #0077B6;
 }
 
 /* Contenitori dei form di registrazione e scelta all'interno del wrapper */
@@ -469,7 +469,7 @@ body {
 
 .phone-prefix-field:focus {
     outline: none;
-    border-color: #4CAF50;
+    border-color: #0077B6;
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
@@ -486,7 +486,7 @@ body {
 
 .phone-group .input-field[type="tel"]:focus {
     outline: none;
-    border-color: #4CAF50;
+    border-color: #0077B6;
     background: white;
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
@@ -678,7 +678,7 @@ body {
 }
 
 .message-box-close {
-    background-color: #4CAF50;
+    background-color: #0077B6;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -689,7 +689,7 @@ body {
 }
 
 .message-box-close:hover {
-    background-color: #45a049;
+    background-color: #0077B6;
 }
 
 

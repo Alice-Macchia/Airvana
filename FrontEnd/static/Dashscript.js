@@ -1,481 +1,167 @@
+// 📊 DASHBOARD SCRIPT V2 - CO2/O2 Line Chart + Meteo Table + Heatmap
 
-// Variabile globale per l'istanza del grafico, per potervi accedere da più funzioni.
-let myLineChart = null;
-let pieChart = null;
-let datiSpecieCorrenti = []; 
-let filtriSpecieAttivi = []; 
+// 🚀 Avvia tutto al caricamento della pagina
+window.addEventListener("DOMContentLoaded", () => {
+  console.log("🌿 Airvana Dashboard pronta");
+    // Prima chiami meteo, POI CO2/O2
+  fetch("/get_open_meteo/1", {
+    method: "POST"
+  })
+    .then(res => {
+      if (!res.ok) throw new Error("Errore nel fetch meteo");
+      return res.json();
+    })
+    .then(data => {
+      console.log("☁️ Meteo salvato correttamente.");
+      fetchAndDraw(1);
+    })
 
-/**
- * Restituisce la data corrente nel formato YYYY-MM-DD.
- * @returns {Promise<string>} La data formattata.
- */
-async function dataOggi() {
-  const oggi = new Date();
-  const yyyy = oggi.getFullYear();
-  const mm = String(oggi.getMonth() + 1).padStart(2, '0');
-  const dd = String(oggi.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
+    .catch(err => {
+      console.error("❌ Errore nella catena meteo->CO2:", err);
+    });
+});
 
-/**
- * Funzione principale per caricare i dati dal backend.
- * Contatta il server, gestisce gli errori e, se ha successo,
- * chiama le funzioni per aggiornare il grafico e la tabella.
- * @param {number} plotId - L'ID del terreno da caricare.
- * @param {string} giorno - La data per cui caricare i dati.
- */
-async function caricaDatiCO2O2(plotId, giorno) {
-    try {
-        const response = await fetch(`/calcola_co2/${plotId}?giorno=${giorno}`);
+// 📦 Carica dati CO2/O2 da FastAPI e lancia i 3 render
+async function fetchAndDraw(plot_id) {
+  try {
+    // 🔁 1. Chiamata a POST per calcolare meteo + co2/o2
+    const resMeteo = await fetch(`/get_open_meteo/${plot_id}`, {
+      method: "POST"
+    });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || `Errore server: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (!data || data.length === 0) {
-            console.warn(`Nessun dato CO₂/O₂ trovato per il terreno ${plotId} il ${giorno}`);
-            alert("Nessun dato disponibile per la data selezionata.");
-            // Pulisce il grafico e la tabella se non ci sono dati
-            aggiornaGrafico([]);
-            popolaTabellaMeteo([]);
-            aggiornaDisplayLive([]);
-            return;
-        }
-
-        // Se i dati sono caricati con successo, aggiorna l'interfaccia
-        aggiornaGrafico(data);
-        popolaTabellaMeteo(data);
-        aggiornaDisplayLive(data); 
-
-    } catch (error) {
-        console.error(`Errore nel caricamento dati per il terreno ${plotId}:`, error);
-        alert(`Impossibile caricare i dati: ${error.message}`);
-        // Pulisce l'UI anche in caso di errore
-        aggiornaGrafico([]);
-        popolaTabellaMeteo([]);
-        aggiornaDisplayLive([]);
+    if (!resMeteo.ok) {
+      throw new Error("❌ Errore nel fetch meteo/CO₂: " + resMeteo.statusText);
     }
+
+    const data = await resMeteo.json();
+    console.log("📥 Dati ricevuti:", data);
+
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error("❌ Nessun dato ricevuto");
+    }
+
+    updateMeteoTable(data);
+    drawEChartsLine(data);
+    drawHeatmap(data);
+
+  } catch (error) {
+    console.error("❌ Errore nel fetch dei dati:", error);
+  }
 }
 
-/**
- * Aggiorna i dati del grafico Chart.js esistente.
- * @param {Array} data - La lista di dati orari proveniente dal backend.
- */
-function aggiornaGrafico(data) {
-  if (!myLineChart) return;
+// 📋 Tabella meteo
+function updateMeteoTable(data) {
+  const tbody = document.getElementById("meteoTableBody");
+  tbody.innerHTML = "";
 
-  // Estrae le etichette (ore) e i valori di CO2/O2 dai dati
-  const labels = data.map(row => row.datetime ? new Date(row.datetime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '--');
-  const co2Data = data.map(row => Number(row.co2_kg_hour) || 0);
-  const o2Data = data.map(row => Number(row.o2_kg_hour) || 0);
-
-  // Aggiorna l'istanza del grafico con i nuovi dati
-  myLineChart.data.labels = labels;
-  myLineChart.data.datasets[0].data = co2Data;
-  myLineChart.data.datasets[1].data = o2Data;
-  myLineChart.update();
-}
-
-/**
- * Popola la tabella HTML con i dati orari dettagliati.
- * @param {Array} dati - La lista di dati orari.
- */
-function popolaTabellaMeteo(dati) {
-  const tbody = document.getElementById('meteoTableBody');
-  if (!tbody) return;
-
-  tbody.innerHTML = ''; // Pulisce la tabella prima di popolarla
-  const format = val => (val !== null && !isNaN(val)) ? Number(val).toFixed(2) : '--';
-
-  dati.forEach(row => {
-    const tr = document.createElement('tr');
-    const ora = row.datetime ? new Date(row.datetime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '--';
+  data.forEach(row => {
+    const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${ora}</td>
-      <td>${format(row.precipitazioni_mm)}</td>
-      <td>${format(row.temperatura_c)}</td>
-      <td>${format(row.radiazione)}</td>
-      <td>${format(row.umidita)}</td>
-      <td>${format(row.co2_kg_hour)}</td>
-      <td>${format(row.o2_kg_hour)}</td>
+      <td>${row.datetime}</td>
+      <td>${row.precipitazioni_mm ?? "-"}</td>
+      <td>${row.temperatura_c ?? "-"}</td>
+      <td>${row.radiazione ?? "-"}</td>
+      <td>${row.umidita ?? "-"}</td>
+      <td>${row.co2_kg_hour?.toFixed(2) ?? "-"}</td>
+      <td>${row.o2_kg_hour?.toFixed(2) ?? "-"}</td>
     `;
     tbody.appendChild(tr);
   });
+
+  const last = data[data.length - 1];
+  document.getElementById("co2Display").textContent = `CO₂: ${last?.co2_kg_hour?.toFixed(2) ?? "--"} kg/h`;
+  document.getElementById("o2Display").textContent = `O₂: ${last?.o2_kg_hour?.toFixed(2) ?? "--"} kg/h`;
 }
 
-/**
- * Aggiorna i display 'live' di CO2 e O2 con l'ultimo dato orario disponibile.
- * @param {Array} data - La lista di dati orari proveniente dal backend.
- */
-function aggiornaDisplayLive(data) {
-    const co2Display = document.getElementById('co2Display');
-    const o2Display = document.getElementById('o2Display');
+// 📈 Line Chart CO₂/O₂
+function drawEChartsLine(data) {
+  const chart = echarts.init(document.getElementById("lineChart"));
+  const times = data.map(d => d.datetime);
+  const co2 = data.map(d => d.co2_kg_hour);
+  const o2 = data.map(d => d.o2_kg_hour);
 
-    // Se gli elementi HTML non esistono nella pagina, non fare nulla.
-    if (!co2Display || !o2Display) {
-        return; 
-    }
+  const option = {
+    title: { text: "Assorbimento CO₂ / Emissione O₂", left: "center" },
+    tooltip: { trigger: "axis" },
+    legend: { data: ["CO₂", "O₂"], bottom: 0 },
+    xAxis: { type: "category", data: times },
+    yAxis: { type: "value", name: "kg/h" },
+    series: [
+      {
+        name: "CO₂",
+        type: "line",
+        smooth: true,
+        data: co2,
+        lineStyle: { color: "#0077B6" }
+      },
+      {
+        name: "O₂",
+        type: "line",
+        smooth: true,
+        data: o2,
+        lineStyle: { color: "#00C49A" }
+      }
+    ]
+  };
 
-    // Controlla se abbiamo ricevuto dati validi e se l'array non è vuoto.
-    if (data && data.length > 0) {
-        // Prendi l'ultimo elemento dell'array, che è il più recente.
-        const ultimoDato = data[data.length - 1];
-        
-        // Formatta i numeri a 3 cifre decimali e aggiorna il testo.
-        const co2Value = Number(ultimoDato.co2_kg_hour || 0).toFixed(3);
-        const o2Value = Number(ultimoDato.o2_kg_hour || 0).toFixed(3);
-        
-        co2Display.textContent = `CO₂: ${co2Value} kg/h`;
-        o2Display.textContent = `O₂: ${o2Value} kg/h`;
-    } else {
-        // Se non ci sono dati, resetta i valori a quelli di default.
-        co2Display.textContent = 'CO₂: -- kg/h';
-        o2Display.textContent = 'O₂: -- kg/h';
-    }
+  chart.setOption(option);
 }
 
-/**
- * Crea o aggiorna il grafico a torta con la distribuzione delle specie.
- * @param {Array} speciesData - Dati delle specie, es. [{species: 'Quercia', area_m2: 500}, ...]
- */
-function creaOAggiornaGraficoTorta(speciesData) {
-    const container = document.getElementById('pieChart');
-    if (!container) return; // Se il canvas non esiste, non fare nulla
+// 🔥 Heatmap meteo + CO₂/O₂
+function drawHeatmap(data) {
+  const chart = echarts.init(document.getElementById("heatmapChart"));
+  const variables = ["precipitazioni_mm", "temperatura_c", "radiazione", "umidita", "co2_kg_hour", "o2_kg_hour"];
+  const labels = ["Precipitazioni", "Temp (°C)", "Radiazione", "Umidità", "CO₂", "O₂"];
+  const hours = data.map(d => d.datetime);
+  const heatData = [];
 
-    // Prepara i dati per Chart.js
-    const labels = speciesData.map(s => s.species);
-    const data = speciesData.map(s => s.area_m2);
-
-    // Se il grafico esiste già, aggiorniamo i suoi dati
-    if (pieChart) {
-        pieChart.data.labels = labels;
-        pieChart.data.datasets[0].data = data;
-        pieChart.update();
-        return;
-    }
-
-    // Se il grafico non esiste, lo creiamo
-    const ctx = container.getContext('2d');
-    pieChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Quantità (m²)',
-                data: data,
-                backgroundColor: [ // Aggiungi più colori se hai più specie
-                    'rgba(255, 99, 132, 0.7)',
-                    'rgba(54, 162, 235, 0.7)',
-                    'rgba(255, 206, 86, 0.7)',
-                    'rgba(75, 192, 192, 0.7)',
-                    'rgba(153, 102, 255, 0.7)',
-                    'rgba(255, 159, 64, 0.7)'
-                ],
-                borderColor: 'rgba(255, 255, 255, 0.8)',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: 'Ripartizione Specie per Quantità'
-                },
-                // Configurazione per mostrare le percentuali
-                datalabels: {
-                    formatter: (value, ctx) => {
-                        let sum = 0;
-                        let dataArr = ctx.chart.data.datasets[0].data;
-                        dataArr.map(data => {
-                            sum += data;
-                        });
-                        let percentage = (value * 100 / sum).toFixed(1) + '%';
-                        return percentage;
-                    },
-                    color: '#fff',
-                    font: {
-                        weight: 'bold'
-                    }
-                }
-            }
-        },
-        // Registriamo il plugin che abbiamo aggiunto
-        plugins: [ChartDataLabels]
+  variables.forEach((v, rowIdx) => {
+    data.forEach((d, colIdx) => {
+      heatData.push([colIdx, rowIdx, d[v] ?? 0]);
     });
-}
+  });
 
-/**
- * Genera dinamicamente i checkbox per filtrare il grafico a torta.
- * @param {Array} speciesData - La lista completa delle specie del terreno.
- */
-function generaFiltriGraficoTorta(speciesData) {
-    const container = document.getElementById('pieChartFilters');
-    if (!container) return;
-
-    container.innerHTML = ''; // Pulisce filtri precedenti
-    filtriSpecieAttivi = []; // Resetta i filtri attivi
-
-    if (!speciesData || speciesData.length === 0) {
-        return; // Non generare filtri se non ci sono specie
-    }
-
-    speciesData.forEach(specie => {
-        // Aggiungi la specie alla lista dei filtri attivi di default
-        filtriSpecieAttivi.push(specie.species);
-
-        // Crea gli elementi HTML per il checkbox
-        const label = document.createElement('label');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = specie.species;
-        checkbox.checked = true; // Di default sono tutti selezionati
-
-        // Aggiungi l'evento che aggiorna il grafico quando si spunta/de-spunta
-        checkbox.addEventListener('change', () => {
-            if (checkbox.checked) {
-                // Se spuntato, aggiungi la specie ai filtri attivi
-                filtriSpecieAttivi.push(checkbox.value);
-            } else {
-                // Se de-spuntato, rimuovila
-                filtriSpecieAttivi = filtriSpecieAttivi.filter(s => s !== checkbox.value);
-            }
-
-            // Filtra i dati originali in base ai filtri attivi
-            const datiFiltrati = datiSpecieCorrenti.filter(d => filtriSpecieAttivi.includes(d.species));
-
-            // Aggiorna il grafico a torta con i dati filtrati
-            creaOAggiornaGraficoTorta(datiFiltrati);
-        });
-
-        label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(specie.species)); // Aggiunge il nome della pianta
-        container.appendChild(label);
-    });
-}
-
-/**
- * Crea dinamicamente i bottoni per ogni terreno dell'utente
- * e associa la logica di caricamento dati al click.
- * @param {Array} plots - La lista dei terreni dell'utente.
- */
-
-function creaBottoniTerreno(plots) {
-    const container = document.getElementById('terrainButtons');
-    if (!container) return;
-    container.innerHTML = ''; // Pulisce i bottoni esistenti
-
-    if (!plots || plots.length === 0) {
-        container.innerHTML = '<p>Nessun terreno trovato. Vai su "Aggiungi Terreno" per crearne uno.</p>';
-        return;
-    }
-
-    plots.forEach((plot, index) => {
-        const button = document.createElement('button');
-        button.className = 'btn';
-        button.textContent = plot.name;
-        button.setAttribute('data-terreno', plot.id);
-
-        if (index === 0) button.classList.add('active');
-
-        button.addEventListener('click', async () => {
-            document.querySelectorAll('#terrainButtons .btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-
-            const plotId = button.getAttribute('data-terreno');
-            const originalButtonText = button.textContent;
-            button.textContent = 'Verifico...';
-            button.disabled = true;
-
-            try {
-                const speciesResponse = await fetch(`/species/${plotId}`);
-                if (!speciesResponse.ok) throw new Error('Errore nel caricamento dati specie.');
-                const speciesResult = await speciesResponse.json();
-                
-                // 2. Memorizza i dati completi e genera i filtri
-                datiSpecieCorrenti = speciesResult.species;
-                generaFiltriGraficoTorta(datiSpecieCorrenti);
-
-                // 3. Disegna il grafico a torta iniziale con tutti i dati
-                creaOAggiornaGraficoTorta(datiSpecieCorrenti);
-               
-                const giorno = await dataOggi();
-                console.log(`🔎 Verifico dati per il terreno ${plotId} in data ${giorno}...`);
-                const checkResponse = await fetch(`/api/weather/exists?plot_id=${plotId}&giorno=${giorno}`);
-                if (!checkResponse.ok) throw new Error('Errore di comunicazione col server.');
-                
-                const checkData = await checkResponse.json();
-
-                if (checkData.exists) {
-                    console.log('✅ Dati già presenti. Carico calcoli.');
-                    button.textContent = 'Caricamento...';
-                    // Questo caso non cambia: chiama /calcola_co2 perché i dati esistono già
-                    await caricaDatiCO2O2(plotId, giorno);
-                } else {
-                    // --- MODIFICA PRINCIPALE IN QUESTO BLOCCO ---
-                    console.log('⚠️ Dati non presenti. Scarico e calcolo...');
-                    button.textContent = 'Scarico e Calcolo...';
-                    
-                    // 1. Chiamiamo l'endpoint che fa TUTTO
-                    const response = await fetch(`/get_open_meteo/${plotId}`, { method: 'POST' });
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.detail || 'Errore durante il download e calcolo.');
-                    }
-                    
-                    // 2. Il risultato è già il dato finale, non serve una seconda chiamata!
-                    const data = await response.json();
-                    console.log('✅ Operazione completata. Aggiorno l\'interfaccia.');
-
-                    // 3. Aggiorniamo direttamente grafico e tabella
-                    aggiornaGrafico(data);
-                    popolaTabellaMeteo(data);
-                    aggiornaDisplayLive(data); 
-                }
-            } catch (error) {
-                console.error(`💥 Fallimento per il terreno ${plotId}:`, error);
-                alert(`Operazione fallita: ${error.message}`);
-                // Pulisce l'UI in caso di errore
-                aggiornaGrafico([]);
-                popolaTabellaMeteo([]);
-                generaFiltriGraficoTorta([]);
-                creaOAggiornaGraficoTorta([]);
-                aggiornaDisplayLive([]);
-            } finally {
-                button.textContent = originalButtonText;
-                button.disabled = false;
-            }
-        });
-        container.appendChild(button);
-    });
-}
-
-/**
- * Funzione principale che inizializza la dashboard recuperando i terreni dell'utente.
- */
-async function inizializzaDashboard() {
-    try {
-        const response = await fetch('/api/users/me/plots');
-        if (!response.ok) throw new Error("Impossibile recuperare i terreni dell'utente.");
-        const userPlots = await response.json();
-
-        creaBottoniTerreno(userPlots);
-
-        if (userPlots.length > 0) {
-            const primoBottone = document.querySelector('#terrainButtons .btn');
-            if (primoBottone) {
-                console.log("Avvio caricamento iniziale per il primo terreno...");
-                primoBottone.click(); // Simula il click per avviare il caricamento
-            }
-        } else {
-            console.log("L'utente non ha terreni. La dashboard è vuota.");
-            document.getElementById('chart-container').innerHTML = '<p>Nessun terreno da visualizzare. Aggiungine uno per iniziare.</p>';
+  chart.setOption({
+    tooltip: {
+      position: 'top',
+      formatter: p => `${labels[p.value[1]]} @ ${hours[p.value[0]]}: <b>${p.value[2]}</b>`
+    },
+    grid: {
+      height: '80%',
+      top: '10%',
+      left: '10%',
+      right: '5%'
+    },
+    xAxis: {
+      type: 'category',
+      data: hours,
+      splitArea: { show: true },
+      axisLabel: { fontSize: 10, rotate: 45 }
+    },
+    yAxis: {
+      type: 'category',
+      data: labels,
+      splitArea: { show: true }
+    },
+    visualMap: {
+      min: 0,
+      max: Math.max(...heatData.map(h => h[2])) || 1,
+      calculable: true,
+      orient: 'horizontal',
+      left: 'center',
+      bottom: '0%'
+    },
+    series: [{
+      name: 'Heatmap',
+      type: 'heatmap',
+      data: heatData,
+      label: { show: false },
+      emphasis: {
+        itemStyle: {
+          shadowBlur: 10,
+          shadowColor: 'rgba(0, 0, 0, 0.5)'
         }
-    } catch (error) {
-        console.error("Impossibile inizializzare la dashboard:", error);
-        alert("Si è verificato un errore nel caricamento dei dati utente.");
-    }
+      }
+    }]
+  });
 }
-
-
-// ===================================================================================
-//  UNICO BLOCCO DI INIZIALIZZAZIONE QUANDO LA PAGINA È PRONTA
-// ===================================================================================
-window.addEventListener('DOMContentLoaded', () => {
-    console.log("Dashboard JS pronto!");
-
-    // --- 1. Inizializzazione Grafico Vuoto ---
-    const ctxLine = document.getElementById('lineChart')?.getContext('2d');
-    if (ctxLine) {
-        myLineChart = new Chart(ctxLine, {
-            type: 'line',
-            data: {
-                labels: [], // Inizia vuoto, verrà popolato dai dati
-                datasets: [{
-                    label: 'CO₂ (kg)',
-                    data: [],
-                    borderColor: '#dc3545',
-                    backgroundColor: 'rgba(220, 53, 69, 0.2)',
-                    tension: 0.2,
-                    fill: true
-                }, {
-                    label: 'O₂ (kg)',
-                    data: [],
-                    borderColor: '#198754',
-                    backgroundColor: 'rgba(25, 135, 84, 0.2)',
-                    tension: 0.2,
-                    fill: true
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false } } }
-        });
-    }
-
-    // --- 2. Gestione di TUTTA l'Interfaccia Utente (UI) ---
-    document.querySelector('.logout-btn')?.addEventListener('click', () => {
-        window.location.href = "/logout";
-    });
-
-    const themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-        const body = document.body;
-        const applyTheme = (theme) => {
-            body.classList.toggle('dark-theme', theme === 'dark');
-            themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-        };
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        applyTheme(savedTheme);
-        themeToggle.addEventListener('click', () => {
-            const newTheme = body.classList.contains('dark-theme') ? 'light' : 'dark';
-            localStorage.setItem('theme', newTheme);
-            applyTheme(newTheme);
-        });
-    }
-    
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('mainContent');
-    const toggleSidebarBtn = document.getElementById('toggleSidebar');
-    toggleSidebarBtn?.addEventListener('click', () => {
-        const isCollapsed = sidebar.classList.toggle('collapsed');
-        if(mainContent) mainContent.classList.toggle('collapsed', isCollapsed);
-        toggleSidebarBtn.textContent = isCollapsed ? '➡️' : '☰';
-    });
-
-    const chatBubble = document.getElementById('chatBubble');
-    const chatBox = document.getElementById('chatBox');
-    chatBubble?.addEventListener('click', () => {
-        const isVisible = chatBox.style.display === 'flex';
-        chatBox.style.display = isVisible ? 'none' : 'flex';
-    });
-    
-    const exportBtn = document.getElementById('exportLinePDF');
-    exportBtn?.addEventListener('click', async () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
-        const chartCanvas = document.getElementById('lineChart');
-        
-        doc.setFontSize(18);
-        doc.text('Report CO₂/O₂', 10, 15);
-        
-        if (chartCanvas && myLineChart.data.labels.length > 0) {
-            const image = await html2canvas(chartCanvas, { scale: 2 });
-            const imgData = image.toDataURL('image/png');
-            doc.addImage(imgData, 'PNG', 10, 25, 190, 100);
-        } else {
-            doc.setFontSize(12);
-            doc.text('Nessun dato disponibile per generare il grafico.', 10, 25);
-        }
-        
-        doc.save('report_dashboard.pdf');
-    });
-
-    // --- 3. Avvio della logica dinamica per caricare i terreni e i dati ---
-    inizializzaDashboard();
-});

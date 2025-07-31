@@ -55,6 +55,8 @@ async def startup():
 async def root(request: Request):
     return templates.TemplateResponse("homepagedefinitiva.html", {"request": request})
 
+
+
 @app.get("/logout")
 async def logout():
     response = RedirectResponse(url="/")
@@ -174,7 +176,9 @@ async def get_open_meteo(plot_id: int, db: AsyncSession = Depends(get_db)):
 
 @app.get("/calcola_co2/{plot_id}")
 async def calcola_co2(plot_id: int, giorno: str = None, user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    
+    print(f"➡️ Inizio calcolo_co2 per plot_id={plot_id}")
+    print(f"🧪 Utente: {user}")
+
     # --- 3. VERIFICA DI PROPRIETÀ ---
     user_id = user["id"]
     query = select(Plot).where(Plot.id == plot_id, Plot.user_id == user_id)

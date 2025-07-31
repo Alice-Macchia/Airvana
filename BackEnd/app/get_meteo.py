@@ -37,7 +37,7 @@ async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float,
         "forecast_days": "1",
         "timezone": "auto"
     }
-
+    
     try:
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(
@@ -56,11 +56,15 @@ async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float,
             timestamp = datetime.fromisoformat(hourly["time"][i])
 
             # Controlla se il dato esiste già usando la sessione async
-            stmt = select(WeatherData).where(WeatherData.plot_id == plot_id, WeatherData.date_time == timestamp)
+            stmt = select(WeatherData.id).where(
+                WeatherData.plot_id == plot_id,
+                WeatherData.date_time == timestamp
+            )
             existing = await db.execute(stmt)
-            if existing.scalar_one_or_none():
+            if existing.first():  # ✅ non lancia errore se ci sono più righe
                 print(f"⚠️ Dato già presente per ora {timestamp}, skip")
                 continue
+
 
             weather = WeatherData(
                 plot_id=plot_id,
