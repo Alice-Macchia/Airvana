@@ -7,12 +7,12 @@ from BackEnd.app.auth import create_access_token, decode_access_token, get_curre
 from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest, FarmerBase, SocietyBase, AgronomistCreate, AgronomistOut, FarmerCreate, AgronomistBase, FarmerRegistration, SocietyRegistration, AgronomistRegistration
 from BackEnd.app.models import User, Farmer, Society, PlotInfo, Plot, Agronomist
 from BackEnd.app.security import hash_password, verify_password
-from BackEnd.app.database import SessionLocal
+from BackEnd.app.database import get_async_session
+
 from BackEnd.app.get_meteo import fetch_and_save_weather_day, fetch_weather_week
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from BackEnd.app.utils import aggiorna_nome_plot, elimina_plot
-from BackEnd.app.database import AsyncSessionLocal
 from typing import List
 from pydantic import BaseModel
 
@@ -24,7 +24,7 @@ templates = Jinja2Templates(directory="FrontEnd/templates")
 
 
 async def get_db():
-    async_session = AsyncSessionLocal()
+    async_session = get_async_session
     try:
         yield async_session
     finally:
