@@ -148,6 +148,30 @@ const Marketplace = () => {
           <p className="lead">
             Acquista crediti di carbonio da terreni agricoli certificati e sostenibili
           </p>
+          <button 
+            className="btn btn-outline-light mt-3"
+            onClick={() => window.location.href = '/'}
+            style={{ 
+              border: '2px solid white', 
+              color: 'white',
+              backgroundColor: 'transparent',
+              padding: '10px 20px',
+              borderRadius: '25px',
+              fontWeight: 'bold',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = 'white';
+              e.target.style.color = '#28a745';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+              e.target.style.color = 'white';
+            }}
+          >
+            <i className="fas fa-home me-2"></i>
+            Torna alla Home
+          </button>
         </div>
       </header>
 

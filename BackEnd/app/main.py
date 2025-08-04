@@ -36,13 +36,14 @@ app.mount("/static", StaticFiles(directory="FrontEnd/static"), name="static")
 
 # Marketplace React - Mount dei file statici
 app.mount("/marketplace", StaticFiles(directory="marketplace_dist"), name="marketplace")
+app.mount("/assets", StaticFiles(directory="marketplace_dist/assets"), name="assets")
 
 templates = Jinja2Templates(directory="FrontEnd/templates")
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:8000", "http://localhost:8000"],
+    allow_origins=["http://127.0.0.1:8000", "http://localhost:8000", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
