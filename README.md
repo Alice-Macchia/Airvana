@@ -166,20 +166,29 @@ python -c "from BackEnd.app.database import init_db; init_db()"
 
 # PER AVVIARE LA PIATTAFORMA (EMMA)
 4. Setup Frontend Marketplace
+
+
+
 QUESTO SOLO LA PRIMA VOLTA
+```bash
+# Installa dipendenze Node.js
+npm install
 cd airvana-marketplace
 npm install
-
+```
 
 🚀 Avvio del Sistema
 PER AVVIARE IL SERVER SU REACT
+```bash
 cd airvana-marketplace
 npm run build
-
+```
 
 
 Dalla root del progetto
+```bash
 uvicorn BackEnd.app.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
 
 
