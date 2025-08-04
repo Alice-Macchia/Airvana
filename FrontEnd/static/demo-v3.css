@@ -73,6 +73,20 @@ display: flex;
 gap: 2rem;
 }
 
+.navbar .nav-links li {
+  display: flex;
+  align-items: center;
+}
+
+.navbar .nav-links a,
+.btn-auth-register {
+  line-height: 1.1;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  height: auto;
+  box-sizing: border-box;
+}
+
 .navbar .nav-links a {
 color: white;
 text-decoration: none;
@@ -103,28 +117,28 @@ width: 100%;
 }
 
 /* Stile per i bottoni "Accedi / Registrati"*/
-.btn-auth-register,
-.btn-demo { /* Aggiunto anche il bottone della demo */
-background-color: var(--primary-green); /* Usa il verde primario */
-color: white;
-border: none;
-border-radius: 25px;
-font-size: 0.95rem;
-cursor: pointer;
-box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
-text-decoration: none;
-transition: background-color 0.3s ease, transform 0.2s ease;
-display: inline-flex; 
-width: 160px;            /* permette al bottone di adattarsi */
-justify-content: center;     /* centra orizzontalmente */
-align-items: center;         /* centra verticalmente */
-padding: 0.6rem 1.5rem; /* spazio interno attorno al testo */
-white-space: nowrap;    /* impedisce che il testo vada a capo */
-margin-left: 0.8rem; /* Spazio tra i bottoni e dagli altri link */
+.btn-auth-register {
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.2rem;
+  line-height: 1.1;
+  margin-left: 0.2rem;
+  height: auto;
+  min-width: 0;
+  white-space: nowrap;
 }
 
-.btn-auth-register:hover,
-.btn-demo:hover { /* Aggiunto anche il bottone della demo */
+.btn-auth-register:hover {
 background-color: var(--accent-green);
 transform: translateY(-1px);
 }

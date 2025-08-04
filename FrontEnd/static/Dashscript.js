@@ -21,7 +21,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-// 📦 Carica dati CO2/O2 da FastAPI e lancia i 3 render
+// 📦 Load CO2/O2 data from FastAPI and launch the 3 renders
 async function fetchAndDraw(plot_id) {
   try {
     // 🔁 1. Chiamata a POST per calcolare meteo + co2/o2

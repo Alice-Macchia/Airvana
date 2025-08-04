@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Query, Depends, HTTPException, Cookie
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,6 +33,10 @@ engine = create_async_engine(DATABASE_URL, echo=False)
 # FastAPI
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="FrontEnd/static"), name="static")
+
+# Marketplace React - Mount dei file statici
+app.mount("/marketplace", StaticFiles(directory="marketplace_dist"), name="marketplace")
+
 templates = Jinja2Templates(directory="FrontEnd/templates")
 
 
@@ -56,8 +60,6 @@ async def startup():
 async def root(request: Request):
     return templates.TemplateResponse("homepagedefinitiva.html", {"request": request})
 
-
-
 @app.get("/logout")
 async def logout():
     response = RedirectResponse(url="/")
@@ -67,8 +69,7 @@ async def logout():
 
 def decode_token(token: str):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         raise HTTPException(status_code=403, detail="Token non valido")
 
@@ -271,3 +272,9 @@ async def check_weather_data_exists(plot_id: int, giorno: str = Query(...), db: 
     except Exception as e:
         print(f"Errore durante la verifica dell'esistenza dei dati meteo per plot {plot_id}: {e}")
         return {"exists": False}
+
+# Route fallback SOLO per /marketplace e /marketplace/
+@app.get("/marketplace", include_in_schema=False)
+@app.get("/marketplace/", include_in_schema=False)
+async def serve_marketplace_index():
+    return FileResponse("marketplace_dist/index.html")

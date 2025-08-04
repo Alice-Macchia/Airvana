@@ -1,0 +1,410 @@
+/* 🌿 Airvana Marketplace - Custom Styles */
+
+/* Import fonts se necessario */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Variables per consistenza con il design esistente */
+:root {
+  --airvana-primary: #000000;      /* Verde principale */
+  --airvana-secondary: #000000;    /* Verde secondario */
+  --airvana-dark: #146c43;         /* Verde scuro */
+  --airvana-light: #000000;        /* Verde chiaro */
+  --airvana-success: #000000;      /* Success green */
+  --airvana-info: #0dcaf0;         /* Info blue */
+  --airvana-warning: #000000;      /* Warning yellow */
+  --airvana-danger: #dc3545;       /* Danger red */
+  --airvana-gray: #6c757d;         /* Gray */
+  --airvana-light-gray: #f8f9fa;   /* Light gray */
+  --airvana-dark-gray: #495057;    /* Dark gray */
+  --airvana-white: #ffffff;        /* White */
+  --airvana-black: #000000;        /* Black */
+  
+  /* Shadows */
+  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+  --shadow-hover: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.1);
+  
+  /* Border radius */
+  --border-radius: 0.375rem;
+  --border-radius-lg: 0.5rem;
+  --border-radius-xl: 0.75rem;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease-in-out;
+  --transition-normal: 0.3s ease-in-out;
+  --transition-slow: 0.5s ease-in-out;
+}
+
+/* Reset e base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  color: var(--airvana-dark-gray);
+  background-color: var(--airvana-white);
+}
+
+/* Marketplace Container */
+.marketplace-container {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+
+/* Header Styles */
+.marketplace-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 2rem 0;
+}
+
+.marketplace-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--airvana-primary);
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.marketplace-header .lead {
+  font-size: 1.25rem;
+  color: var(--airvana-gray);
+  margin-bottom: 2rem;
+}
+
+/* Alert personalizzato */
+.marketplace-info-alert {
+  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+  border: 1px solid #bee5eb;
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  margin: 2rem 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.marketplace-info-alert strong {
+  color: var(--airvana-dark);
+}
+
+/* Card Styles */
+.terreno-card {
+  background: var(--airvana-white);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+  border: none;
+  overflow: hidden;
+  height: 100%;
+}
+
+.terreno-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Card Image */
+.terreno-card .card-img-top {
+  height: 200px;
+  object-fit: cover;
+  transition: transform var(--transition-normal);
+}
+
+.terreno-card:hover .card-img-top {
+  transform: scale(1.05);
+}
+
+/* Badge Certificato */
+.certified-badge {
+  background: linear-gradient(135deg, var(--airvana-primary) 0%, var(--airvana-secondary) 100%);
+  color: var(--airvana-white);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Card Body */
+.terreno-card .card-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.terreno-card .card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--airvana-dark);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.terreno-card .card-text {
+  color: var(--airvana-gray);
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+  line-height: 1.6;
+}
+
+/* Statistiche CO₂ */
+.stats-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-box {
+  background: var(--airvana-light-gray);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid #e9ecef;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value.co2 {
+  color: var(--airvana-success);
+}
+
+.stat-value.price {
+  color: var(--airvana-primary);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--airvana-gray);
+  font-weight: 500;
+}
+
+/* Alert Impatto */
+.impact-alert {
+  background: linear-gradient(135deg, #d1e7dd 0%, #badbcc 100%);
+  border: 1px solid #badbcc;
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.impact-alert i {
+  color: var(--airvana-success);
+  margin-right: 0.5rem;
+}
+
+/* Button Styles */
+.add-to-cart-btn {
+  background: linear-gradient(135deg, var(--airvana-primary) 0%, var(--airvana-secondary) 100%);
+  border: none;
+  border-radius: var(--border-radius);
+  color: var(--airvana-white);
+  font-weight: 600;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+}
+
+.add-to-cart-btn:hover {
+  background: linear-gradient(135deg, var(--airvana-dark) 0%, var(--airvana-primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  color: var(--airvana-white);
+}
+
+.add-to-cart-btn:active {
+  transform: translateY(0);
+}
+
+/* Card Footer */
+.terreno-card .card-footer {
+  background: transparent;
+  border: none;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.footer-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.footer-info small {
+  color: var(--airvana-gray);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.footer-info i {
+  font-size: 0.875rem;
+}
+
+/* Footer informativo */
+.marketplace-footer {
+  background: var(--airvana-white);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-sm);
+  margin-top: 3rem;
+  padding: 2rem;
+}
+
+.marketplace-footer .card-title {
+  color: var(--airvana-primary);
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.feature-item {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.feature-item i {
+  font-size: 2.5rem;
+  color: var(--airvana-primary);
+  margin-bottom: 1rem;
+}
+
+.feature-item h6 {
+  font-weight: 600;
+  color: var(--airvana-dark);
+  margin-bottom: 0.5rem;
+}
+
+.feature-item small {
+  color: var(--airvana-gray);
+  line-height: 1.5;
+}
+
+/* Loading Spinner */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.spinner-border {
+  color: var(--airvana-primary);
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .marketplace-header h1 {
+    font-size: 2rem;
+  }
+  
+  .marketplace-header .lead {
+    font-size: 1.1rem;
+  }
+  
+  .stats-container {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .footer-info {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .feature-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .marketplace-container {
+    padding: 1rem 0;
+  }
+  
+  .terreno-card .card-body {
+    padding: 1rem;
+  }
+  
+  .add-to-cart-btn {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Animazioni */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.terreno-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.terreno-card:nth-child(1) { animation-delay: 0.1s; }
+.terreno-card:nth-child(2) { animation-delay: 0.2s; }
+.terreno-card:nth-child(3) { animation-delay: 0.3s; }
+.terreno-card:nth-child(4) { animation-delay: 0.4s; }
+.terreno-card:nth-child(5) { animation-delay: 0.5s; }
+.terreno-card:nth-child(6) { animation-delay: 0.6s; }
+
+/* Hover effects migliorati */
+.terreno-card:hover .certified-badge {
+  transform: scale(1.05);
+}
+
+.terreno-card:hover .stat-box {
+  background: var(--airvana-light);
+}
+
+/* Focus states per accessibilità */
+.add-to-cart-btn:focus {
+  outline: 2px solid var(--airvana-primary);
+  outline-offset: 2px;
+}
+
+.terreno-card:focus-within {
+  outline: 2px solid var(--airvana-primary);
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .add-to-cart-btn,
+  .certified-badge {
+    display: none;
+  }
+  
+  .terreno-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #dee2e6;
+  }
+} 
