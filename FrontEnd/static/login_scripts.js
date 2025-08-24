@@ -1,6 +1,3 @@
-// Test di caricamento JavaScript
-alert('JavaScript caricato correttamente!');
-
 // Variabile per lo stato di registrazione e per i dati di localizzazione
 let isRegistering = false;
 let currentView = 'login'; // 'login', 'registerChoice', 'registerUser', 'registerCompany'

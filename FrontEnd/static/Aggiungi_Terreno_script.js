@@ -836,29 +836,7 @@ async function saveData() {
         const terrenoToSave = { ...draftTerreno }; // Copia il terreno
         terreni.push(terrenoToSave); // Aggiungi all'array principale
         
-        // --- 3. Salva nel database usando l'endpoint /save-plot ---
-        showLoadingModal('Salvataggio del terreno nel database...');
-        
-        const plotData = {
-            name: terrenoToSave.name,
-            species: terrenoToSave.species.map(s => ({ name: s.name, quantity: parseFloat(s.quantity) }))
-        };
-        
-        const response = await fetch('/save-plot', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(plotData)
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Errore salvataggio terreno: ${response.status} - ${errorText}`);
-        }
-        
-        const result = await response.json();
-        console.log('Terreno salvato nel database:', result);
-        
-        // --- 4. Prepara i dati per il salvataggio delle coordinate ---
+        // --- 3. Prepara i dati per il salvataggio delle coordinate ---
         showLoadingModal('Salvataggio coordinate e meteo...');
         const centroidCoords = { lat: parseFloat(centroidMatch[1]), long: parseFloat(centroidMatch[2]) };
         const dataToSend = {
@@ -870,7 +848,7 @@ async function saveData() {
             created_at: new Date().toISOString()
         };
 
-        // --- 5. Salva le coordinate ---
+        // --- 4. Salva le coordinate ---
         const coordResponse = await fetch('/save-coordinates', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -884,7 +862,7 @@ async function saveData() {
         
         const coordResult = await coordResponse.json();
         
-        // --- 6. Scarica meteo e calcola ---
+        // --- 5. Scarica meteo e calcola ---
         showLoadingModal('Download dati meteo e calcoli...');
         const newTerrainId = coordResult.terrain_id;
         const meteoResponse = await fetch(`/get_open_meteo/${newTerrainId}`, { method: 'POST' });
@@ -894,12 +872,12 @@ async function saveData() {
         }
         await meteoResponse.json();
         
-        // --- 7. Pulisci la bozza e aggiorna l'UI ---
+        // --- 6. Pulisci la bozza e aggiorna l'UI ---
         draftTerreno = null; // Rimuovi il terreno dalla bozza
         renderTerreniList(); // Aggiorna la sidebar
         updateTerreniTable(); // Aggiorna la tabella del secondo menu
         
-        // --- 8. Se arriviamo qui, tutto è andato a buon fine ---
+        // --- 7. Se arriviamo qui, tutto è andato a buon fine ---
         isSuccess = true; // Imposta il flag di successo
 
     } catch (error) {
@@ -912,7 +890,7 @@ async function saveData() {
         hideLoadingModal();
     }
 
-    // --- 9. Mostra il messaggio di successo FINALE, solo se l'operazione è riuscita ---
+    // --- 8. Mostra il messaggio di successo FINALE, solo se l'operazione è riuscita ---
     if (isSuccess) {
         showCustomAlert('Terreno salvato con successo! Ora appare nella tabella "I MIEI TERRENI".');
 
