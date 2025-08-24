@@ -1,11 +1,16 @@
 // Variabili globali per la mappa
-let mainMap = null;
-let mainDrawnItems = new L.FeatureGroup();
+let mainMap;
+let drawnItems;
+let mainDrawnItems;
+let addressMarker; // Marker per l'indirizzo cercato
+let currentTerrenoId = null;
+let selectedTerrenoId = null;
+let draftTerreno = null;
 let drawControl = null;
 
 // Variabili globali per i dati dell'utente (da popolare al DOMContentLoaded)
-let currentUserId = null;
-let currentUserEmail = null;
+let currentUserId = 41; // Valore di default per il testing
+let currentUserEmail = "test@example.com"; // Valore di default per il testing
 
 const stilePoligono = {
     color: "#2e7d32",
@@ -24,8 +29,6 @@ const selectedStilePoligono = {
 };
 
 let terreni = [];      // Questo array conterrà tutti i terreni gestiti
-let selectedTerrenoId = null;
-let markerIndirizzo = null;
 let co2Chart;
 
 const ALL_SPECIES_NAMES = [
@@ -151,52 +154,96 @@ function stimaCO2(speciesArray, area_ha) {
 }
 
 function onMapPolygonCreated(e) {
-    if (!selectedTerrenoId) {
-        showCustomAlert("Seleziona o aggiungi un terreno dalla lista 'I miei terreni' prima di disegnare sulla mappa.");
-        mainDrawnItems.removeLayer(e.layer); // Rimuove il layer disegnato se nessun terreno è selezionato
+    console.log('onMapPolygonCreated chiamata con:', e);
+    console.log('draftTerreno:', draftTerreno);
+    console.log('selectedTerrenoId:', selectedTerrenoId);
+    
+    // Permetti il disegno se c'è un terreno in bozza O un terreno selezionato
+    if (!draftTerreno && !selectedTerrenoId) {
+        showCustomAlert("Aggiungi prima un nome per il terreno prima di disegnare sulla mappa.");
+        mainDrawnItems.removeLayer(e.layer); // Rimuove il layer disegnato se nessun terreno è attivo
         return;
     }
 
-    const selectedTerreno = terreni.find(t => t.id === selectedTerrenoId);
-    if (selectedTerreno) {
+    // Usa il terreno in bozza se presente, altrimenti cerca nell'array terreni
+    const activeTerreno = draftTerreno || terreni.find(t => t.id === selectedTerrenoId);
+    console.log('activeTerreno:', activeTerreno);
+    
+    if (activeTerreno) {
         // Se esiste già un layer per questo terreno, lo rimuove prima di aggiungere il nuovo
-        if (selectedTerreno.leafletLayer) {
-            mainDrawnItems.removeLayer(selectedTerreno.leafletLayer);
+        if (activeTerreno.leafletLayer) {
+            console.log('Rimuovo layer esistente per:', activeTerreno.name);
+            mainDrawnItems.removeLayer(activeTerreno.leafletLayer);
         }
-        selectedTerreno.leafletLayer = e.layer;
-        selectedTerreno.leafletLayer.setStyle(selectedStilePoligono); // Applica lo stile selezionato
-        mainDrawnItems.addLayer(selectedTerreno.leafletLayer);
+        
+        // Assegna il nuovo layer al terreno
+        activeTerreno.leafletLayer = e.layer;
+        console.log('Layer assegnato al terreno:', activeTerreno.name);
+        
+        // Applica lo stile selezionato (blu)
+        activeTerreno.leafletLayer.setStyle(selectedStilePoligono);
+        console.log('Stile applicato al layer');
+        
+        // Aggiungi il layer alla mappa
+        mainDrawnItems.addLayer(activeTerreno.leafletLayer);
+        console.log('Layer aggiunto a mainDrawnItems');
+        
+        // Forza il refresh della mappa
+        mainMap.invalidateSize();
 
         // Aggiorna le coordinate del terreno
-        selectedTerreno.coordinate = selectedTerreno.leafletLayer.getLatLngs()[0].map(latlng => ({
+        activeTerreno.coordinate = activeTerreno.leafletLayer.getLatLngs()[0].map(latlng => ({
             lat: latlng.lat,
             long: latlng.lng
         }));
+        console.log('Coordinate aggiornate:', activeTerreno.coordinate);
 
         // Calcola e aggiorna area e perimetro
-        selectedTerreno.area_ha = parseFloat(calcolaArea(selectedTerreno.leafletLayer));
-        selectedTerreno.perimetro_m = parseFloat(calcolaPerimetro(selectedTerreno.leafletLayer));
+        activeTerreno.area_ha = parseFloat(calcolaArea(activeTerreno.leafletLayer));
+        activeTerreno.perimetro_m = parseFloat(calcolaPerimetro(activeTerreno.leafletLayer));
+        console.log('Area e perimetro calcolati:', activeTerreno.area_ha, activeTerreno.perimetro_m);
 
         // Aggiorna i campi di input nel pannello dei dettagli
-        document.getElementById("area").value = `${selectedTerreno.area_ha} ha`;
-        document.getElementById("perimetro").value = `${selectedTerreno.perimetro_m} m`;
+        const areaInput = document.getElementById("area");
+        const perimetroInput = document.getElementById("perimetro");
+        if (areaInput) areaInput.value = `${activeTerreno.area_ha} ha`;
+        if (perimetroInput) perimetroInput.value = `${activeTerreno.perimetro_m} m`;
 
         // Mostra popup sulla mappa e messaggio all'utente
-        selectedTerreno.leafletLayer.bindPopup(`Area: ${selectedTerreno.area_ha} ha<br>Perimetro: ${selectedTerreno.perimetro_m} m`).openPopup();
-        showCustomAlert(`Poligono disegnato per "${selectedTerreno.name}". Clicca 'Salva dati terreno' per aggiornare.`);
-        document.getElementById('coordinates-section').style.display = 'flex'; // Mostra sezione coordinate
-        document.getElementById('polygon-vertices-section').style.display = 'block'; // Mostra sezione vertici
+        activeTerreno.leafletLayer.bindPopup(`Area: ${activeTerreno.area_ha} ha<br>Perimetro: ${activeTerreno.perimetro_m} m`).openPopup();
+        
+        // Messaggio diverso per terreni in bozza vs salvati
+        if (draftTerreno) {
+            showCustomAlert(`Poligono disegnato per il terreno in bozza "${activeTerreno.name}". Ora puoi aggiungere specie e cliccare 'Salva dati terreno'.`);
+        } else {
+            showCustomAlert(`Poligono disegnato per "${activeTerreno.name}". Clicca 'Salva dati terreno' per aggiornare.`);
+        }
+        
+        // Mostra le sezioni coordinate e vertici
+        const coordinatesSection = document.getElementById('coordinates-section');
+        const polygonVerticesSection = document.getElementById('polygon-vertices-section');
+        if (coordinatesSection) coordinatesSection.style.display = 'flex';
+        if (polygonVerticesSection) polygonVerticesSection.style.display = 'block';
 
         // Aggiorna indirizzo, coordinate del centroide e vertici
         updateAddressAndCoordinates();
-        displayPolygonVertices(selectedTerreno.coordinate);
+        displayPolygonVertices(activeTerreno.coordinate);
         updateDashboard(); // Aggiorna il dashboard generale
+        
+        console.log('Poligono creato con successo per:', activeTerreno.name);
+    } else {
+        console.error('Nessun terreno attivo trovato');
     }
 }
 
 function onMapLayerEdited(e) {
     e.layers.eachLayer(layer => {
-        const terreno = terreni.find(t => t.leafletLayer && L.Util.stamp(t.leafletLayer) === L.Util.stamp(layer));
+        // Cerca il terreno sia nell'array terreni che nella bozza
+        let terreno = terreni.find(t => t.leafletLayer && L.Util.stamp(t.leafletLayer) === L.Util.stamp(layer));
+        if (!terreno && draftTerreno && draftTerreno.leafletLayer && L.Util.stamp(draftTerreno.leafletLayer) === L.Util.stamp(layer)) {
+            terreno = draftTerreno;
+        }
+        
         if (terreno) {
             // Aggiorna le coordinate del terreno
             terreno.coordinate = layer.getLatLngs()[0].map(latlng => ({
@@ -208,15 +255,22 @@ function onMapLayerEdited(e) {
             terreno.area_ha = parseFloat(calcolaArea(layer));
             terreno.perimetro_m = parseFloat(calcolaPerimetro(layer));
 
-            // Se il terreno modificato è quello attualmente selezionato, aggiorna i campi di input
-            if (selectedTerrenoId === terreno.id) {
+            // Se il terreno modificato è quello attualmente attivo, aggiorna i campi di input
+            if ((draftTerreno && draftTerreno.id === terreno.id) || selectedTerrenoId === terreno.id) {
                 document.getElementById("area").value = `${terreno.area_ha} ha`;
                 document.getElementById("perimetro").value = `${terreno.perimetro_m} m`;
             }
 
             // Aggiorna popup sulla mappa e messaggio all'utente
             layer.bindPopup(`Area: ${terreno.area_ha} ha<br>Perimetro: ${terreno.perimetro_m} m`).openPopup();
-            showCustomAlert(`Poligono per "${terreno.name}" modificato. Clicca 'Salva dati terreno' per aggiornare.`);
+            
+            // Messaggio diverso per terreni in bozza vs salvati
+            if (draftTerreno && draftTerreno.id === terreno.id) {
+                showCustomAlert(`Poligono per il terreno in bozza "${terreno.name}" modificato. Clicca 'Salva dati terreno' per salvare definitivamente.`);
+            } else {
+                showCustomAlert(`Poligono per "${terreno.name}" modificato. Clicca 'Salva dati terreno' per aggiornare.`);
+            }
+            
             updateAddressAndCoordinates(); // Aggiorna centroide/indirizzo
             displayPolygonVertices(terreno.coordinate); // Aggiorna visualizzazione vertici
             updateDashboard(); // Aggiorna il dashboard generale
@@ -226,7 +280,12 @@ function onMapLayerEdited(e) {
 
 function onMapLayerDeleted(e) {
     e.layers.eachLayer(layer => {
-        const terreno = terreni.find(t => t.leafletLayer && L.Util.stamp(t.leafletLayer) === L.Util.stamp(layer));
+        // Cerca il terreno sia nell'array terreni che nella bozza
+        let terreno = terreni.find(t => t.leafletLayer && L.Util.stamp(t.leafletLayer) === L.Util.stamp(layer));
+        if (!terreno && draftTerreno && draftTerreno.leafletLayer && L.Util.stamp(draftTerreno.leafletLayer) === L.Util.stamp(layer)) {
+            terreno = draftTerreno;
+        }
+        
         if (terreno) {
             // Rimuove il riferimento al layer e resetta i dati geometrici
             terreno.leafletLayer = null;
@@ -234,12 +293,19 @@ function onMapLayerDeleted(e) {
             terreno.area_ha = 0;
             terreno.perimetro_m = 0;
 
-            // Se il terreno eliminato era quello selezionato, resetta i campi di input
-            if (selectedTerrenoId === terreno.id) {
+            // Se il terreno eliminato era quello attualmente attivo, resetta i campi di input
+            if ((draftTerreno && draftTerreno.id === terreno.id) || selectedTerrenoId === terreno.id) {
                 document.getElementById("area").value = "Disegna sulla mappa";
                 document.getElementById("perimetro").value = "Disegna sulla mappa";
             }
-            showCustomAlert(`Poligono per "${terreno.name}" eliminato. Clicca 'Salva dati terreno' per aggiornare.`);
+            
+            // Messaggio diverso per terreni in bozza vs salvati
+            if (draftTerreno && draftTerreno.id === terreno.id) {
+                showCustomAlert(`Poligono per il terreno in bozza "${terreno.name}" eliminato. Clicca 'Salva dati terreno' per salvare definitivamente.`);
+            } else {
+                showCustomAlert(`Poligono per "${terreno.name}" eliminato. Clicca 'Salva dati terreno' per aggiornare.`);
+            }
+            
             // Resetta visualizzazione coordinate e vertici
             document.getElementById("centroid-display").textContent = "Centroide: N/A";
             document.getElementById("vertices-display").innerHTML = "Nessun poligono selezionato o disegnato.";
@@ -275,66 +341,66 @@ function displayPolygonVertices(coordinates) {
 
 
 function renderTerreniList() {
-    const terrenoListUl = document.getElementById('terreno-list');
-    terrenoListUl.innerHTML = ''; // Pulisce la lista esistente
-
-    if (terreni.length === 0) {
-        terrenoListUl.innerHTML = '<li style="text-align: center; color: var(--text-color); opacity: 0.7;">Nessun terreno aggiunto.</li>';
-        // Nasconde i pannelli dei dettagli se non ci sono terreni
+    console.log('renderTerreniList chiamata - mostra solo il terreno in bozza nella sidebar');
+    
+    const terrenoList = document.getElementById('terreno-list');
+    if (!terrenoList) {
+        console.log('Elemento terreno-list non trovato');
+        return;
+    }
+    
+    // Pulisce la lista esistente
+    terrenoList.innerHTML = '';
+    
+    // Mostra solo il terreno in bozza (se presente)
+    if (draftTerreno) {
+        const li = document.createElement('li');
+        li.id = `terreno-item-${draftTerreno.id}`;
+        li.className = 'terreno-item current';
+        
+        // Mostra il nome del terreno in bozza con icone per modifica/elimina
+        li.innerHTML = `
+            <span class="terreno-name">${draftTerreno.name}</span>
+            <div class="terreno-actions">
+                <button onclick="editDraftTerrenoName()" class="action-button edit" title="Modifica nome">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <path d="M7 17l3 3 7-7-3-3-7 7z"/>
+                        <path d="M14 7l3 3"/>
+                        <path d="M17 3l4 4"/>
+                        <path d="M21 7l-4-4"/>
+                    </svg>
+                </button>
+                <button onclick="deleteDraftTerreno()" class="action-button delete" title="Elimina">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M3 6h18"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        terrenoList.appendChild(li);
+    }
+    
+    // Nasconde i pannelli dei dettagli se non ci sono terreni in bozza
+    if (!draftTerreno) {
         document.getElementById('selected-terrain-details').style.display = 'none';
         document.getElementById('coordinates-section').style.display = 'none';
         document.getElementById('polygon-vertices-section').style.display = 'none';
-        mainDrawnItems.clearLayers(); // Pulisce anche i layer dalla mappa
+        // NON pulire i layer dalla mappa qui - permette al poligono di rimanere visibile
+        // if (mainDrawnItems) {
+        //     mainDrawnItems.clearLayers(); // Pulisce anche i layer dalla mappa
+        // }
         return;
     }
 
-    terreni.forEach(t => {
-        const li = document.createElement('li');
-        li.id = `terreno-item-${t.id}`;
-        li.classList.add('terreno-item');
-        if (t.id === selectedTerrenoId) { // Evidenzia il terreno selezionato
-            li.classList.add('selected');
-        }
-
-        const terrainNameSpan = document.createElement('span');
-        terrainNameSpan.classList.add('terreno-name');
-        terrainNameSpan.textContent = t.name;
-
-        const actionsDiv = document.createElement('div');
-        actionsDiv.classList.add('terreno-actions');
-
-        // Bottone Modifica Nome
-        const editButton = document.createElement('button');
-        editButton.innerHTML = '<i class="fas fa-edit"></i>';
-        editButton.title = 'Modifica Nome';
-        editButton.onclick = (e) => {
-            e.stopPropagation(); // Impedisce che il click si propaghi al li e selezioni il terreno
-            editTerrenoName(t.id);
-        };
-        actionsDiv.appendChild(editButton);
-
-        // Bottone Elimina Terreno
-        const deleteButton = document.createElement('button');
-        deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
-        deleteButton.title = 'Elimina Terreno';
-        deleteButton.onclick = (e) => {
-            e.stopPropagation(); // Impedisce che il click si propaghi
-            deleteTerreno(t.id);
-        };
-
-        actionsDiv.appendChild(deleteButton);
-        li.appendChild(terrainNameSpan);
-        li.appendChild(actionsDiv);
-
-        li.onclick = () => selectTerreno(t.id); // Seleziona il terreno al click sul li
-
-        terrenoListUl.appendChild(li);
-    });
-    // Assicura che i pannelli siano visibili se ci sono terreni
+    // Mostra i pannelli solo se c'è un terreno in bozza
     document.getElementById('selected-terrain-details').style.display = 'flex';
     document.getElementById('coordinates-section').style.display = 'flex';
-    const selectedTerreno = terreni.find(t => t.id === selectedTerrenoId);
-    if (selectedTerreno && selectedTerreno.leafletLayer) {
+    
+    if (draftTerreno.leafletLayer) {
         document.getElementById('polygon-vertices-section').style.display = 'block';
     } else {
         document.getElementById('polygon-vertices-section').style.display = 'none';
@@ -357,8 +423,9 @@ function addTerreno() {
         newName = `${originalName} (${counter})`;
         counter++;
     }
-    //-------------------------------------------------------------//
-    const newTerreno = {
+    
+    // Crea il terreno in bozza (non ancora salvato)
+    draftTerreno = {
         id: Date.now(), // ID univoco basato sul timestamp
         name: newName,
         species: [],
@@ -369,15 +436,39 @@ function addTerreno() {
         leafletLayer: null // Nessun layer sulla mappa all'inizio
     };
 
-    terreni.push(newTerreno);
-    input.value = ``; // Pulisce l'input
-    renderTerreniList(); // Aggiorna la lista dei terreni
-    selectTerreno(newTerreno.id); // Seleziona automaticamente il nuovo terreno
-    clearAddressMarker(); // Pulisce eventuali marker di indirizzo precedenti
-    showCustomAlert(`Terreno "${newName}" aggiunto. Ora puoi disegnarlo sulla mappa e aggiungere le specie.`);
+    input.value = ''; // Pulisce l'input
+    
+    // Aggiorna i campi di input e mostra i pannelli dei dettagli
+    document.getElementById("current-terrain-name").textContent = draftTerreno.name;
+    document.getElementById("area").value = 'Disegna sulla mappa';
+    document.getElementById("perimetro").value = 'Disegna sulla mappa';
+    
+    // Mostra i pannelli dei dettagli
+    document.getElementById('selected-terrain-details').style.display = 'flex';
+    document.getElementById('coordinates-section').style.display = 'flex';
+    document.getElementById('polygon-vertices-section').style.display = 'none';
+    
+    // Pulisce la lista delle specie e gli input
+    renderSpeciesListForSelectedTerrain();
+    document.getElementById("new-species-name-input").value = "";
+    document.getElementById("new-species-quantity-input").value = "";
+    
+    // Aggiorna solo la sidebar per mostrare il terreno in bozza
+    renderTerreniList();
+    
+    // NON aggiorna la tabella del secondo menu (solo dopo il salvataggio)
+    // NON salva nel database (solo dopo "Salva dati terreno")
+    
+    showCustomAlert(`Terreno "${newName}" aggiunto in bozza. Ora puoi disegnarlo sulla mappa e aggiungere le specie. Clicca "Salva dati terreno" per salvarlo definitivamente.`);
 }
 
 function selectTerreno(id) {
+    // Se c'è un terreno in bozza, non permettere la selezione di altri terreni
+    if (draftTerreno) {
+        showCustomAlert("Completa prima il terreno in bozza. Clicca 'Salva dati terreno' o elimina il terreno in bozza.");
+        return;
+    }
+    
     // Deseleziona il terreno precedentemente selezionato (stile e classe CSS)
     if (selectedTerrenoId) {
         const prevSelectedTerreno = terreni.find(t => t.id === selectedTerrenoId);
@@ -440,12 +531,15 @@ function editTerrenoName(id) {
     showCustomPrompt(`Modifica nome per "${terreno.name}":`, terreno.name, (newName) => {
         if (newName !== null && newName.trim() !== '' && newName.trim() !== terreno.name) {
             terreno.name = newName.trim();
-            renderTerreniList(); // Aggiorna la lista
             if (selectedTerrenoId === id) { // Se il terreno modificato è quello selezionato
                 document.getElementById("current-terrain-name").textContent = terreno.name; // Aggiorna il nome nel pannello
             }
+            renderTerreniList(); // Aggiorna la sidebar del primo menu
             updateTerreniTable(); // Aggiorna la tabella riepilogativa
             updateAllLayerPopups(); // Aggiorna i popup sulla mappa
+            
+            // Salva nel database
+            saveTerreniToDatabase();
         }
     });
 }
@@ -480,11 +574,17 @@ function deleteTerreno(id) {
                     document.getElementById("perimetro").value = "Disegna sulla mappa";
                     document.getElementById("vertices-display").innerHTML = "Nessun poligono selezionato o disegnato.";
                     renderSpeciesListForSelectedTerrain(); // Pulisce la lista specie
-                    mainDrawnItems.clearLayers(); // Pulisce tutti i layer dalla mappa
+                    if (mainDrawnItems) {
+                        mainDrawnItems.clearLayers(); // Pulisce tutti i layer dalla mappa
+                    }
                 }
             }
-            renderTerreniList(); // Aggiorna la lista dei terreni
+            renderTerreniList(); // Aggiorna la sidebar del primo menu
+            updateTerreniTable(); // Aggiorna la tabella
             updateDashboard(); // Aggiorna il dashboard
+            
+            // Salva nel database
+            saveTerreniToDatabase();
 
             // Pulisce la ricerca indirizzo se non ci sono terreni o nessuno è selezionato
             if (terreni.length === 0 || selectedTerrenoId === null) {
@@ -497,7 +597,9 @@ function deleteTerreno(id) {
 function renderSpeciesListForSelectedTerrain() {
     const speciesListUl = document.getElementById('species-list-for-selected-terrain');
     speciesListUl.innerHTML = ''; // Pulisce la lista precedente
-    const selectedTerreno = terreni.find(t => t.id === selectedTerrenoId);
+    
+    // Usa il terreno in bozza se presente, altrimenti cerca nell'array terreni
+    const selectedTerreno = draftTerreno || terreni.find(t => t.id === selectedTerrenoId);
 
     if (!selectedTerreno || selectedTerreno.species.length === 0) {
         speciesListUl.innerHTML = '<li style="text-align: center; color: var(--text-color); opacity: 0.7;">Nessuna specie aggiunta.</li>';
@@ -560,12 +662,13 @@ function addSpeciesToSelectedTerrain() {
 
 
 
-    if (!selectedTerrenoId) {
+    if (!selectedTerrenoId && !draftTerreno) {
         showCustomAlert("Seleziona un terreno prima di aggiungere specie.");
         return;
     }
 
-    const selectedTerreno = terreni.find(t => t.id === selectedTerrenoId);
+    // Usa il terreno in bozza se presente, altrimenti cerca nell'array terreni
+    const selectedTerreno = draftTerreno || terreni.find(t => t.id === selectedTerrenoId);
     if (selectedTerreno) {
         // Usa il nome con la formattazione corretta dalla lista ALL_SPECIES_NAMES
         selectedTerreno.species.push({ name: correctlyCasedName, quantity: quantityValue });
@@ -577,15 +680,33 @@ function addSpeciesToSelectedTerrain() {
             suggestionsContainer.style.display = 'none';
             suggestionsContainer.innerHTML = '';
         }
-        renderSpeciesListForSelectedTerrain(); // Aggiorna la lista delle specie
+        
+        // Aggiorna la UI
+        if (draftTerreno) {
+            // Se è un terreno in bozza, aggiorna solo la sidebar
+            renderTerreniList();
+            // Aggiorna anche la lista delle specie per mostrare la nuova specie aggiunta
+            renderSpeciesListForSelectedTerrain();
+        } else {
+            // Se è un terreno salvato, aggiorna la lista delle specie
+            renderSpeciesListForSelectedTerrain();
+        }
+        
         updateDashboard();
-        showCustomAlert(`Specie "${correctlyCasedName}" aggiunta al terreno "${selectedTerreno.name}". Ricorda di cliccare 'Salva dati terreno' per salvare le modifiche.`);
+        
+        // Messaggio diverso per terreni in bozza vs salvati
+        if (draftTerreno) {
+            showCustomAlert(`Specie "${correctlyCasedName}" aggiunta al terreno in bozza "${selectedTerreno.name}". Clicca "Salva dati terreno" per salvare definitivamente.`);
+        } else {
+            showCustomAlert(`Specie "${correctlyCasedName}" aggiunta al terreno "${selectedTerreno.name}". Ricorda di cliccare 'Salva dati terreno' per salvare le modifiche.`);
+        }
     }
 }
 // --- FINE MODIFICA ---
 
 function editSpeciesInSelectedTerrain(index) {
-    const selectedTerreno = terreni.find(t => t.id === selectedTerrenoId);
+    // Usa il terreno in bozza se presente, altrimenti cerca nell'array terreni
+    const selectedTerreno = draftTerreno || terreni.find(t => t.id === selectedTerrenoId);
     if (!selectedTerreno || !selectedTerreno.species[index]) return;
 
     const currentSpecies = selectedTerreno.species[index];
@@ -612,9 +733,26 @@ function editSpeciesInSelectedTerrain(index) {
 
             if (nameToUse.trim() !== '') {
                 selectedTerreno.species[index] = { name: nameToUse, quantity: newQuantity.trim() };
-                renderSpeciesListForSelectedTerrain();
+                
+                // Aggiorna la UI
+                if (draftTerreno) {
+                    // Se è un terreno in bozza, aggiorna solo la sidebar
+                    renderTerreniList();
+                    // Aggiorna anche la lista delle specie per mostrare la nuova specie aggiunta
+                    renderSpeciesListForSelectedTerrain();
+                } else {
+                    // Se è un terreno salvato, aggiorna la lista delle specie
+                    renderSpeciesListForSelectedTerrain();
+                }
+                
                 updateDashboard();
-                showCustomAlert(`Specie modificata per "${selectedTerreno.name}". Ricorda di cliccare 'Salva dati terreno'.`);
+                
+                // Messaggio diverso per terreni in bozza vs salvati
+                if (draftTerreno) {
+                    showCustomAlert(`Specie modificata per il terreno in bozza "${selectedTerreno.name}". Clicca "Salva dati terreno" per salvare definitivamente.`);
+                } else {
+                    showCustomAlert(`Specie modificata per "${selectedTerreno.name}". Ricorda di cliccare 'Salva dati terreno'.`);
+                }
             } else {
                 showCustomAlert("Il nome della specie non può essere vuoto."); // Non dovrebbe succedere con la logica sopra
             }
@@ -626,11 +764,28 @@ function deleteSpeciesFromSelectedTerrain(index) {
     showCustomConfirm('Sei sicuro di voler eliminare questa specie?', (confirmed) => {
         if (!confirmed) return;
 
-        const selectedTerreno = terreni.find(t => t.id === selectedTerrenoId);
+        // Usa il terreno in bozza se presente, altrimenti cerca nell'array terreni
+        const selectedTerreno = draftTerreno || terreni.find(t => t.id === selectedTerrenoId);
         if (selectedTerreno && selectedTerreno.species[index]) {
-            selectedTerreno.species.splice(index, 1); // Rimuove la specie dall'array
-            renderSpeciesListForSelectedTerrain(); // Aggiorna la lista
-            showCustomAlert(`Specie eliminata dal terreno "${selectedTerreno.name}". Ricorda di cliccare 'Salva dati terreno'.`);
+            selectedTerreno.species.splice(index, 1);
+            
+            // Aggiorna la UI
+            if (draftTerreno) {
+                // Se è un terreno in bozza, aggiorna solo la sidebar
+                renderTerreniList();
+                // Aggiorna anche la lista delle specie per mostrare la nuova specie aggiunta
+                renderSpeciesListForSelectedTerrain();
+            } else {
+                // Se è un terreno salvato, aggiorna la lista delle specie
+                renderSpeciesListForSelectedTerrain();
+            }
+            
+            // Messaggio diverso per terreni in bozza vs salvati
+            if (draftTerreno) {
+                showCustomAlert(`Specie eliminata dal terreno in bozza "${selectedTerreno.name}". Clicca "Salva dati terreno" per salvare definitivamente.`);
+            } else {
+                showCustomAlert(`Specie eliminata dal terreno "${selectedTerreno.name}". Ricorda di cliccare 'Salva dati terreno'.`);
+            }
         }
     });
 }
@@ -640,55 +795,98 @@ function deleteSpeciesFromSelectedTerrain(index) {
 // In Aggiungi_Terreno_script.js
 
 async function saveData() {
+    console.log('saveData chiamata');
+    console.log('draftTerreno:', draftTerreno);
+    console.log('currentUserId:', currentUserId);
+    
     // Mostra SUBITO il modal di caricamento
     showLoadingModal('Verifica dei dati in corso...');
     let isSuccess = false; // Variabile per tracciare il successo dell'operazione
 
     try {
         // --- 1. Controlli di validazione ---
-        if (!selectedTerrenoId) {
-            throw new Error("Nessun terreno selezionato per il salvataggio.");
+        if (!draftTerreno) {
+            throw new Error("Nessun terreno in bozza da salvare.");
         }
-        const terreno = terreni.find(t => t.id === selectedTerrenoId);
-        if (!terreno) {
-             throw new Error("Errore: il terreno selezionato non è stato trovato.");
-        }
-        if (!terreno.coordinate || terreno.coordinate.length < 3) {
+        
+        console.log('Terreno in bozza trovato:', draftTerreno.name);
+        
+        if (!draftTerreno.coordinate || draftTerreno.coordinate.length < 3) {
             throw new Error("Disegna un poligono valido sulla mappa prima di salvare.");
         }
-        const centroidDisplay = document.getElementById("centroid-display").textContent;
-        const centroidMatch = centroidDisplay.match(/Lat ([\d.-]+), Lon ([\d.-]+)/);
+        
+        console.log('Coordinate valide trovate:', draftTerreno.coordinate.length);
+        
+        const centroidDisplay = document.getElementById("centroid-display");
+        if (!centroidDisplay) {
+            throw new Error("Elemento centroid-display non trovato.");
+        }
+        
+        const centroidText = centroidDisplay.textContent;
+        console.log('Testo centroid:', centroidText);
+        
+        const centroidMatch = centroidText.match(/Lat ([\d.-]+), Lon ([\d.-]+)/);
         if (!centroidMatch) {
             throw new Error("Impossibile salvare. Il centroide non è disponibile.");
         }
+        
+        console.log('Centroide estratto:', centroidMatch[1], centroidMatch[2]);
 
-        // --- 2. Preparazione dei dati ---
-        showLoadingModal('Salvataggio del terreno...');
-        const centroidCoords = { lat: parseFloat(centroidMatch[1]), long: parseFloat(centroidMatch[2]) };
-        const dataToSend = {
-            idutente: parseInt(currentUserId),
-            terrainName: terreno.name,
-            species: terreno.species.map(s => ({ name: s.name, quantity: parseFloat(s.quantity) })),
-            centroid: centroidCoords,
-            vertices: terreno.coordinate.map(v => ({ lat: v.lat, long: v.long })),
-            created_at: new Date().toISOString()
+        // --- 2. Sposta il terreno dalla bozza all'array principale ---
+        const terrenoToSave = { ...draftTerreno }; // Copia il terreno
+        terreni.push(terrenoToSave); // Aggiungi all'array principale
+        
+        // --- 3. Salva nel database usando l'endpoint /save-plot ---
+        showLoadingModal('Salvataggio del terreno nel database...');
+        
+        const plotData = {
+            name: terrenoToSave.name,
+            species: terrenoToSave.species.map(s => ({ name: s.name, quantity: parseFloat(s.quantity) }))
         };
-
-        // --- 3. Prima Chiamata: Salva il terreno ---
-        const response = await fetch('/save-coordinates', {
+        
+        const response = await fetch('/save-plot', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dataToSend)
+            body: JSON.stringify(plotData)
         });
+        
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Errore salvataggio terreno: ${response.status} - ${errorText}`);
         }
-        const result = await response.json();
         
-        // --- 4. Seconda Chiamata: Scarica meteo e calcola ---
+        const result = await response.json();
+        console.log('Terreno salvato nel database:', result);
+        
+        // --- 4. Prepara i dati per il salvataggio delle coordinate ---
+        showLoadingModal('Salvataggio coordinate e meteo...');
+        const centroidCoords = { lat: parseFloat(centroidMatch[1]), long: parseFloat(centroidMatch[2]) };
+        const dataToSend = {
+            idutente: parseInt(currentUserId),
+            terrainName: terrenoToSave.name,
+            species: terrenoToSave.species.map(s => ({ name: s.name, quantity: parseFloat(s.quantity) })),
+            centroid: centroidCoords,
+            vertices: terrenoToSave.coordinate.map(v => ({ lat: v.lat, long: v.long })),
+            created_at: new Date().toISOString()
+        };
+
+        // --- 5. Salva le coordinate ---
+        const coordResponse = await fetch('/save-coordinates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToSend)
+        });
+        
+        if (!coordResponse.ok) {
+            const errorText = await coordResponse.text();
+            throw new Error(`Errore salvataggio coordinate: ${coordResponse.status} - ${errorText}`);
+        }
+        
+        const coordResult = await coordResponse.json();
+        
+        // --- 6. Scarica meteo e calcola ---
         showLoadingModal('Download dati meteo e calcoli...');
-        const newTerrainId = result.terrain_id;
+        const newTerrainId = coordResult.terrain_id;
         const meteoResponse = await fetch(`/get_open_meteo/${newTerrainId}`, { method: 'POST' });
         if (!meteoResponse.ok) {
             const meteoErrorText = await meteoResponse.text();
@@ -696,7 +894,12 @@ async function saveData() {
         }
         await meteoResponse.json();
         
-        // --- 5. Se arriviamo qui, tutto è andato a buon fine ---
+        // --- 7. Pulisci la bozza e aggiorna l'UI ---
+        draftTerreno = null; // Rimuovi il terreno dalla bozza
+        renderTerreniList(); // Aggiorna la sidebar
+        updateTerreniTable(); // Aggiorna la tabella del secondo menu
+        
+        // --- 8. Se arriviamo qui, tutto è andato a buon fine ---
         isSuccess = true; // Imposta il flag di successo
 
     } catch (error) {
@@ -709,9 +912,9 @@ async function saveData() {
         hideLoadingModal();
     }
 
-    // --- 6. Mostra il messaggio di successo FINALE, solo se l'operazione è riuscita ---
+    // --- 9. Mostra il messaggio di successo FINALE, solo se l'operazione è riuscita ---
     if (isSuccess) {
-        showCustomAlert('Salvataggio e calcoli iniziali completati con successo!');
+        showCustomAlert('Terreno salvato con successo! Ora appare nella tabella "I MIEI TERRENI".');
 
         // Aggiungi il link per andare alla dashboard
         const resultContainer = document.getElementById('save-result-container');
@@ -727,9 +930,9 @@ async function saveData() {
 }
 
 function clearAddressMarker() {
-    if (markerIndirizzo) {
-        mainMap.removeLayer(markerIndirizzo);
-        markerIndirizzo = null;
+    if (addressMarker) {
+        mainMap.removeLayer(addressMarker);
+        addressMarker = null;
     }
 }
 
@@ -772,22 +975,35 @@ function goToLocationSidebar() {
 }
 
 function calculateAndDisplayCentroid(polygonLayer) {
+    console.log('calculateAndDisplayCentroid chiamata con:', polygonLayer);
+    
     if (typeof turf === 'undefined') {
         console.error("Errore calculateAndDisplayCentroid: La libreria Turf.js non è caricata.");
-        document.getElementById("centroid-display").textContent = "Centroide: Errore (Turf.js non caricato).";
+        const centroidDisplay = document.getElementById("centroid-display");
+        if (centroidDisplay) {
+            centroidDisplay.textContent = "Centroide: Errore (Turf.js non caricato).";
+        }
         return;
     }
 
     if (!polygonLayer || !polygonLayer.getLatLngs) {
         console.warn("calculateAndDisplayCentroid: Nessun layer poligono valido fornito.");
-        document.getElementById("centroid-display").textContent = "Centroide: N/A";
+        const centroidDisplay = document.getElementById("centroid-display");
+        if (centroidDisplay) {
+            centroidDisplay.textContent = "Centroide: N/A";
+        }
         return;
     }
 
     const latlngsOuterRing = polygonLayer.getLatLngs()[0]; // Prende l'anello esterno del poligono
+    console.log('Coordinate del poligono:', latlngsOuterRing);
+    
     if (!Array.isArray(latlngsOuterRing) || latlngsOuterRing.length < 3) { // Un poligono valido ha almeno 3 vertici
          console.warn("calculateAndDisplayCentroid: Coordinate del poligono insufficienti.");
-         document.getElementById("centroid-display").textContent = "Centroide: N/A (poligono non valido).";
+         const centroidDisplay = document.getElementById("centroid-display");
+         if (centroidDisplay) {
+             centroidDisplay.textContent = "Centroide: N/A (poligono non valido).";
+         }
          return;
     }
 
@@ -796,10 +1012,15 @@ function calculateAndDisplayCentroid(polygonLayer) {
     if (!latlngsOuterRing[0].equals(latlngsOuterRing[latlngsOuterRing.length - 1])) {
         geoJsonCoords.push(geoJsonCoords[0]); // Chiude il poligono se non lo è
     }
+    
+    console.log('Coordinate GeoJSON:', geoJsonCoords);
 
     if (geoJsonCoords.length < 4) { // Dopo la chiusura, un poligono valido ha almeno 4 coordinate (3 uniche + 1 ripetuta)
         console.warn("calculateAndDisplayCentroid: Poligono non valido anche dopo il tentativo di chiusura.");
-        document.getElementById("centroid-display").textContent = "Centroide: N/A (poligono troppo piccolo).";
+        const centroidDisplay = document.getElementById("centroid-display");
+        if (centroidDisplay) {
+            centroidDisplay.textContent = "Centroide: N/A (poligono troppo piccolo).";
+        }
         return;
     }
 
@@ -809,15 +1030,35 @@ function calculateAndDisplayCentroid(polygonLayer) {
         const centroidCoords = centroid.geometry.coordinates;
         const centroidLat = centroidCoords[1].toFixed(6); // Latitudine
         const centroidLon = centroidCoords[0].toFixed(6); // Longitudine
-        document.getElementById("centroid-display").textContent = `Centroide: Lat ${centroidLat}, Lon ${centroidLon}`;
+        
+        console.log('Centroide calcolato:', centroidLat, centroidLon);
+        
+        const centroidDisplay = document.getElementById("centroid-display");
+        if (centroidDisplay) {
+            centroidDisplay.textContent = `Centroide: Lat ${centroidLat}, Lon ${centroidLon}`;
+            console.log('Elemento centroid-display aggiornato con:', centroidDisplay.textContent);
+        } else {
+            console.error('Elemento centroid-display non trovato!');
+        }
     } catch (error) {
         console.error("calculateAndDisplayCentroid: Errore critico nel calcolo del centroide:", error);
-        document.getElementById("centroid-display").textContent = "Centroide: Errore nel calcolo (vedi console).";
+        const centroidDisplay = document.getElementById("centroid-display");
+        if (centroidDisplay) {
+            centroidDisplay.textContent = "Centroide: Errore nel calcolo (vedi console).";
+        }
     }
 }
 //
 function updateAddressAndCoordinates() {
-    const terreno = terreni.find(t => t.id === selectedTerrenoId);
+    // Prima controlla se c'è un terreno in bozza
+    let terreno = null;
+    if (draftTerreno && draftTerreno.leafletLayer) {
+        terreno = draftTerreno;
+    } else {
+        // Altrimenti cerca nei terreni salvati
+        terreno = terreni.find(t => t.id === selectedTerrenoId);
+    }
+    
     if (terreno && terreno.leafletLayer) {
         const polygon = terreno.leafletLayer;
         calculateAndDisplayCentroid(polygon); // Calcola e mostra il centroide
@@ -849,8 +1090,11 @@ function updateAddressAndCoordinates() {
             console.warn("Turf.js non disponibile o poligono non valido per geocodifica inversa.");
         }
     } else {
-        // Se non c'è un terreno selezionato o non ha un layer, resetta il display del centroide
-        document.getElementById("centroid-display").textContent = "Centroide: N/A";
+        // Se non c'è un terreno attivo o non ha un layer, resetta il display del centroide
+        const centroidDisplay = document.getElementById("centroid-display");
+        if (centroidDisplay) {
+            centroidDisplay.textContent = "Centroide: N/A";
+        }
     }
 }
 
@@ -865,7 +1109,22 @@ async function reverseGeocode(lat, lng) {
 
 
 function updateAllMapLayers() {
+    // Controllo di sicurezza: verifica che mainDrawnItems sia inizializzato
+    if (!mainDrawnItems) {
+        console.warn('mainDrawnItems non è ancora inizializzato, saltando updateAllMapLayers');
+        return;
+    }
+    
     mainDrawnItems.clearLayers(); // Pulisce tutti i layer disegnati
+    
+    // Prima aggiungi il layer del terreno in bozza (se presente)
+    if (draftTerreno && draftTerreno.leafletLayer) {
+        console.log('Aggiungendo layer del draftTerreno alla mappa:', draftTerreno.name);
+        draftTerreno.leafletLayer.setStyle(selectedStilePoligono); // Stile blu per il terreno in bozza
+        mainDrawnItems.addLayer(draftTerreno.leafletLayer);
+    }
+    
+    // Poi aggiungi i layer dei terreni salvati
     terreni.forEach(t => {
         if (t.leafletLayer) { // Se il terreno ha un layer associato
             // Applica lo stile in base a se è selezionato o meno
@@ -887,6 +1146,9 @@ function updateAllMapLayers() {
         if (selectedTerrenoId && selectedTerrenoObj) {
             // Se un terreno è selezionato e ha un layer, centra su quello
             mainMap.fitBounds(selectedTerrenoObj.leafletLayer.getBounds(), { padding: [20, 20], maxZoom: 16 });
+        } else if (draftTerreno && draftTerreno.leafletLayer) {
+            // Se c'è un terreno in bozza, centra su quello
+            mainMap.fitBounds(draftTerreno.leafletLayer.getBounds(), { padding: [20, 20], maxZoom: 16 });
         } else {
             // Altrimenti, centra su tutti i layer disegnati
             mainMap.fitBounds(mainDrawnItems.getBounds(), { padding: [20, 20] });
@@ -960,13 +1222,41 @@ function resetFiltro() {
 }
 
 function updateDashboard() {
-    // const totalTerreni = terreni.length; // Non usato al momento
-    const totalCO2AllTerrains = terreni.reduce((sum, t) => sum + parseFloat(t.co2_kg_annuo || 0), 0).toFixed(2);
-    const selectedTerreno = terreni.find(t => t.id === selectedTerrenoId);
+    console.log('updateDashboard chiamata');
+    console.log('draftTerreno:', draftTerreno);
+    console.log('selectedTerrenoId:', selectedTerrenoId);
+    console.log('terreni.length:', terreni.length);
+    
+    // Calcola l'area totale di tutti i terreni
+    let totalArea = 0;
+    let totalCo2 = 0;
+    
+    // Calcola i totali dai terreni salvati
+    terreni.forEach(t => {
+        totalArea += parseFloat(t.area_ha || 0);
+        totalCo2 += parseFloat(t.co2_kg_annuo || 0);
+    });
+    
+    // Se c'è un terreno in bozza, aggiungi anche quello ai totali
+    if (draftTerreno) {
+        totalArea += parseFloat(draftTerreno.area_ha || 0);
+        // Per il CO2 del draftTerreno, calcola in base alle specie
+        if (draftTerreno.species && draftTerreno.species.length > 0) {
+            draftTerreno.species.forEach(s => {
+                const specieKey = s.name.toLowerCase();
+                const rate = co2Rates[specieKey] || co2Rates.default;
+                const quantityInM2 = parseFloat(s.quantity || 0);
+                const DENSITA_IMPLICITA_PER_M2 = 0.01;
+                const numeroUnitaStima = quantityInM2 * DENSITA_IMPLICITA_PER_M2;
+                totalCo2 += rate * numeroUnitaStima;
+            });
+        }
+    }
 
     // Mostra i dati del terreno SELEZIONATO nel riepilogo "CO2 Assorbita Totale" e "Area Totale"
     // Questo comportamento potrebbe essere rivisto se si vuole il totale di TUTTI i terreni.
     // Per ora, il nome "Riepilogo Terreno" suggerisce i dati del terreno corrente.
+    const selectedTerreno = terreni.find(t => t.id === selectedTerrenoId);
     const areaForDisplay = selectedTerreno ? parseFloat(selectedTerreno.area_ha || 0).toFixed(2) : '0.00';
     const co2ForDisplay = selectedTerreno ? parseFloat(selectedTerreno.co2_kg_annuo || 0).toFixed(2) : '0.00';
 
@@ -975,27 +1265,74 @@ function updateDashboard() {
 
     updateTerreniTable(); // Aggiorna la tabella di tutti i terreni
     updateCO2Chart();     // Aggiorna il grafico CO2 (basato su tutti i terreni)
-    updateAllMapLayers(); // Aggiorna tutti i layer sulla mappa
+    
+    // Controllo di sicurezza: verifica che la mappa sia inizializzata prima di aggiornare i layer
+    if (mainMap && mainDrawnItems) {
+        updateAllMapLayers(); // Aggiorna tutti i layer sulla mappa
+    } else {
+        console.warn('Mappa non ancora inizializzata, saltando updateAllMapLayers');
+    }
 }
 
 function updateTerreniTable() {
+    console.log('updateTerreniTable chiamata');
+    console.log('Array terreni in updateTerreniTable:', terreni);
+    
     const tableBody = document.querySelector("#terreni-table tbody");
+    if (!tableBody) {
+        console.error('Elemento #terreni-table tbody non trovato!');
+        return;
+    }
+    
     tableBody.innerHTML = ''; // Pulisce la tabella
-    terreni.forEach(t => {
+    console.log(`Creando ${terreni.length} righe per la tabella`);
+    
+    terreni.forEach((t, index) => {
+        console.log(`Creando riga ${index + 1} per terreno:`, t);
         const row = tableBody.insertRow();
         const cell1 = row.insertCell();
         cell1.textContent = t.name;
         cell1.setAttribute('data-label', 'Nome Terreno'); // Per responsività CSS
+        
         const cell2 = row.insertCell();
-        cell2.textContent = t.species.map(s => `${s.name} (${s.quantity}m²)`).join(', ') || 'N/A';
+        console.log(`Terreno ${t.name}:`, t.species); // Debug
+        const speciesText = t.species && t.species.length > 0 
+            ? t.species.map(s => `${s.name} (${s.quantity}m²)`).join(', ')
+            : 'N/A';
+        console.log(`Testo specie per ${t.name}:`, speciesText);
+        cell2.textContent = speciesText;
         cell2.setAttribute('data-label', 'Specie');
+        
         const cell3 = row.insertCell();
         cell3.textContent = parseFloat(t.area_ha || 0).toFixed(2); // Formatta a 2 decimali
         cell3.setAttribute('data-label', 'Area (ha)');
+        
+        // Colonna Azioni con pulsanti Modifica ed Elimina terreno
         const cell4 = row.insertCell();
-        cell4.textContent = parseFloat(t.co2_kg_annuo || 0).toFixed(2); // Formatta a 2 decimali
-        cell4.setAttribute('data-label', 'CO₂ Assorbita (kg/anno)');
+        cell4.setAttribute('data-label', 'Azioni');
+        cell4.innerHTML = `
+            <div class="action-buttons">
+                <button class="action-button edit" onclick="editTerrenoName('${t.id}')" title="Modifica terreno">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <path d="M7 17l3 3 7-7-3-3-7 7z"/>
+                        <path d="M14 7l3 3"/>
+                        <path d="M17 3l4 4"/>
+                        <path d="M21 7l-4-4"/>
+                    </svg>
+                </button>
+                <button class="action-button delete" onclick="deleteTerreno('${t.id}')" title="Elimina terreno">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                </button>
+            </div>
+        `;
     });
+    
+    console.log('Tabella aggiornata completata');
 }
 
 function updateCO2Chart() {
@@ -1277,9 +1614,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setTimeout(() => {
-        initializeMainMap();
-        renderTerreniList(); // Renderizza la lista iniziale dei terreni (vuota o da localStorage/API)
-        updateDashboard();   // Aggiorna il dashboard iniziale
+        // NON inizializzare la mappa qui: verrà inizializzata al primo open del menu
+        loadTerreniFromDatabase(); // Carica i terreni dal database
+        // renderTerreniList() e updateDashboard() vengono chiamati da loadTerreniFromDatabase()
 
         // Nasconde i pannelli di dettaglio all'inizio se nessun terreno è selezionato
         // Questo è già gestito da renderTerreniList e selectTerreno, ma può essere una sicurezza.
@@ -1309,6 +1646,421 @@ document.addEventListener('DOMContentLoaded', () => {
         
         initializeSpeciesAutosuggest(); // Inizializza l'autosuggest per le specie
 
+        // Imposta entrambi i menu collassabili chiusi di default
+        const collMenu1 = document.getElementById('aggiungi-terreno-menu');
+        const collMenu2 = document.getElementById('miei-terreni-menu');
+        
+        if (collMenu1) { 
+            const menuContent1 = collMenu1.querySelector('.menu-content');
+            if (menuContent1) {
+                menuContent1.classList.remove('open');
+                menuContent1.classList.add('hidden');
+            }
+        }
+        
+        if (collMenu2) { 
+            const menuContent2 = collMenu2.querySelector('.menu-content');
+            if (menuContent2) {
+                menuContent2.classList.remove('open');
+                menuContent2.classList.add('hidden');
+            }
+        }
+
     }, 100); // Ridotto il timeout, 1000ms è molto lungo per l'inizializzazione base.
              // Potrebbe essere necessario un timeout più lungo se la mappa ha problemi a caricarsi subito.
 });
+
+// Carica i terreni dal database
+async function loadTerreniFromDatabase() {
+    try {
+        console.log('Tentativo di caricamento terreni dal database...');
+        const response = await fetch('http://127.0.0.1:8000/debug/user/41/plots');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Dati ricevuti dal database:', data);
+        
+        if (data && data.plots && Array.isArray(data.plots) && data.plots.length > 0) {
+            // Aggiorna l'array terreni con i dati dal database
+            terreni = data.plots.map(plot => ({
+                id: plot.id,
+                name: plot.name || `Terreno ${plot.id}`,
+                species: plot.species || [],
+                area_ha: plot.area_ha || 0,
+                perimetro_m: plot.perimetro_m || 0,
+                coordinate: plot.coordinate || [],
+                leafletLayer: null
+            }));
+            
+            // Aggiorna la UI
+            renderTerreniList(); // Aggiorna la sidebar del primo menu
+            updateTerreniTable();
+            updateDashboard();
+            
+            console.log(`Caricati ${terreni.length} terreni dal database:`, terreni);
+        } else {
+            console.log('Nessun terreno trovato nel database, uso localStorage');
+            loadTerreniFromLocalStorage();
+        }
+    } catch (error) {
+        console.error('Errore nel caricamento dei terreni dal database:', error);
+        console.log('Fallback a localStorage...');
+        // Fallback: prova a caricare da localStorage se disponibile
+        loadTerreniFromLocalStorage();
+    }
+}
+
+// Carica i terreni da localStorage (fallback)
+function loadTerreniFromLocalStorage() {
+    console.log('loadTerreniFromLocalStorage chiamata');
+    try {
+        const savedTerreni = localStorage.getItem('terreni');
+        console.log('Dati salvati in localStorage:', savedTerreni);
+        
+        if (savedTerreni) {
+            terreni = JSON.parse(savedTerreni);
+            console.log('Terreni caricati da localStorage:', terreni);
+            renderTerreniList(); // Aggiorna la sidebar del primo menu
+            updateTerreniTable();
+            updateDashboard();
+            console.log(`Caricati ${terreni.length} terreni da localStorage`);
+        } else {
+            console.log('Nessun dato in localStorage, creo dati di esempio');
+            // Se non ci sono dati salvati, crea dati di esempio per test
+            createSampleData();
+        }
+    } catch (error) {
+        console.error('Errore nel caricamento da localStorage:', error);
+        console.log('Creo dati di esempio per errore');
+        // Crea dati di esempio per test
+        createSampleData();
+    }
+}
+
+// Crea dati di esempio per test
+function createSampleData() {
+    console.log('createSampleData chiamata');
+    terreni = [
+        {
+            id: 1,
+            name: "Campo Nord",
+            species: [
+                { name: "Mais", quantity: 5000 },
+                { name: "Grano", quantity: 3000 }
+            ],
+            area_ha: 8.5,
+            perimetro_m: 1200,
+            coordinate: [],
+            leafletLayer: null
+        },
+        {
+            id: 2,
+            name: "Vigneto Sud",
+            species: [
+                { name: "Vite", quantity: 2000 }
+            ],
+            area_ha: 3.2,
+            perimetro_m: 800,
+            coordinate: [],
+            leafletLayer: null
+        },
+        {
+            id: 3,
+            name: "Frutteto Est",
+            species: [
+                { name: "Melo", quantity: 150 },
+                { name: "Pero", quantity: 120 },
+                { name: "Ciliegio", quantity: 80 }
+            ],
+            area_ha: 2.1,
+            perimetro_m: 600,
+            coordinate: [],
+            leafletLayer: null
+        }
+    ];
+    
+    console.log('Array terreni creato:', terreni);
+    console.log('Primo terreno species:', terreni[0].species);
+    
+    // Salva i dati di esempio in localStorage
+    saveTerreniToLocalStorage();
+    
+    // Aggiorna la UI
+    console.log('Terreni creati:', terreni); // Debug
+    renderTerreniList(); // Aggiorna la sidebar del primo menu
+    updateTerreniTable();
+    updateDashboard();
+    
+    console.log(`Creati ${terreni.length} terreni di esempio per test`);
+}
+
+// Salva i terreni nel database
+async function saveTerreniToDatabase() {
+    try {
+        const response = await fetch('/save-plot', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(terreni)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        console.log('Terreni salvati nel database con successo');
+        return true;
+    } catch (error) {
+        console.error('Errore nel salvataggio dei terreni:', error);
+        // Fallback: salva in localStorage
+        saveTerreniToLocalStorage();
+        return false;
+    }
+}
+
+// ===== FUNZIONI PER LA GESTIONE DELLE SPECIE =====
+
+// Aggiunge una nuova specie a un terreno
+function addSpeciesToTerrain(terrenoId) {
+    // Usa il terreno in bozza se presente, altrimenti cerca nell'array terreni
+    const terreno = draftTerreno || terreni.find(t => t.id == terrenoId);
+    if (!terreno) return;
+    
+    showCustomPrompt('Nome della nuova specie:', '', (speciesName) => {
+        if (speciesName && speciesName.trim() !== '') {
+            showCustomPrompt('Quantità (in m²):', '', (quantity) => {
+                if (quantity && !isNaN(quantity) && parseFloat(quantity) > 0) {
+                    const newSpecies = {
+                        name: speciesName.trim(),
+                        quantity: parseFloat(quantity)
+                    };
+                    
+                    terreno.species.push(newSpecies);
+                    
+                    // Aggiorna la UI
+                    if (draftTerreno) {
+                        // Se è un terreno in bozza, aggiorna solo la sidebar
+                        renderTerreniList();
+                        // Aggiorna anche la lista delle specie per mostrare la nuova specie aggiunta
+                        renderSpeciesListForSelectedTerrain();
+                    } else {
+                        // Se è un terreno salvato, aggiorna la tabella
+                        updateTerreniTable();
+                    }
+                    updateDashboard();
+                    
+                    // NON salva nel database se è in bozza (solo dopo "Salva dati terreno")
+                    if (!draftTerreno) {
+                        saveTerreniToDatabase();
+                    }
+                    
+                    showCustomAlert(`Specie "${speciesName}" aggiunta al terreno "${terreno.name}"`);
+                } else {
+                    showCustomAlert('Inserisci una quantità valida maggiore di zero.');
+                }
+            });
+        } else {
+            showCustomAlert('Inserisci un nome valido per la specie.');
+        }
+    });
+}
+
+// Modifica una specie esistente in un terreno
+function editSpeciesInTerrain(terrenoId) {
+    // Usa il terreno in bozza se presente, altrimenti cerca nell'array terreni
+    const terreno = draftTerreno || terreni.find(t => t.id == terrenoId);
+    if (!terreno || terreno.species.length === 0) return;
+    
+    // Crea una lista delle specie per la selezione
+    const speciesList = terreno.species.map((s, index) => `${index + 1}. ${s.name} (${s.quantity}m²)`).join('\n');
+    
+    showCustomPrompt(`Seleziona il numero della specie da modificare:\n\n${speciesList}`, '', (selection) => {
+        const index = parseInt(selection) - 1;
+        if (index >= 0 && index < terreno.species.length) {
+            const species = terreno.species[index];
+            
+            showCustomPrompt(`Nuovo nome per "${species.name}":`, species.name, (newName) => {
+                if (newName && newName.trim() !== '') {
+                    showCustomPrompt(`Nuova quantità per "${newName.trim()}":`, species.quantity.toString(), (newQuantity) => {
+                        if (newQuantity && !isNaN(newQuantity) && parseFloat(newQuantity) > 0) {
+                            species.name = newName.trim();
+                            species.quantity = parseFloat(newQuantity);
+                            
+                            // Aggiorna la UI
+                            if (draftTerreno) {
+                                // Se è un terreno in bozza, aggiorna solo la sidebar
+                                renderTerreniList();
+                                // Aggiorna anche la lista delle specie per mostrare la nuova specie aggiunta
+                                renderSpeciesListForSelectedTerrain();
+                            } else {
+                                // Se è un terreno salvato, aggiorna la tabella
+                                updateTerreniTable();
+                            }
+                            updateDashboard();
+                            
+                            // NON salva nel database se è in bozza (solo dopo "Salva dati terreno")
+                            if (!draftTerreno) {
+                                saveTerreniToDatabase();
+                            }
+                            
+                            showCustomAlert(`Specie "${newName}" modificata con successo`);
+                        } else {
+                            showCustomAlert('Inserisci una quantità valida maggiore di zero.');
+                        }
+                    });
+                } else {
+                    showCustomAlert('Inserisci un nome valido per la specie.');
+                }
+            });
+        } else {
+            showCustomAlert('Selezione non valida.');
+        }
+    });
+}
+
+// Elimina una specie da un terreno
+function deleteSpeciesFromTerrain(terrenoId) {
+    // Usa il terreno in bozza se presente, altrimenti cerca nell'array terreni
+    const terreno = draftTerreno || terreni.find(t => t.id == terrenoId);
+    if (!terreno || terreno.species.length === 0) return;
+    
+    // Crea una lista delle specie per la selezione
+    const speciesList = terreno.species.map((s, index) => `${index + 1}. ${s.name} (${s.quantity}m²)`).join('\n');
+    
+    showCustomPrompt(`Seleziona il numero della specie da eliminare:\n\n${speciesList}`, '', (selection) => {
+        const index = parseInt(selection) - 1;
+        if (index >= 0 && index < terreno.species.length) {
+            const species = terreno.species[index];
+            
+            showCustomConfirm(`Sei sicuro di voler eliminare la specie "${species.name}" dal terreno "${terreno.name}"?`, (confirmed) => {
+                if (confirmed) {
+                    terreno.species.splice(index, 1);
+                    
+                    // Aggiorna la UI
+                    if (draftTerreno) {
+                        // Se è un terreno in bozza, aggiorna solo la sidebar
+                        renderTerreniList();
+                        // Aggiorna anche la lista delle specie per mostrare la nuova specie aggiunta
+                        renderSpeciesListForSelectedTerrain();
+                    } else {
+                        // Se è un terreno salvato, aggiorna la tabella
+                        updateTerreniTable();
+                    }
+                    updateDashboard();
+                    
+                    // NON salva nel database se è in bozza (solo dopo "Salva dati terreno")
+                    if (!draftTerreno) {
+                        saveTerreniToDatabase();
+                    }
+                    
+                    showCustomAlert(`Specie "${species.name}" eliminata dal terreno "${terreno.name}"`);
+                }
+            });
+        } else {
+            showCustomAlert('Selezione non valida.');
+        }
+    });
+}
+
+// Salva i terreni in localStorage (fallback)
+function saveTerreniToLocalStorage() {
+    try {
+        localStorage.setItem('terreni', JSON.stringify(terreni));
+        console.log('Terreni salvati in localStorage');
+    } catch (error) {
+        console.error('Errore nel salvataggio in localStorage:', error);
+    }
+}
+
+// Menu collassabile: apertura/chiusura con freccia e comportamento accordion
+function toggleCollapsibleMenu(menuId) {
+    const menu = document.getElementById(menuId);
+    if (!menu) return;
+    
+    const menuContent = menu.querySelector('.menu-content');
+    const arrowIcon = menu.querySelector('.arrow-icon');
+    const opening = !menuContent.classList.contains('open');
+    
+    if (opening) {
+        // Comportamento accordion: chiudi tutti gli altri menu prima di aprire questo
+        const allMenus = document.querySelectorAll('.collapsible-menu');
+        allMenus.forEach(otherMenu => {
+            if (otherMenu.id !== menuId) {
+                const otherMenuContent = otherMenu.querySelector('.menu-content');
+                const otherArrowIcon = otherMenu.querySelector('.arrow-icon');
+                
+                // Chiudi l'altro menu
+                otherMenuContent.classList.remove('open');
+                otherMenuContent.classList.add('hidden');
+                if (otherArrowIcon) otherArrowIcon.style.transform = 'rotate(45deg)'; // Freccia punta verso destra
+            }
+        });
+        
+        // Apre il menu corrente
+        menuContent.classList.remove('hidden');
+        menuContent.classList.add('open');
+        if (arrowIcon) arrowIcon.style.transform = 'rotate(135deg)'; // Freccia punta verso il basso
+        
+        // Inizializza la mappa al primo open, poi solo invalidate
+        setTimeout(() => {
+            if (!mainMap) {
+                initializeMainMap();
+            } else {
+                mainMap.invalidateSize();
+            }
+        }, 300);
+    } else {
+        // Chiude il menu corrente
+        menuContent.classList.remove('open');
+        menuContent.classList.add('hidden');
+        if (arrowIcon) arrowIcon.style.transform = 'rotate(45deg)'; // Freccia punta verso destra
+    }
+}
+
+// Funzione per modificare il nome del terreno in bozza
+function editDraftTerrenoName() {
+    if (!draftTerreno) return;
+    
+    showCustomPrompt('Nuovo nome per il terreno:', draftTerreno.name, (newName) => {
+        if (newName && newName.trim() !== '') {
+            draftTerreno.name = newName.trim();
+            renderTerreniList(); // Aggiorna la sidebar
+            showCustomAlert(`Nome del terreno modificato in "${newName}"`);
+        } else {
+            showCustomAlert('Inserisci un nome valido per il terreno.');
+        }
+    });
+}
+
+// Funzione per eliminare il terreno in bozza
+function deleteDraftTerreno() {
+    if (!draftTerreno) return;
+    
+    showCustomConfirm(`Sei sicuro di voler eliminare il terreno "${draftTerreno.name}"?`, () => {
+        draftTerreno = null; // Rimuove il terreno in bozza
+        renderTerreniList(); // Aggiorna la sidebar
+        showCustomAlert('Terreno in bozza eliminato.');
+    });
+}
+
+// Funzione helper per aggiornare le coordinate quando si trova un indirizzo
+function updateCoordinatesFromAddress(lat, lon) {
+    // Aggiorna i campi coordinate se esistono
+    const latInput = document.getElementById('latitude');
+    const lonInput = document.getElementById('longitude');
+    
+    if (latInput && lonInput) {
+        latInput.value = lat.toFixed(6);
+        lonInput.value = lon.toFixed(6);
+    }
+    
+    // Aggiorna anche il draftTerreno se esiste
+    if (draftTerreno) {
+        draftTerreno.coordinates = [lat, lon];
+        console.log('Coordinate aggiornate nel draftTerreno:', draftTerreno.coordinates);
+    }
+}

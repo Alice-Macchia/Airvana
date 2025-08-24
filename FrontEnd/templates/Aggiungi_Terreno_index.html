@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="static/Aggiungi_Terreno_style.css">
 </head>
 
-<body data-user-id="{{ user_id }}" data-user-email="{{ email }}"></body>
+<body data-user-id="{{ user_id }}" data-user-email="{{ email }}">
 
 <header>
     <div class="header-left">
@@ -37,6 +37,13 @@
        
     </div>
 </header>
+
+<div class="collapsible-menu" id="aggiungi-terreno-menu">
+    <div class="menu-header" onclick="toggleCollapsibleMenu('aggiungi-terreno-menu')">
+        <span class="arrow-icon"></span>
+        <span class="menu-title">AGGIUNGI TERRENO</span>
+    </div>
+    <div class="menu-content">
 
 <div id="container">
     <div id="sidebar">
@@ -64,52 +71,54 @@
 
     <div id="main-content-area">
 
-        <div id="main-map-container"></div>
+        <div class="map-and-details-container">
+            <div id="main-map-container"></div>
 
-        <div id="selected-terrain-details" class="dashboard-section" style="display: none;">
-            <h3>Dettagli Terreno: <span id="current-terrain-name"></span></h3>
+            <div id="selected-terrain-details" class="dashboard-section" style="display: none;">
+                <h3>Dettagli Terreno: <span id="current-terrain-name"></span></h3>
 
-            <div class="info-group">
-                <div>
-                    <label for="area">Area (ha):</label>
-                    <input type="text" id="area" placeholder="Disegna sulla mappa" readonly>
-                </div>
-                <div>
-                    <label for="perimetro">Perimetro (m):</label>
-                    <input type="text" id="perimetro" placeholder="Disegna sulla mappa" readonly>
-                </div>
-            </div>
-
-            <h4 style="margin-top: 5px;">Specie Vegetali</h4>
-            <div class="species-input-group">
-                <div class="species-name-input-wrapper" style="flex: 1; position: relative;">
-                    <input type="text" id="new-species-name-input" placeholder="Nome specie" style="width: 100%;">
-                    <div id="species-suggestions-dropdown"></div> </div>
-                    
-                <div class="species-quantity-wrapper" style="flex: 1; display: flex; align-items: center;">
-                    <input type="number" id="new-species-quantity-input" placeholder="Quantita es. 10" min="0" style="flex-grow: 1; margin-right: 5px;">
-                    <span class="unit-label" style="white-space: nowrap;"></span>
+                <div class="info-group">
+                    <div>
+                        <label for="area">Area (ha):</label>
+                        <input type="text" id="area" placeholder="Disegna sulla mappa" readonly>
+                    </div>
+                    <div>
+                        <label for="perimetro">Perimetro (m):</label>
+                        <input type="text" id="perimetro" placeholder="Disegna sulla mappa" readonly>
+                    </div>
                 </div>
 
-                <button onclick="addSpeciesToSelectedTerrain()" class="add-species-icon-button" title="Aggiungi specie">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="10" fill="#28a745"/>
-                        <circle cx="12" cy="12" r="9" fill="url(#paint0_radial_addspecies)"/>
-                        <path d="M12 7V17M7 12H17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <defs>
-                            <radialGradient id="paint0_radial_addspecies" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(12 12) rotate(90) scale(10)">
-                                <stop stop-color="#3CB371"/>
-                                <stop offset="1" stop-color="#218838"/>
-                            </radialGradient>
-                        </defs>
-                    </svg>
-                </button>
-            </div>
-            <ul id="species-list-for-selected-terrain" class="species-list">
-            </ul>
+                <h4 style="margin-top: 5px;">Specie Vegetali</h4>
+                <div class="species-input-group">
+                    <div class="species-name-input-wrapper" style="flex: 1; position: relative;">
+                        <input type="text" id="new-species-name-input" placeholder="Nome specie" style="width: 100%;">
+                        <div id="species-suggestions-dropdown"></div> </div>
+                        
+                    <div class="species-quantity-wrapper" style="flex: 1; display: flex; align-items: center;">
+                        <input type="number" id="new-species-quantity-input" placeholder="Quantita es. 10" min="0" style="flex-grow: 1; margin-right: 5px;">
+                        <span class="unit-label" style="white-space: nowrap;"></span>
+                    </div>
 
-            <div style="margin-top: auto;">
-                <button onclick="saveData()">Salva dati terreno</button>
+                    <button onclick="addSpeciesToSelectedTerrain()" class="add-species-icon-button" title="Aggiungi specie">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#28a745"/>
+                            <circle cx="12" cy="12" r="9" fill="url(#paint0_radial_addspecies)"/>
+                            <path d="M12 7V17M7 12H17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <defs>
+                                <radialGradient id="paint0_radial_addspecies" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(12 12) rotate(90) scale(10)">
+                                    <stop stop-color="#3CB371"/>
+                                    <stop offset="1" stop-color="#218838"/>
+                                </radialGradient>
+                            </defs>
+                        </svg>
+                    </button>
+                </div>
+                <ul id="species-list-for-selected-terrain" class="species-list">
+                </ul>
+
+                <div style="margin-top: auto;">
+                    <button onclick="saveData()">Salva dati terreno</button>
+                </div>
             </div>
         </div>
 
@@ -144,7 +153,21 @@
                 <canvas id="co2Chart"></canvas>
             </div>
         </div>
+            </div>
+    </div>
+    </div> <!-- Chiusura di menu-content -->
+    </div> <!-- Chiusura di aggiungi-terreno-menu -->
 
+<!-- Spazio tra i menu -->
+<br>
+
+<!-- Menu separato per "I MIEI TERRENI" - FUORI dal primo menu -->
+<div class="collapsible-menu" id="miei-terreni-menu">
+    <div class="menu-header" onclick="toggleCollapsibleMenu('miei-terreni-menu')">
+        <span class="arrow-icon"></span>
+        <span class="menu-title">I MIEI TERRENI</span>
+    </div>
+    <div class="menu-content">
         <div class="dashboard-section">
             <h3>Tutti i Terreni</h3>
             <table id="terreni-table" style="width:100%; border-collapse: collapse; margin-top: 15px;">
@@ -153,8 +176,8 @@
                     <th style="padding: 10px; border: 1px solid var(--border-color); text-align: left;">Nome Terreno</th>
                     <th style="padding: 10px; border: 1px solid var(--border-color); text-align: left;">Specie</th>
                     <th style="padding: 10px; border: 1px solid var(--border-color); text-align: left;">Area (ha)</th>
-                    <th style="padding: 10px; border: 1px solid var(--border-color); text-align: left;">CO₂ Assorbita (kg/anno)</th>
-                    </tr>
+                    <th style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">Azioni</th>
+                </tr>
                 </thead>
                 <tbody>
                 </tbody>
@@ -162,6 +185,7 @@
         </div>
     </div>
 </div>
+
 <!-- Dentro il body -->
 
 

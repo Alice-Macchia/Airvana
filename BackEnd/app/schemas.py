@@ -254,5 +254,37 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     id: Optional[str] = None
 
+# ===== TERRAIN UPDATE/DELETE SCHEMAS =====
+
+class TerrainUpdateRequest(BaseModel):
+    terrain_id: int
+    terrain_name: Optional[str] = None
+    species: Optional[List[SpeciesSave]] = None
+
+class TerrainCoordinatesUpdateRequest(BaseModel):
+    terrain_id: int
+    centroid: Centroid
+    vertices: List[Coordinate]
+
+class TerrainDeleteRequest(BaseModel):
+    terrain_id: int
+
+class SpeciesUpdateRequest(BaseModel):
+    terrain_id: int
+    species_id: int
+    name: Optional[str] = None
+    quantity: Optional[int] = None
+
+class SpeciesDeleteRequest(BaseModel):
+    terrain_id: int
+    species_id: int
+
+class TerrainUpdateResponse(BaseModel):
+    message: str
+    updated_terrain: dict
+
+class TerrainDeleteResponse(BaseModel):
+    message: str
+
 #pip install fastapi uvicorn sqlalchemy geoalchemy2 shapely psycopg2-binary
 

@@ -1,11 +1,17 @@
 from fastapi import APIRouter, HTTPException, Depends, Security, Request, Form, status
+from datetime import datetime
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from geoalchemy2.shape import to_shape
+from .models import Plot, PlotSpecies, Species
+from .database import get_db
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 from BackEnd.app.auth import create_access_token, decode_access_token, get_current_user
-from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest, FarmerBase, SocietyBase, AgronomistCreate, AgronomistOut, FarmerCreate, AgronomistBase, FarmerRegistration, SocietyRegistration, AgronomistRegistration
-from BackEnd.app.models import User, Farmer, Society, PlotInfo, Plot, Agronomist
+from BackEnd.app.schemas import UserCreate, UserLogin, UserInsert, RenamePlotRequest, DeletePlotRequest, FarmerBase, SocietyBase, AgronomistCreate, AgronomistOut, FarmerCreate, AgronomistBase, FarmerRegistration, SocietyRegistration, AgronomistRegistration, TerrainUpdateRequest, TerrainDeleteRequest, SpeciesUpdateRequest, SpeciesDeleteRequest, TerrainUpdateResponse, TerrainDeleteResponse, TerrainCoordinatesUpdateRequest
+from BackEnd.app.models import User, Farmer, Society, PlotInfo, Plot, Agronomist, Species, PlotSpecies
 from BackEnd.app.security import hash_password, verify_password
 from BackEnd.app.database import SessionLocal
 from BackEnd.app.get_meteo import fetch_and_save_weather_day, fetch_weather_week
@@ -15,6 +21,8 @@ from BackEnd.app.utils import aggiorna_nome_plot, elimina_plot
 from BackEnd.app.database import SessionLocal
 from typing import List
 from pydantic import BaseModel
+from shapely.wkb import loads
+from shapely.geometry import Polygon
 
 
 # router = APIRouter()
@@ -252,3 +260,488 @@ async def get_user_plots(user: dict = Depends(get_current_user), db: AsyncSessio
         return []
         
     return plots
+
+@router.get("/get-user-terreni/{user_id}")
+async def get_user_terreni(user_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Restituisce i terreni dell'utente specificato nel formato richiesto dal frontend.
+    Questa rotta è specifica per il frontend e restituisce dati più dettagliati.
+    """
+    try:
+        # Verifica che l'utente esista
+        user_query = select(User).where(User.id == user_id)
+        user_result = await db.execute(user_query)
+        user = user_result.scalar_one_or_none()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="Utente non trovato")
+        
+        # Recupera i terreni dell'utente con le specie caricate in anticipo
+        from sqlalchemy.orm import selectinload
+        plots_query = select(Plot).options(
+            selectinload(Plot.species_associations).selectinload(PlotSpecies.species)
+        ).where(Plot.user_id == user_id)
+        
+        plots_result = await db.execute(plots_query)
+        plots = plots_result.scalars().all()
+        
+        if not plots:
+            print(f"Nessun terreno trovato per utente {user_id}")
+            return []
+        
+        print(f"Trovati {len(plots)} terreni per utente {user_id}")
+        
+        # Prepara i dati nel formato richiesto dal frontend
+        terreni_data = []
+        
+        for plot in plots:
+            print(f"Elaborazione terreno {plot.id}: {plot.name}")
+            
+            # Calcola l'area del poligono se disponibile
+            area_ha = 0
+            perimetro_m = 0
+            vertices = []
+            
+            if plot.geom:
+                try:
+                    # Converti la geometria WKB in un oggetto Shapely
+                    geom_wkb = plot.geom.data
+                    shapely_geom = loads(geom_wkb)
+                    
+                    if isinstance(shapely_geom, Polygon):
+                        # Converti le coordinate da gradi a metri per calcoli accurati
+                        from pyproj import Transformer
+                        
+                        # Crea un transformer per convertire da WGS84 a UTM
+                        # Trova la zona UTM appropriata basandosi sul centroide
+                        centroid_coords = list(shapely_geom.centroid.coords)[0]
+                        lon, lat = centroid_coords
+                        
+                        # Calcola la zona UTM (semplificato per l'Italia)
+                        utm_zone = int((lon + 180) / 6) + 1
+                        utm_epsg = 32600 + utm_zone  # EPSG per UTM Nord
+                        
+                        transformer = Transformer.from_crs("EPSG:4326", f"EPSG:{utm_epsg}", always_xy=True)
+                        
+                        # Converti le coordinate del poligono in UTM
+                        utm_coords = []
+                        for coord in shapely_geom.exterior.coords:
+                            x, y = transformer.transform(coord[0], coord[1])
+                            utm_coords.append((x, y))
+                        
+                        # Crea un nuovo poligono in coordinate UTM
+                        from shapely.geometry import Polygon as ShapelyPolygon
+                        utm_polygon = ShapelyPolygon(utm_coords)
+                        
+                        # Calcola area in m² e converti in ettari
+                        area_m2 = utm_polygon.area
+                        area_ha = area_m2 / 10000
+                        
+                        # Calcola perimetro in metri
+                        perimetro_m = utm_polygon.length
+                        
+                        # Estrai i vertici del poligono (mantieni le coordinate originali in gradi)
+                        coords = list(shapely_geom.exterior.coords)
+                        for coord in coords:
+                            vertices.append({
+                                "lat": coord[1],  # latitudine
+                                "long": coord[0]  # longitudine
+                            })
+                        
+                        print(f"  Geometria elaborata: area={area_ha:.2f} ha, perimetro={perimetro_m:.2f} m")
+                except Exception as e:
+                    print(f"Errore nel calcolo geometria per plot {plot.id}: {e}")
+            
+            # Recupera le specie associate al terreno (ora caricate in anticipo)
+            species_data = []
+            try:
+                if hasattr(plot, 'species_associations') and plot.species_associations:
+                    print(f"  Trovate {len(plot.species_associations)} associazioni specie")
+                    for ps in plot.species_associations:
+                        try:
+                            # Le specie sono già caricate, non serve fare query aggiuntive
+                            if hasattr(ps, 'species') and ps.species:
+                                species_data.append({
+                                    "name": ps.species.name,
+                                    "quantity": ps.surface_area,
+                                    "co2_absorption_rate": ps.species.co2_absorption_rate or 0
+                                })
+                                print(f"    Specie: {ps.species.name}, superficie: {ps.surface_area} m²")
+                        except Exception as e:
+                            print(f"Errore nell'elaborazione specie per plot {plot.id}: {e}")
+                            continue
+                else:
+                    print(f"  Nessuna specie associata trovata")
+            except Exception as e:
+                print(f"Errore nell'accesso alle associazioni specie per plot {plot.id}: {e}")
+            
+            terreno = {
+                "id": plot.id,
+                "terrain_name": plot.name or f"Terreno {plot.id}",
+                "species": species_data,
+                "area_ha": round(area_ha, 2),
+                "perimetro_m": round(perimetro_m, 2),
+                "vertices": vertices
+            }
+            
+            terreni_data.append(terreno)
+            print(f"  Terreno {plot.id} elaborato con successo")
+        
+        print(f"Elaborazione completata. Restituisco {len(terreni_data)} terreni per utente {user_id}")
+        return terreni_data
+        
+    except Exception as e:
+        print(f"Errore nel recupero terreni per utente {user_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
+
+
+# ===== NUOVE ROTTE PER AGGIORNAMENTO/ELIMINAZIONE TERRAIN =====
+
+@router.put("/update-terrain", response_model=TerrainUpdateResponse)
+async def update_terrain(request: TerrainUpdateRequest, db: AsyncSession = Depends(get_db)):
+    """Aggiorna un terreno esistente (nome e/o specie)"""
+    try:
+        # Verifica che il terreno esista e appartenga all'utente
+        plot_query = select(Plot).where(Plot.id == request.terrain_id)
+        plot_result = await db.execute(plot_query)
+        plot = plot_result.scalar_one_or_none()
+        
+        if not plot:
+            raise HTTPException(status_code=404, detail="Terreno non trovato")
+        
+        # Aggiorna il nome se fornito
+        if request.terrain_name is not None:
+            plot.name = request.terrain_name
+        
+        # Aggiorna le specie se fornite
+        if request.species is not None:
+            # Rimuovi le specie esistenti
+            existing_species_query = select(PlotSpecies).where(PlotSpecies.plot_id == request.terrain_id)
+            existing_species_result = await db.execute(existing_species_query)
+            existing_species = existing_species_result.scalars().all()
+            
+            for ps in existing_species:
+                await db.delete(ps)
+            
+            # Aggiungi le nuove specie
+            for species_data in request.species:
+                # Trova la specie nel database
+                species_query = select(Species).where(Species.name == species_data.name)
+                species_result = await db.execute(species_query)
+                species = species_result.scalar_one_or_none()
+                
+                if species:
+                    plot_species = PlotSpecies(
+                        plot_id=request.terrain_id,
+                        species_id=species.id,
+                        surface_area=species_data.quantity
+                    )
+                    db.add(plot_species)
+        
+        await db.commit()
+        
+        # Restituisci i dati aggiornati
+        updated_terrain = {
+            "id": plot.id,
+            "name": plot.name,
+            "species": request.species if request.species else []
+        }
+        
+        return TerrainUpdateResponse(
+            message="Terreno aggiornato con successo",
+            updated_terrain=updated_terrain
+        )
+        
+    except Exception as e:
+        await db.rollback()
+        print(f"Errore nell'aggiornamento del terreno {request.terrain_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
+
+
+@router.delete("/delete-terrain", response_model=TerrainDeleteResponse)
+async def delete_terrain(request: TerrainDeleteRequest, db: AsyncSession = Depends(get_db)):
+    """Elimina un terreno e tutte le sue associazioni"""
+    try:
+        # Verifica che il terreno esista
+        plot_query = select(Plot).where(Plot.id == request.terrain_id)
+        plot_result = await db.execute(plot_query)
+        plot = plot_result.scalar_one_or_none()
+        
+        if not plot:
+            raise HTTPException(status_code=404, detail="Terreno non trovato")
+        
+        # Rimuovi prima le associazioni con le specie
+        species_associations_query = select(PlotSpecies).where(PlotSpecies.plot_id == request.terrain_id)
+        species_associations_result = await db.execute(species_associations_query)
+        species_associations = species_associations_result.scalars().all()
+        
+        for ps in species_associations:
+            await db.delete(ps)
+        
+        # Rimuovi il terreno
+        await db.delete(plot)
+        
+        await db.commit()
+        
+        return TerrainDeleteResponse(
+            message="Terreno eliminato con successo"
+        )
+        
+    except Exception as e:
+        await db.rollback()
+        print(f"Errore nell'eliminazione del terreno {request.terrain_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
+
+
+@router.put("/update-species", response_model=TerrainUpdateResponse)
+async def update_species(request: SpeciesUpdateRequest, db: AsyncSession = Depends(get_db)):
+    """Aggiorna una singola specie di un terreno"""
+    try:
+        # Verifica che l'associazione specie-terreno esista
+        plot_species_query = select(PlotSpecies).where(
+            PlotSpecies.plot_id == request.terrain_id,
+            PlotSpecies.id == request.species_id
+        )
+        plot_species_result = await db.execute(plot_species_query)
+        plot_species = plot_species_result.scalar_one_or_none()
+        
+        if not plot_species:
+            raise HTTPException(status_code=404, detail="Associazione specie-terreno non trovata")
+        
+        # Aggiorna la specie se fornita
+        if request.name is not None:
+            species_query = select(Species).where(Species.name == request.name)
+            species_result = await db.execute(species_query)
+            species = species_result.scalar_one_or_none()
+            
+            if not species:
+                raise HTTPException(status_code=400, detail="Specie non valida")
+            
+            plot_species.species_id = species.id
+        
+        # Aggiorna la quantità se fornita
+        if request.quantity is not None:
+            plot_species.surface_area = request.quantity
+        
+        await db.commit()
+        
+        # Restituisci i dati aggiornati
+        updated_terrain = {
+            "id": request.terrain_id,
+            "species_updated": True
+        }
+        
+        return TerrainUpdateResponse(
+            message="Specie aggiornata con successo",
+            updated_terrain=updated_terrain
+        )
+        
+    except Exception as e:
+        await db.rollback()
+        print(f"Errore nell'aggiornamento della specie per terreno {request.terrain_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
+
+
+@router.put("/update-terrain-coordinates", response_model=TerrainUpdateResponse)
+async def update_terrain_coordinates(request: TerrainCoordinatesUpdateRequest, db: AsyncSession = Depends(get_db)):
+    """Aggiorna le coordinate di un terreno esistente"""
+    try:
+        # Verifica che il terreno esista
+        plot_query = select(Plot).where(Plot.id == request.terrain_id)
+        plot_result = await db.execute(plot_query)
+        plot = plot_result.scalar_one_or_none()
+        
+        if not plot:
+            raise HTTPException(status_code=404, detail="Terreno non trovato")
+        
+        # Aggiorna la geometria del poligono
+        from shapely.geometry import Polygon, Point
+        from geoalchemy2.shape import from_shape
+        
+        polygon = Polygon([(v.long, v.lat) for v in request.vertices])
+        point = Point(request.centroid.long, request.centroid.lat)
+        
+        plot.geom = from_shape(polygon, srid=4326)
+        plot.centroid = from_shape(point, srid=4326)
+        
+        await db.commit()
+        
+        # Restituisci i dati aggiornati
+        updated_terrain = {
+            "id": plot.id,
+            "coordinates_updated": True,
+            "area": polygon.area,
+            "perimeter": polygon.length
+        }
+        
+        return TerrainUpdateResponse(
+            message="Coordinate del terreno aggiornate con successo",
+            updated_terrain=updated_terrain
+        )
+        
+    except Exception as e:
+        await db.rollback()
+        print(f"Errore nell'aggiornamento delle coordinate per terreno {request.terrain_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
+
+
+@router.delete("/delete-species", response_model=TerrainDeleteResponse)
+async def delete_species(request: SpeciesDeleteRequest, db: AsyncSession = Depends(get_db)):
+    """Elimina una singola specie da un terreno"""
+    try:
+        # Verifica che l'associazione specie-terreno esista
+        plot_species_query = select(PlotSpecies).where(
+            PlotSpecies.plot_id == request.terrain_id,
+            PlotSpecies.id == request.species_id
+        )
+        plot_species_result = await db.execute(plot_species_query)
+        plot_species = plot_species_result.scalar_one_or_none()
+        
+        if not plot_species:
+            raise HTTPException(status_code=404, detail="Associazione specie-terreno non trovata")
+        
+        # Elimina l'associazione
+        await db.delete(plot_species)
+        
+        await db.commit()
+        
+        return TerrainDeleteResponse(
+            message="Specie eliminata con successo"
+        )
+        
+    except Exception as e:
+        await db.rollback()
+        print(f"Errore nell'eliminazione della specie per terreno {request.terrain_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
+
+# === ROUTE DI DEBUG ===
+@router.get("/debug/user/{user_id}/plots")
+async def debug_get_user_plots(user_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Endpoint di debug per ottenere i plot di un utente specifico senza autenticazione
+    """
+    try:
+        print(f"🔍 Debug: Recupero plot per utente {user_id}")
+        
+        # Query per ottenere tutti i plot dell'utente
+        query = select(Plot).where(Plot.user_id == user_id)
+        result = await db.execute(query)
+        plots = result.scalars().all()
+        
+        print(f"📊 Trovati {len(plots)} plot per utente {user_id}")
+        
+        plots_data = []
+        for plot in plots:
+            print(f"🌱 Elaboro plot {plot.id}: {plot.name}")
+            
+            # Ottieni le specie per questo plot
+            species_query = select(PlotSpecies, Species).join(Species).where(PlotSpecies.plot_id == plot.id)
+            species_result = await db.execute(species_query)
+            species_data = species_result.all()
+            
+            print(f"   - Specie trovate: {len(species_data)}")
+            
+            # Formatta le specie
+            species_list = []
+            for plot_species, species in species_data:
+                species_info = {
+                    "name": species.name,
+                    "quantity": plot_species.surface_area
+                }
+                species_list.append(species_info)
+                print(f"     * {species.name}: {plot_species.surface_area}m²")
+            
+            # Calcola area totale dal poligono se disponibile
+            area_ha = 0
+            if plot.geom:
+                try:
+                    shapely_geom = to_shape(plot.geom)
+                    area_ha = shapely_geom.area * 111.32 * 111.32 * 0.0001  # Converti in ettari
+                    print(f"   - Area calcolata: {area_ha:.2f} ha")
+                except Exception as geom_error:
+                    print(f"   - Errore calcolo area: {geom_error}")
+                    area_ha = 0
+            
+            plot_info = {
+                "id": plot.id,
+                "name": plot.name or f"Terreno {plot.id}",
+                "species": species_list,
+                "area_ha": round(area_ha, 2),
+                "perimetro_m": 0,
+                "coordinate": [],
+                "created_at": plot.created_at.isoformat() if plot.created_at else None
+            }
+            plots_data.append(plot_info)
+        
+        print(f"✅ Debug completato: {len(plots_data)} plot elaborati")
+        return {"plots": plots_data, "debug_info": f"Utente {user_id}, {len(plots_data)} plot trovati"}
+        
+    except Exception as e:
+        print(f"💥 ERRORE DEBUG per utente {user_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore debug: {str(e)}")
+
+
+# === ROUTE PER SALVARE PLOT ===
+@router.post("/save-plot")
+async def save_plot(plot_data: dict, db: AsyncSession = Depends(get_db)):
+    """Salva un nuovo plot nel database"""
+    try:
+        print(f"💾 Salvataggio plot: {plot_data}")
+        
+        # Crea un nuovo plot
+        new_plot = Plot(
+            user_id=41,  # Per ora hardcoded, poi useremo l'utente autenticato
+            name=plot_data.get("name"),
+            geom=None,  # Per ora None, poi aggiungeremo la geometria
+            created_at=datetime.now()
+        )
+        
+        db.add(new_plot)
+        await db.flush()  # Per ottenere l'ID
+        
+        # Aggiungi le specie se presenti
+        if plot_data.get("species"):
+            for species_info in plot_data["species"]:
+                # Trova o crea la specie
+                species_query = select(Species).where(Species.name == species_info["name"])
+                species_result = await db.execute(species_query)
+                species = species_result.scalar_one_or_none()
+                
+                if not species:
+                    species = Species(name=species_info["name"])
+                    db.add(species)
+                    await db.flush()
+                
+                # Crea l'associazione plot-specie
+                plot_species = PlotSpecies(
+                    plot_id=new_plot.id,
+                    species_id=species.id,
+                    surface_area=species_info["quantity"]
+                )
+                db.add(plot_species)
+        
+        await db.commit()
+        print(f"✅ Plot salvato con ID: {new_plot.id}")
+        
+        return {"success": True, "plot_id": new_plot.id, "message": "Plot salvato con successo"}
+        
+    except Exception as e:
+        await db.rollback()
+        print(f"💥 ERRORE nel salvataggio del plot: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore nel salvataggio: {str(e)}")

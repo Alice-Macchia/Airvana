@@ -11,6 +11,205 @@
     --border-radius: 8px;
 }
 
+/* Menu collassabile - stili base uniformi */
+.collapsible-menu {
+    margin: 20px 20px 0 20px; /* Uniforme: top 20px, right 20px, bottom 0, left 20px */
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+/* Override per il primo menu - angoli in basso sempre arrotondati */
+#aggiungi-terreno-menu .menu-content {
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+}
+
+/* Spaziatura tra i menu */
+#miei-terreni-menu {
+    margin-top: 15px; /* Spazio tra i due menu */
+}
+
+/* Pulsanti azioni nella tabella */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+.action-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-button:hover {
+    background-color: var(--light-bg);
+    transform: scale(1.1);
+}
+
+.action-button.edit {
+    color: var(--primary-blue);
+}
+
+.action-button.edit:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.action-button.delete {
+    color: var(--danger-red);
+}
+
+.action-button.delete:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Pulsanti per la gestione delle specie */
+.action-button.add-species {
+    color: var(--primary-green);
+}
+
+.action-button.add-species:hover {
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.action-button.edit-species {
+    color: var(--primary-blue);
+}
+
+.action-button.edit-species:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.action-button.delete-species {
+    color: var(--danger-red);
+}
+
+.action-button.delete-species:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Azioni per il terreno in bozza nella sidebar */
+.terreno-actions {
+    display: flex;
+    gap: 6px; /* Ridotto da 8px a 6px */
+    margin-left: auto; /* Spinge i pulsanti a destra */
+    flex-shrink: 0; /* Impedisce ai pulsanti di ridursi */
+}
+
+.terreno-actions .action-button {
+    padding: 6px; /* Ridotto da 4px a 6px per pulsanti più grandi */
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    background-color: var(--dark-blue); /* Sfondo blu scuro */
+    border: 1px solid var(--dark-blue);
+    color: white; /* Icone bianche */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px; /* Larghezza minima fissa */
+    min-height: 28px; /* Altezza minima fissa */
+}
+
+.terreno-actions .action-button:hover {
+    background-color: #1e3a8a; /* Blu ancora più scuro per hover */
+    transform: scale(1.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.terreno-actions .action-button svg {
+    width: 16px; /* Ridotto da 16px a 14px per compattezza */
+    height: 16px;
+    fill: currentColor; /* Assicura che le icone siano bianche */
+}
+
+.terreno-actions .action-button.edit {
+    color: white; /* Cambiato da var(--primary-blue) a white */
+}
+
+.terreno-actions .action-button.edit:hover {
+    background-color: #1e3a8a; /* Blu scuro per hover */
+}
+
+.terreno-actions .action-button.delete {
+    color: white; /* Cambiato da #dc3545 a white */
+}
+
+.terreno-actions .action-button.delete:hover {
+    background-color: #dc2626; /* Rosso scuro per hover */
+}
+
+/* Pulsanti disabilitati */
+.action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.action-button:disabled:hover {
+    background-color: transparent;
+    transform: none;
+}
+
+/* Icone SVG per i pulsanti */
+.action-button svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Stili specifici per il secondo menu - ora uniformi al primo */
+#miei-terreni-menu .menu-header {
+    margin-top: 0; /* Stesso stile del primo menu, ereditato da .menu-header */
+}
+
+.menu-header {
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-weight: 600;
+    font-size: 1.1em;
+    transition: background-color 0.3s ease;
+}
+
+.menu-header:hover {
+    background-color: var(--dark-blue);
+}
+
+.arrow-icon {
+    width: 12px;
+    height: 12px;
+    border-right: 3px solid white;
+    border-top: 3px solid white;
+    transform: rotate(45deg); /* Prima ruota per creare >, poi per puntare a destra */
+    transition: transform 0.3s ease;
+}
+
+.menu-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+    background-color: var(--white-bg);
+}
+
+.menu-content.open {
+    max-height: none; /* Permette al contenuto di espandersi naturalmente */
+    overflow: visible; /* Mostra tutto il contenuto senza scroll interno */
+}
+
+.menu-content.hidden {
+    max-height: 0;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -25,33 +224,55 @@ body, html {
 }
 
 header {
-    background-color: var(--dark-green);
-    padding: 10px 30px;
-    border-bottom: 1px solid var(--border-color);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 15px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 .header-left {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
 }
 
 .site-title {
-    font-family: 'Merriweather', serif;
-    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
     color: white;
-    font-size: 1.8em;
-    font-weight: 700;
+    margin: 0;
 }
 
 .user-profile {
     display: flex;
-    align-items: center;
     gap: 10px;
+    align-items: center;
+}
+
+.user-profile button {
+    background-color: transparent;
+    border: 1px solid white;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.user-profile button:hover {
+    background-color: white;
+    color: var(--primary-blue);
+}
+
+.user-profile button i {
+    font-size: 16px;
 }
 
 .home-icon {
@@ -120,8 +341,8 @@ header {
 
 #container {
     display: flex;
-    height: calc(100vh - 70px); 
-    overflow: hidden;
+    min-height: calc(100vh - 70px); /* Cambiato da height a min-height */
+    overflow: visible; /* Cambiato da hidden a visible per permettere scrolling */
 }
 
 #sidebar {
@@ -129,7 +350,7 @@ header {
     background: var(--white-bg);
     padding: 25px;
     border-right: 1px solid var(--border-color);
-    overflow-y: auto;
+    overflow-y: visible; /* Cambiato da auto a visible per scrolling naturale */
     box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
@@ -150,20 +371,20 @@ header {
 #main-content-area {
     flex: 1;
     display: flex;
-    flex-wrap: wrap; 
+    flex-direction: column;
     gap: 15px; 
     padding: 15px;
-    overflow-y: auto; 
+    overflow-y: visible; /* Cambiato da auto a visible per scrolling naturale */
     overflow-x: hidden; 
 }
 
 #main-map-container {
-    flex: 1 1 48%; 
-    min-width: 0; 
     height: 500px; 
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     overflow: hidden;
+    min-height: 500px;
+    width: 100%;
 }
 
 #main-map-container .leaflet-container {
@@ -172,16 +393,32 @@ header {
 }
 
 #selected-terrain-details {
-    flex: 1 1 48%;
-    min-width: 300px;
+    display: none; /* Nascondo di default, verrà mostrato solo quando necessario */
     background-color: var(--white-bg);
     padding: 20px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
-    display: flex;
     flex-direction: column;
     gap: 10px;
-    height: 500px; /* <-- ALTEZZA FISSA*/
+    min-height: auto;
+    width: 100%;
+}
+
+/* Contenitore per mappa e dettagli terreno in riga orizzontale */
+.map-and-details-container {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+}
+
+#main-map-container {
+    flex: 2;
+    min-width: 0;
+}
+
+#selected-terrain-details {
+    flex: 1;
+    min-width: 300px;
 }
 
 .dashboard-section {
@@ -190,8 +427,7 @@ header {
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     margin-bottom: 0; 
-    flex: 1 1 100%; 
-    min-width: 0; 
+    width: 100%;
 }
 
 #coordinates-section,
@@ -200,7 +436,7 @@ header {
     padding: 20px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
-    flex: 1 1 calc(33% - 10px); 
+    flex: 1 1 calc(50% - 7.5px); 
     min-width: 0; 
     margin-top: 0; 
 }
@@ -222,7 +458,7 @@ header {
     display: flex;
     flex-wrap: wrap;
     gap: 15px; 
-    flex: 1 1 100%; 
+    width: 100%;
 }
 
 #coordinates-section p {
@@ -394,56 +630,94 @@ h4 {
 }
 
 .terreno-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: var(--light-bg);
-    padding: 10px 15px;
-    border-radius: 5px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background-color: #1e40af !important; /* Blu scuro corretto */
+    color: white !important;
+    padding: 12px 16px !important;
+    border-radius: 8px !important;
+    margin-bottom: 12px !important;
+    cursor: default !important;
+    transition: all 0.3s ease !important;
+    border: 2px solid #1e3a8a !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    text-align: left !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    min-height: 44px !important;
 }
 
 .terreno-item:hover {
-    background-color: #dce3e9;
-    transform: translateX(3px);
+    background-color: #1e3a8a !important; /* Blu ancora più scuro per hover */
+    transform: translateY(-1px) !important; /* Cambiato da scale(1.02) a translateY per un effetto più sottile */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important; /* Ombra più pronunciata per hover */
 }
 
-.terreno-item.selected {
-    background-color: var(--primary-green);
-    color: white;
-    font-weight: 700;
-    border: 1px solid var(--dark-green);
+.terreno-item.current {
+    background-color: #1e40af !important; /* Stesso colore del riquadro normale */
+    color: white !important;
+    border-color: #1e3a8a !important;
+    transform: none !important; /* Rimosso scale per il terreno corrente */
 }
 
-.terreno-item.selected .terreno-name {
-    color: white;
+.terreno-name {
+    display: block !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    color: white !important;
+    text-align: left !important; /* Nome allineato a sinistra */
+    flex: 1 !important; /* Prende tutto lo spazio disponibile */
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin-right: 0 !important; /* Nessun margine a destra */
 }
 
 .terreno-actions {
-    display: flex;
-    gap: 8px;
+    display: flex !important;
+    gap: 8px !important;
+    margin-left: auto !important; /* Spinge le icone a destra */
+    flex-shrink: 0 !important;
 }
 
-.terreno-actions button {
-    background: none;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    font-size: 1em;
-    padding: 5px;
-    width: auto;
-    transition: color 0.2s ease;
+.terreno-actions .action-button {
+    padding: 6px !important;
+    border-radius: 4px !important;
+    transition: all 0.2s ease !important;
+    background-color: transparent !important; /* Sfondo trasparente */
+    border: none !important;
+    color: white !important; /* Icone bianche */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 28px !important; /* Dimensioni come nell'immagine */
+    min-height: 28px !important;
 }
 
-.terreno-item.selected .terreno-actions button {
-    color: white;
+.terreno-actions .action-button:hover {
+    background-color: rgba(255,255,255,0.1) !important; /* Hover sottile */
+    transform: scale(1.05) !important;
 }
 
-.terreno-actions button:hover {
-    color: var(--dark-blue);
+.terreno-actions .action-button svg {
+    width: 20px !important;
+    height: 20px !important;
+    fill: none !important;
+    stroke: white !important;
+    stroke-width: 2 !important;
 }
+
+.terreno-actions .action-button.edit {
+    color: white !important;
+}
+
+.terreno-actions .action-button.delete {
+    color: white !important; /* Cambiato da rosso a bianco per corrispondere all'immagine */
+}
+
+
+
 
 .species-list {
     list-style: none;
@@ -717,21 +991,30 @@ h4 {
         flex-direction: column;
     }
 
-    #main-map-container,
-    #selected-terrain-details,
-    .dashboard-section,
-    .info-panel-row { 
-        flex: 1 1 100%;
-        min-width: unset;
-        height: auto;
+    .map-and-details-container {
+        flex-direction: column;
     }
 
     #main-map-container {
         height: 50vh;
+        min-height: 300px;
+        width: 100%;
+    }
+
+    #selected-terrain-details {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .dashboard-section,
+    .info-panel-row { 
+        width: 100%;
+        min-width: unset;
     }
 
     #coordinates-section,
     #polygon-vertices-section { 
         flex: 1 1 100%;
+        width: 100%;
     }
 }

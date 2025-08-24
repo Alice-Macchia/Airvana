@@ -11,8 +11,9 @@ from dotenv import load_dotenv
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from geoalchemy2.shape import to_shape
-from BackEnd.app.models import Base, Plot
+from BackEnd.app.models import Base, Plot, PlotSpecies, Species
 from BackEnd.app.routes import router
+
 from BackEnd.app.schemas import (SaveCoordinatesRequest, SaveCoordinatesResponse, ClassificaRequest, ClassificaResponse, EsportaRequest, EsportaResponse)
 from BackEnd.app.utils import (inserisci_terreno, mostra_classifica, Esporta, get_species_distribution_by_plot)
 from BackEnd.app.co2_o2_calculator import (calculate_co2_o2_hourly, get_coefficients_from_db, get_weather_data_from_db, get_species_from_db, aggiorna_weatherdata_con_assorbimenti)
@@ -50,6 +51,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
 
 @app.on_event("startup")
 async def startup():
@@ -242,6 +244,65 @@ async def calcola_co2(plot_id: int, giorno: str = None, user: dict = Depends(get
 async def get_all_plots(session: AsyncSession = Depends(get_db)):
     plots = await get_all_plots_coords(session)
     return {"data": plots}
+
+@app.get("/api/users/me/plots")
+async def get_user_plots(user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """
+    Ottiene tutti i plot dell'utente corrente con le loro specie
+    """
+    try:
+        user_id = user["id"]
+        
+        # Query per ottenere tutti i plot dell'utente
+        query = select(Plot).where(Plot.user_id == user_id)
+        result = await db.execute(query)
+        plots = result.scalars().all()
+        
+        plots_data = []
+        for plot in plots:
+            # Ottieni le specie per questo plot
+            species_query = select(PlotSpecies, Species).join(Species).where(PlotSpecies.plot_id == plot.id)
+            species_result = await db.execute(species_query)
+            species_data = species_result.all()
+            
+            # Formatta le specie
+            species_list = []
+            for plot_species, species in species_data:
+                species_list.append({
+                    "name": species.name,
+                    "quantity": plot_species.surface_area
+                })
+            
+            # Calcola area totale dal poligono se disponibile
+            area_ha = 0
+            if plot.geom:
+                from geoalchemy2.shape import to_shape
+                try:
+                    shapely_geom = to_shape(plot.geom)
+                    area_ha = shapely_geom.area * 111.32 * 111.32 * 0.0001  # Converti in ettari
+                except:
+                    area_ha = 0
+            
+            plot_info = {
+                "id": plot.id,
+                "name": plot.name or f"Terreno {plot.id}",
+                "species": species_list,
+                "area_ha": round(area_ha, 2),
+                "perimetro_m": 0,  # Calcolabile se necessario
+                "coordinate": [],  # Coordinate del poligono se necessario
+                "created_at": plot.created_at.isoformat() if plot.created_at else None
+            }
+            plots_data.append(plot_info)
+        
+        return {"plots": plots_data}
+        
+    except Exception as e:
+        print(f"Errore nel recupero dei plot dell'utente: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Errore nel recupero dei plot")
+
+
 
 @app.get("/weather/{plot_id}")
 async def get_weather(plot_id: int, giorno: str = Query(...), db: AsyncSession = Depends(get_db)):

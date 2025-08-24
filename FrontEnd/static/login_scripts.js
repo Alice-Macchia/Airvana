@@ -1,3 +1,6 @@
+// Test di caricamento JavaScript
+alert('JavaScript caricato correttamente!');
+
 // Variabile per lo stato di registrazione e per i dati di localizzazione
 let isRegistering = false;
 let currentView = 'login'; // 'login', 'registerChoice', 'registerUser', 'registerCompany'
@@ -380,16 +383,24 @@ function handleDropdownKeyDown(event, inputElement, dropdownElement) {
  * Alterna la visibilità di un campo password e la relativa icona.
  */
 function togglePasswordVisibility(inputId, toggleId) {
+    console.log('togglePasswordVisibility chiamata con:', inputId, toggleId); // Debug
     const passwordInput = document.getElementById(inputId);
     const toggleIcon = document.getElementById(toggleId);
-    if (!passwordInput || !toggleIcon) return;
+    console.log('Elementi trovati:', { passwordInput, toggleIcon }); // Debug
+    
+    if (!passwordInput || !toggleIcon) {
+        console.error('Elementi mancanti per togglePasswordVisibility'); // Debug
+        return;
+    }
 
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
         toggleIcon.innerHTML = showPasswordSVG;
+        console.log('Password ora visibile'); // Debug
     } else {
         passwordInput.type = 'password';
         toggleIcon.innerHTML = hidePasswordSVG;
+        console.log('Password ora nascosta'); // Debug
     }
 }
 
@@ -659,6 +670,7 @@ function handleFormSubmit(event) {
 
 // Event listener che si attiva quando il DOM è completamente caricato e parsato.
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM completamente caricato!'); // Debug
     // Carica i dati di localizzazione prima di inizializzare gli altri componenti
     await loadLocationData();
 
@@ -698,6 +710,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (backToChoiceUser) backToChoiceUser.addEventListener('click', backToRegisterChoice);
     if (backToChoiceCompany) backToChoiceCompany.addEventListener('click', backToRegisterChoice);
     if (backToChoiceAgro) backToChoiceAgro.addEventListener('click', backToRegisterChoice);
+
+    // Gestione della visibilità delle password per il form di login
+    const toggleLoginPasswordEl = document.getElementById('toggleLoginPassword');
+    console.log('Elemento toggleLoginPassword trovato:', toggleLoginPasswordEl); // Debug
+    if (toggleLoginPasswordEl) {
+        toggleLoginPasswordEl.innerHTML = hidePasswordSVG;
+        console.log('Icona impostata per toggleLoginPassword'); // Debug
+        toggleLoginPasswordEl.addEventListener('click', () => {
+            console.log('Click su toggleLoginPassword!'); // Debug
+            togglePasswordVisibility('loginPassword', 'toggleLoginPassword');
+        });
+        console.log('Event listener aggiunto per toggleLoginPassword'); // Debug
+    } else {
+        console.error('Elemento toggleLoginPassword NON TROVATO!'); // Debug
+    }
 
     // Gestione della visibilità delle password per il form agricoltore
     const toggleRegisterPasswordEl = document.getElementById('toggleRegisterPassword');
