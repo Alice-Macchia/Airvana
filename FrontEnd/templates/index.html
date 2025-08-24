@@ -6,6 +6,11 @@
     <title>Airvana: Il Terreno che Respira!</title>
     <link rel="icon" href="/static/favicon-16x16.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- nuove librerie: -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.23/dist/jspdf.plugin.autotable.min.js"></script>
+  
     <link rel="stylesheet" href="/static/Dashstyle.css">
 </head>
 <body class="bg-gray-100 text-gray-900 font-sans">
@@ -19,8 +24,8 @@
         <a href="/inserisciterreno" class="w-full text-center py-2 hover:bg-blue-100">
           🌱 <span class="hidden group-hover:inline text-white group-hover:text-gray-800 transition">Terreno</span>
         </a>
-        <a href="#" class="w-full text-center py-2 hover:bg-blue-100">
-          📄 <span class="hidden group-hover:inline text-white group-hover:text-gray-800 transition">Report</span>
+        <a href="#" id="exportPdfBtn" class="w-full text-center py-2 hover:bg-blue-100">
+          📄 <span class="hidden group-hover:inline text-white group-hover:text-gray-800 transition">Report PDF</span>
         </a>
         <a href="#" class="w-full text-center py-2 hover:bg-blue-100">
           ⚙️ <span class="hidden group-hover:inline text-white group-hover:text-gray-800 transition">Impostazioni</span>
