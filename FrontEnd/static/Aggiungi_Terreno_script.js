@@ -363,20 +363,10 @@ function renderTerreniList() {
             <span class="terreno-name">${draftTerreno.name}</span>
             <div class="terreno-actions">
                 <button onclick="editDraftTerrenoName()" class="action-button edit" title="Modifica nome">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <path d="M7 17l3 3 7-7-3-3-7 7z"/>
-                        <path d="M14 7l3 3"/>
-                        <path d="M17 3l4 4"/>
-                        <path d="M21 7l-4-4"/>
-                    </svg>
+                    <i class="fa-solid fa-pen-to-square"></i>
                 </button>
                 <button onclick="deleteDraftTerreno()" class="action-button delete" title="Elimina">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <path d="M3 6h18"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
+                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
         `;
@@ -787,6 +777,47 @@ function deleteSpeciesFromSelectedTerrain(index) {
                 showCustomAlert(`Specie eliminata dal terreno "${selectedTerreno.name}". Ricorda di cliccare 'Salva dati terreno'.`);
             }
         }
+    });
+}
+
+function deleteTerrenoFromTable(id) {
+    showCustomConfirm('Sei sicuro di voler eliminare questo terreno?', (confirmed) => {
+        if (!confirmed) return;
+
+        console.log(`Tentativo di eliminazione terreno ID ${id} dal database...`);
+
+        fetch('/delete-terrain', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ terrain_id: id })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Errore durante l'eliminazione: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`✅ Terreno ID ${id} eliminato con successo:`, data.message);
+
+            // Mostra popup di successo
+            showCustomAlert("Eliminato con successo!");
+
+            // Aggiorna dataset locale della tabella
+           // plots = plots.filter(t => t.id !== id);
+
+            // Aggiorna la tabella
+           // updateTerreniTable();
+
+           loadTerreniFromDatabase(); // se esiste
+
+        })
+        .catch(error => {
+            console.error("❌ Errore durante l'eliminazione:", error);
+            showCustomAlert("Errore durante l'eliminazione!");
+        });
     });
 }
 
@@ -1291,20 +1322,10 @@ function updateTerreniTable() {
         cell4.innerHTML = `
             <div class="action-buttons">
                 <button class="action-button edit" onclick="editTerrenoName('${t.id}')" title="Modifica terreno">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <path d="M7 17l3 3 7-7-3-3-7 7z"/>
-                        <path d="M14 7l3 3"/>
-                        <path d="M17 3l4 4"/>
-                        <path d="M21 7l-4-4"/>
-                    </svg>
+                    <i class="fa-solid fa-pen-to-square"></i>
                 </button>
-                <button class="action-button delete" onclick="deleteTerreno('${t.id}')" title="Elimina terreno">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 6h18"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
+                <button class="action-button delete" onclick="deleteTerrenoFromTable('${t.id}')" title="Elimina terreno">
+                    <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
         `;
