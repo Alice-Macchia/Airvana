@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const TerrenoCard = ({ terreno, onAggiungiAlCarrello, onTerrenoClick }) => {
+const TerrenoCardV2 = ({ terreno, onAggiungiAlCarrello, onTerrenoClick }) => {
   const { id, nome, co2Assorbita, prezzo, descrizione, immagine } = terreno;
   const [imageError, setImageError] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -28,7 +28,7 @@ const TerrenoCard = ({ terreno, onAggiungiAlCarrello, onTerrenoClick }) => {
   };
 
   return (
-    <div className={`terreno-card ${isExpanded ? 'expanded' : ''}`}>
+    <div className="terreno-card-v2">
       {/* Immagine del terreno */}
       <div className="card-img-top" onClick={onTerrenoClick} style={{ cursor: 'pointer' }}>
         {!imageError ? (
@@ -44,8 +44,9 @@ const TerrenoCard = ({ terreno, onAggiungiAlCarrello, onTerrenoClick }) => {
             <span className="fallback-text">{nome}</span>
           </div>
         )}
-        <div className="certified-badge">
-          🌿 Certificato
+        <div className="certified-badge-v2">
+          <i className="fas fa-certificate"></i>
+          Certificato
         </div>
       </div>
 
@@ -62,38 +63,39 @@ const TerrenoCard = ({ terreno, onAggiungiAlCarrello, onTerrenoClick }) => {
         </p>
 
         {/* Statistiche CO₂ */}
-        <div className="row mb-3">
-          <div className="col-6">
-            <div className="text-center p-2 bg-light rounded">
-              <div className="fw-bold text-success">{co2Assorbita.toLocaleString()}</div>
-              <small className="text-muted">kg CO₂/anno</small>
-            </div>
+        <div className="stats-container-v2">
+          <div className="stat-box-v2">
+            <div className="stat-value-v2 co2">{co2Assorbita.toLocaleString()}</div>
+            <div className="stat-label-v2">kg CO₂/anno</div>
           </div>
-          <div className="col-6">
-            <div className="text-center p-2 bg-light rounded">
-              <div className="fw-bold text-primary">€{prezzo}</div>
-              <small className="text-muted">/anno</small>
-            </div>
+          <div className="stat-box-v2">
+            <div className="stat-value-v2 price">€{prezzo}</div>
+            <div className="stat-label-v2">/anno</div>
           </div>
         </div>
 
         {/* Calcolo impatto - solo quando espanso */}
         {isExpanded && (
-          <div className="alert alert-success alert-sm mb-3">
-            <div className="d-flex align-items-center">
-              <i className="fas fa-calculator me-2"></i>
-              <div>
-                <strong>Impatto:</strong> Compensa {Math.round(co2Assorbita / 1000 * 100) / 100} tonnellate di CO₂
-              </div>
+          <div className="impact-alert-v2">
+            <i className="fas fa-calculator"></i>
+            <div className="alert-content">
+              <strong>Impatto:</strong>
+              <p>Compensa {Math.round(co2Assorbita / 1000 * 100) / 100} tonnellate di CO₂</p>
             </div>
           </div>
         )}
 
         {/* Pulsante per espandere/contrarre */}
-        <div className="d-flex justify-content-between align-items-center mb-2">
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <button 
             className="btn btn-sm btn-outline-primary"
             onClick={() => setIsExpanded(!isExpanded)}
+            style={{ 
+              flex: 1, 
+              borderRadius: 'var(--radius-lg)',
+              fontSize: '0.8rem',
+              padding: '0.5rem'
+            }}
           >
             {isExpanded ? 'Mostra meno' : 'Mostra di più'}
           </button>
@@ -104,40 +106,33 @@ const TerrenoCard = ({ terreno, onAggiungiAlCarrello, onTerrenoClick }) => {
               e.stopPropagation();
               onAggiungiAlCarrello(id);
             }}
-            className="btn-airvana"
-            style={{ width: 'auto', padding: '0.5rem 1rem' }}
+            className="btn-add-to-cart-v2"
           >
-            <i className="fas fa-shopping-cart me-1"></i>
+            <i className="fas fa-shopping-cart"></i>
             Aggiungi
           </button>
         </div>
       </div>
 
       {/* Footer della card */}
-      <div className="card-footer bg-transparent">
-        <div className="d-flex justify-content-between text-center">
-          <div className="flex-fill">
-            <small className="text-muted d-flex flex-column align-items-center">
-              <i className="fas fa-map-marker-alt mb-1"></i>
-              <span>Italia</span>
-            </small>
-          </div>
-          <div className="flex-fill">
-            <small className="text-muted d-flex flex-column align-items-center">
-              <i className="fas fa-certificate mb-1"></i>
-              <span>Certificato</span>
-            </small>
-          </div>
-          <div className="flex-fill">
-            <small className="text-muted d-flex flex-column align-items-center">
-              <i className="fas fa-search mb-1"></i>
-              <span>Monitorato</span>
-            </small>
-          </div>
+      <div className="card-footer">
+        <div className="footer-info-v2">
+          <small>
+            <i className="fas fa-map-marker-alt"></i>
+            <span>Italia</span>
+          </small>
+          <small>
+            <i className="fas fa-certificate"></i>
+            <span>Certificato</span>
+          </small>
+          <small>
+            <i className="fas fa-search"></i>
+            <span>Monitorato</span>
+          </small>
         </div>
       </div>
     </div>
   );
 };
 
-export default TerrenoCard; 
+export default TerrenoCardV2;

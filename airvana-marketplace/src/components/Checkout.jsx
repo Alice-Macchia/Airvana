@@ -1,276 +1,197 @@
 import React, { useState } from 'react';
-import './Checkout.css';
+import './CheckoutV2.css';
 
 const Checkout = ({ cartItems, onClose, onComplete }) => {
-  const [formData, setFormData] = useState({
+  const [currentStep, setCurrentStep] = useState(1);
+  const [orderData, setOrderData] = useState({
     nome: '',
     cognome: '',
     email: '',
-    telefono: '',
     indirizzo: '',
     citta: '',
     cap: '',
-    paese: 'Italia',
-    metodoPagamento: 'carta',
-    note: ''
+    pagamento: 'carta',
+    numeroCarta: '',
+    scadenza: '',
+    cvv: ''
   });
 
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-
-  // Calcola il totale
   const subtotal = cartItems.reduce((sum, item) => sum + item.prezzo, 0);
-  const iva = subtotal * 0.22; // 22% IVA
-  const totale = subtotal + iva;
+  const tasse = subtotal * 0.22;
+  const totale = subtotal + tasse;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setOrderData(prev => ({
       ...prev,
       [name]: value
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-
-    // Simula chiamata API
-    setTimeout(() => {
-      setLoading(false);
-      onComplete({
-        orderId: `ORD-${Date.now()}`,
-        items: cartItems,
-        total: totale,
-        customer: formData
-      });
-    }, 2000);
+    const order = {
+      ...orderData,
+      items: cartItems,
+      subtotal,
+      tasse,
+      totale,
+      orderId: 'ORD-' + Date.now()
+    };
+    onComplete(order);
   };
 
-  const nextStep = () => setStep(step + 1);
-  const prevStep = () => setStep(step - 1);
+  const nextStep = () => {
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
+  };
 
-  return (
-    <div className="checkout-overlay">
-      <div className="checkout-modal">
-        <div className="checkout-header">
-          <h2>🌿 Checkout Crediti CO₂</h2>
-          <button className="close-btn" onClick={onClose}>
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
+  const prevStep = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
 
-        {/* Progress Bar */}
-        <div className="checkout-progress">
-          <div className={`progress-step ${step >= 1 ? 'active' : ''}`}>
-            <span className="step-number">1</span>
-            <span className="step-label">Riepilogo</span>
-          </div>
-          <div className={`progress-step ${step >= 2 ? 'active' : ''}`}>
-            <span className="step-number">2</span>
-            <span className="step-label">Dati</span>
-          </div>
-          <div className={`progress-step ${step >= 3 ? 'active' : ''}`}>
-            <span className="step-number">3</span>
-            <span className="step-label">Pagamento</span>
-          </div>
-        </div>
-
-        {/* Step 1: Riepilogo */}
-        {step === 1 && (
-          <div className="checkout-step">
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="checkout-step-v2">
             <h3>Riepilogo Ordine</h3>
-            <div className="cart-items">
-              {cartItems.map((item, index) => (
-                <div key={index} className="cart-item">
-                  <div className="item-image">
+            <div className="cart-items-v2">
+              {cartItems.map(item => (
+                <div key={item.id} className="cart-item-v2">
+                  <div className="item-image-v2">
                     <img src={item.immagine} alt={item.nome} />
                   </div>
-                  <div className="item-details">
+                  <div className="item-details-v2">
                     <h4>{item.nome}</h4>
-                    <p className="item-description">{item.descrizione}</p>
-                    <div className="item-stats">
-                      <span className="co2-absorbed">
-                        <i className="fas fa-leaf"></i> {item.co2Assorbita} kg CO₂/anno
-                      </span>
+                    <p className="item-description-v2">{item.descrizione}</p>
+                    <div className="item-stats-v2">
+                      <div className="co2-absorbed-v2">
+                        <i className="fas fa-leaf"></i>
+                        {item.co2Assorbita.toLocaleString()} kg CO₂/anno
+                      </div>
                     </div>
                   </div>
-                  <div className="item-price">
-                    <span className="price">€{item.prezzo}/anno</span>
+                  <div className="item-price-v2">
+                    <div className="price-v2">€{item.prezzo}</div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="order-summary">
-              <div className="summary-row">
+            <div className="order-summary-v2">
+              <h4>Riepilogo</h4>
+              <div className="summary-row-v2">
                 <span>Subtotale:</span>
                 <span>€{subtotal.toFixed(2)}</span>
               </div>
-              <div className="summary-row">
-                <span>IVA (22%):</span>
-                <span>€{iva.toFixed(2)}</span>
+              <div className="summary-row-v2">
+                <span>Tasse (22%):</span>
+                <span>€{tasse.toFixed(2)}</span>
               </div>
-              <div className="summary-row total">
+              <div className="summary-row-v2 total-v2">
                 <span>Totale:</span>
                 <span>€{totale.toFixed(2)}</span>
               </div>
             </div>
-            <button className="btn-next" onClick={nextStep}>
-              Procedi ai Dati <i className="fas fa-arrow-right"></i>
-            </button>
           </div>
-        )}
-
-        {/* Step 2: Dati Personali */}
-        {step === 2 && (
-          <div className="checkout-step">
-            <h3>Dati Personali</h3>
-            <form onSubmit={(e) => { e.preventDefault(); nextStep(); }}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="nome">Nome *</label>
+        );
+      case 2:
+        return (
+          <div className="checkout-step-v2">
+            <h3>Informazioni di Spedizione</h3>
+            <form>
+              <div className="form-row-v2">
+                <div className="form-group-v2">
+                  <label>Nome</label>
                   <input
                     type="text"
-                    id="nome"
                     name="nome"
-                    value={formData.nome}
+                    value={orderData.nome}
                     onChange={handleInputChange}
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="cognome">Cognome *</label>
+                <div className="form-group-v2">
+                  <label>Cognome</label>
                   <input
                     type="text"
-                    id="cognome"
                     name="cognome"
-                    value={formData.cognome}
+                    value={orderData.cognome}
                     onChange={handleInputChange}
                     required
                   />
                 </div>
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="email">Email *</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="telefono">Telefono</label>
-                  <input
-                    type="tel"
-                    id="telefono"
-                    name="telefono"
-                    value={formData.telefono}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label htmlFor="indirizzo">Indirizzo *</label>
+              <div className="form-group-v2">
+                <label>Email</label>
                 <input
-                  type="text"
-                  id="indirizzo"
-                  name="indirizzo"
-                  value={formData.indirizzo}
+                  type="email"
+                  name="email"
+                  value={orderData.email}
                   onChange={handleInputChange}
                   required
                 />
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="citta">Città *</label>
-                  <input
-                    type="text"
-                    id="citta"
-                    name="citta"
-                    value={formData.citta}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="cap">CAP *</label>
-                  <input
-                    type="text"
-                    id="cap"
-                    name="cap"
-                    value={formData.cap}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label htmlFor="note">Note (opzionale)</label>
-                <textarea
-                  id="note"
-                  name="note"
-                  value={formData.note}
+              <div className="form-group-v2">
+                <label>Indirizzo</label>
+                <input
+                  type="text"
+                  name="indirizzo"
+                  value={orderData.indirizzo}
                   onChange={handleInputChange}
-                  rows="3"
-                  placeholder="Note aggiuntive per l'ordine..."
+                  required
                 />
               </div>
-              <div className="form-actions">
-                <button type="button" className="btn-prev" onClick={prevStep}>
-                  <i className="fas fa-arrow-left"></i> Indietro
-                </button>
-                <button type="submit" className="btn-next">
-                  Procedi al Pagamento <i className="fas fa-arrow-right"></i>
-                </button>
+              <div className="form-row-v2">
+                <div className="form-group-v2">
+                  <label>Città</label>
+                  <input
+                    type="text"
+                    name="citta"
+                    value={orderData.citta}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group-v2">
+                  <label>CAP</label>
+                  <input
+                    type="text"
+                    name="cap"
+                    value={orderData.cap}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
               </div>
             </form>
           </div>
-        )}
-
-        {/* Step 3: Pagamento */}
-        {step === 3 && (
-          <div className="checkout-step">
+        );
+      case 3:
+        return (
+          <div className="checkout-step-v2">
             <h3>Metodo di Pagamento</h3>
-            <div className="payment-methods">
-              <div className="payment-method">
+            <div className="payment-methods-v2">
+              <div className="payment-method-v2">
                 <input
                   type="radio"
                   id="carta"
-                  name="metodoPagamento"
+                  name="pagamento"
                   value="carta"
-                  checked={formData.metodoPagamento === 'carta'}
+                  checked={orderData.pagamento === 'carta'}
                   onChange={handleInputChange}
                 />
                 <label htmlFor="carta">
                   <i className="fas fa-credit-card"></i>
-                  Carta di Credito/Debito
+                  Carta di Credito
                 </label>
               </div>
-              <div className="payment-method">
-                <input
-                  type="radio"
-                  id="bonifico"
-                  name="metodoPagamento"
-                  value="bonifico"
-                  checked={formData.metodoPagamento === 'bonifico'}
-                  onChange={handleInputChange}
-                />
-                <label htmlFor="bonifico">
-                  <i className="fas fa-university"></i>
-                  Bonifico Bancario
-                </label>
-              </div>
-              <div className="payment-method">
+              <div className="payment-method-v2">
                 <input
                   type="radio"
                   id="paypal"
-                  name="metodoPagamento"
+                  name="pagamento"
                   value="paypal"
-                  checked={formData.metodoPagamento === 'paypal'}
+                  checked={orderData.pagamento === 'paypal'}
                   onChange={handleInputChange}
                 />
                 <label htmlFor="paypal">
@@ -278,77 +199,113 @@ const Checkout = ({ cartItems, onClose, onComplete }) => {
                   PayPal
                 </label>
               </div>
+              <div className="payment-method-v2">
+                <input
+                  type="radio"
+                  id="bonifico"
+                  name="pagamento"
+                  value="bonifico"
+                  checked={orderData.pagamento === 'bonifico'}
+                  onChange={handleInputChange}
+                />
+                <label htmlFor="bonifico">
+                  <i className="fas fa-university"></i>
+                  Bonifico Bancario
+                </label>
+              </div>
             </div>
 
-            {formData.metodoPagamento === 'carta' && (
-              <div className="card-form">
-                <div className="form-group">
-                  <label htmlFor="cardNumber">Numero Carta *</label>
-                  <input
-                    type="text"
-                    id="cardNumber"
-                    placeholder="1234 5678 9012 3456"
-                    maxLength="19"
-                  />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="expiry">Scadenza *</label>
+            {orderData.pagamento === 'carta' && (
+              <div className="card-form-v2">
+                <div className="form-row-v2">
+                  <div className="form-group-v2">
+                    <label>Numero Carta</label>
                     <input
                       type="text"
-                      id="expiry"
-                      placeholder="MM/AA"
-                      maxLength="5"
+                      name="numeroCarta"
+                      value={orderData.numeroCarta}
+                      onChange={handleInputChange}
+                      placeholder="1234 5678 9012 3456"
+                      required
                     />
                   </div>
-                  <div className="form-group">
-                    <label htmlFor="cvv">CVV *</label>
+                </div>
+                <div className="form-row-v2">
+                  <div className="form-group-v2">
+                    <label>Scadenza</label>
                     <input
                       type="text"
-                      id="cvv"
+                      name="scadenza"
+                      value={orderData.scadenza}
+                      onChange={handleInputChange}
+                      placeholder="MM/AA"
+                      required
+                    />
+                  </div>
+                  <div className="form-group-v2">
+                    <label>CVV</label>
+                    <input
+                      type="text"
+                      name="cvv"
+                      value={orderData.cvv}
+                      onChange={handleInputChange}
                       placeholder="123"
-                      maxLength="4"
+                      required
                     />
                   </div>
                 </div>
               </div>
             )}
-
-            <div className="order-summary">
-              <h4>Riepilogo Finale</h4>
-              <div className="summary-row">
-                <span>Totale Ordine:</span>
-                <span>€{totale.toFixed(2)}</span>
-              </div>
-              <div className="summary-row">
-                <span>Crediti CO₂:</span>
-                <span>{cartItems.reduce((sum, item) => sum + item.co2Assorbita, 0)} kg/anno</span>
-              </div>
-            </div>
-
-            <div className="form-actions">
-              <button type="button" className="btn-prev" onClick={prevStep}>
-                <i className="fas fa-arrow-left"></i> Indietro
-              </button>
-              <button 
-                type="button" 
-                className="btn-complete" 
-                onClick={handleSubmit}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin"></i> Elaborazione...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-check"></i> Completa Ordine
-                  </>
-                )}
-              </button>
-            </div>
           </div>
-        )}
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="checkout-overlay-v2">
+      <div className="checkout-modal-v2">
+        <div className="checkout-header-v2">
+          <h2>Checkout</h2>
+          <button className="close-btn-v2" onClick={onClose}>
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div className="checkout-progress-v2">
+          {[1, 2, 3].map(step => (
+            <div key={step} className={`progress-step-v2 ${currentStep >= step ? 'active' : ''}`}>
+              <div className="step-number-v2">{step}</div>
+              <div className="step-label-v2">
+                {step === 1 && 'Riepilogo'}
+                {step === 2 && 'Spedizione'}
+                {step === 3 && 'Pagamento'}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {renderStep()}
+
+          <div className="form-actions-v2">
+            {currentStep > 1 && (
+              <button type="button" className="btn-prev-v2" onClick={prevStep}>
+                <i className="fas fa-arrow-left"></i> Precedente
+              </button>
+            )}
+            {currentStep < 3 ? (
+              <button type="button" className="btn-next-v2" onClick={nextStep}>
+                Successivo <i className="fas fa-arrow-right"></i>
+              </button>
+            ) : (
+              <button type="submit" className="btn-complete-v2" disabled={!orderData.nome || !orderData.cognome || !orderData.email}>
+                <i className="fas fa-check"></i> Completa Ordine
+              </button>
+            )}
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import TerrenoCard from './TerrenoCard';
+import React, { useState, useEffect, useRef } from 'react';
+import TerrenoCardV2 from './TerrenoCardV2';
 import Checkout from './components/Checkout';
 import TerrenoDetail from './components/TerrenoDetail';
-import './Marketplace.css';
+import './MarketplaceV2.css';
 
 const Marketplace = () => {
   const [terreni, setTerreni] = useState([]);
@@ -11,6 +11,9 @@ const Marketplace = () => {
   const [showCheckout, setShowCheckout] = useState(false);
   const [selectedTerreno, setSelectedTerreno] = useState(null);
   const [showTerrenoDetail, setShowTerrenoDetail] = useState(false);
+  const hamburgerRef = useRef(null);
+  const navLinksRef = useRef(null);
+  const navbarRef = useRef(null);
 
   // Dati statici per i terreni certificati
   const terreniData = [
@@ -64,8 +67,44 @@ const Marketplace = () => {
     }
   ];
 
-  // Simula caricamento dati da API
+  // Gestione degli eventi per la navbar
   useEffect(() => {
+    const handleScroll = () => {
+      if (navbarRef.current) {
+        if (window.scrollY > 50) {
+          navbarRef.current.classList.add('scrolled');
+        } else {
+          navbarRef.current.classList.remove('scrolled');
+        }
+      }
+    };
+
+    const handleHamburgerClick = () => {
+      if (navLinksRef.current) {
+        navLinksRef.current.classList.toggle('active');
+      }
+    };
+
+    const handleNavLinkClick = (e) => {
+      if (navLinksRef.current && navLinksRef.current.classList.contains('active')) {
+        navLinksRef.current.classList.remove('active');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
+    if (hamburgerRef.current) {
+      hamburgerRef.current.addEventListener('click', handleHamburgerClick);
+    }
+    
+    if (navLinksRef.current) {
+      const navLinks = navLinksRef.current.querySelectorAll('a');
+      navLinks.forEach(link => {
+        link.addEventListener('click', handleNavLinkClick);
+      });
+    }
+
+    // Simula caricamento dati da API
     const loadTerreni = async () => {
       // Simula chiamata API
       setTimeout(() => {
@@ -82,6 +121,22 @@ const Marketplace = () => {
       section.style.opacity = '1';
       section.style.transform = 'translateY(0)';
     });
+
+    // Cleanup degli event listeners
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      
+      if (hamburgerRef.current) {
+        hamburgerRef.current.removeEventListener('click', handleHamburgerClick);
+      }
+      
+      if (navLinksRef.current) {
+        const navLinks = navLinksRef.current.querySelectorAll('a');
+        navLinks.forEach(link => {
+          link.removeEventListener('click', handleNavLinkClick);
+        });
+      }
+    };
   }, []);
 
   // Funzione per gestire l'aggiunta al carrello
@@ -141,48 +196,47 @@ const Marketplace = () => {
 
   return (
     <>
-      {/* Header Hero Section (come demo.html) */}
-      <header className="marketplace-header">
+      {/* Navbar V2 */}
+      <nav className="navbar-v2" ref={navbarRef}>
+        <a href="/" className="logo">
+          <i className="fas fa-leaf logo-icon"></i>
+          Airvana
+        </a>
+        <ul className="nav-links" ref={navLinksRef}>
+          <li><a href="/"><i className="fas fa-home"></i> Home</a></li>
+          <li><a href="#terreni"><i className="fas fa-seedling"></i> Terreni</a></li>
+          <li><a href="#benefici"><i className="fas fa-award"></i> Benefici</a></li>
+          <li><a href="#contatti"><i className="fas fa-envelope"></i> Contatti</a></li>
+          <li className="desktop-only">
+            <a href="/logreg" className="btn-auth-v2">
+              <i className="fas fa-user"></i>
+              Accedi / Registrati
+            </a>
+          </li>
+        </ul>
+        <div className="hamburger mobile-menu" ref={hamburgerRef}>
+          <i className="fas fa-bars"></i>
+        </div>
+      </nav>
+
+      {/* Header Hero Section V2 */}
+      <header className="marketplace-header-v2">
         <div className="title-container">
           <h1>🌿 Marketplace Crediti CO₂</h1>
           <p className="lead">
             Acquista crediti di carbonio da terreni agricoli certificati e sostenibili
           </p>
-          <button 
-            className="btn btn-outline-light mt-3"
-            onClick={() => window.location.href = '/'}
-            style={{ 
-              border: '2px solid white', 
-              color: 'white',
-              backgroundColor: 'transparent',
-              padding: '10px 20px',
-              borderRadius: '25px',
-              fontWeight: 'bold',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.backgroundColor = 'white';
-              e.target.style.color = '#28a745';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = 'transparent';
-              e.target.style.color = 'white';
-            }}
-          >
-            <i className="fas fa-home me-2"></i>
-            Torna alla Home
-          </button>
         </div>
       </header>
 
-      {/* Main Container (come demo.html) */}
+      {/* Main Container */}
       <main>
-        {/* Sezione Terreni */}
-        <section className="terreni-section">
-          <div className="section-header">
+        {/* Sezione Terreni V2 */}
+        <section id="terreni">
+          <div className="section-header-v2">
             <h2>Terreni Certificati Disponibili</h2>
             <button 
-              className="btn-cart"
+              className="btn-cart-v2"
               onClick={handleOpenCheckout}
               disabled={cart.length === 0}
             >
@@ -190,10 +244,10 @@ const Marketplace = () => {
               Carrello ({cart.length})
             </button>
           </div>
-          <div className="row g-4">
+          <div className="terreni-grid">
             {terreni.map((terreno) => (
-              <div key={terreno.id} className="col-12 col-md-6 col-lg-4">
-                <TerrenoCard 
+              <div key={terreno.id}>
+                <TerrenoCardV2 
                   terreno={terreno}
                   onAggiungiAlCarrello={handleAggiungiAlCarrello}
                   onTerrenoClick={() => handleTerrenoClick(terreno)}
@@ -203,37 +257,31 @@ const Marketplace = () => {
           </div>
         </section>
 
-        {/* Sezione Benefici (come demo.html) */}
-        <section className="benefici-section">
+        {/* Sezione Benefici V2 */}
+        <section id="benefici" className="benefici-section-v2">
           <h2>🌱 Perché scegliere i nostri crediti CO₂?</h2>
-          <div className="row">
-            <div className="col-md-4">
-              <div className="text-center p-3">
-                <i className="fas fa-certificate text-success fs-2 mb-2"></i>
-                <h6>Certificati</h6>
-                <small className="text-muted">Tutti i terreni sono certificati da enti riconosciuti</small>
-              </div>
+          <div className="benefici-grid">
+            <div className="benefit-card">
+              <i className="fas fa-certificate"></i>
+              <h6>Certificati</h6>
+              <small>Tutti i terreni sono certificati da enti riconosciuti</small>
             </div>
-            <div className="col-md-4">
-              <div className="text-center p-3">
-                <i className="fas fa-leaf text-success fs-2 mb-2"></i>
-                <h6>Sostenibili</h6>
-                <small className="text-muted">Pratiche agricole rispettose dell'ambiente</small>
-              </div>
+            <div className="benefit-card">
+              <i className="fas fa-leaf"></i>
+              <h6>Sostenibili</h6>
+              <small>Pratiche agricole rispettose dell'ambiente</small>
             </div>
-            <div className="col-md-4">
-              <div className="text-center p-3">
-                <i className="fas fa-chart-line text-success fs-2 mb-2"></i>
-                <h6>Trasparenti</h6>
-                <small className="text-muted">Monitoraggio continuo dell'assorbimento CO₂</small>
-              </div>
+            <div className="benefit-card">
+              <i className="fas fa-chart-line"></i>
+              <h6>Trasparenti</h6>
+              <small>Monitoraggio continuo dell'assorbimento CO₂</small>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer (come demo.html) */}
-      <footer>
+      {/* Footer V2 */}
+      <footer id="contatti" className="marketplace-footer-v2">
         <p>&copy; 2025 Airvana Marketplace. Tutti i diritti riservati.</p>
       </footer>
 

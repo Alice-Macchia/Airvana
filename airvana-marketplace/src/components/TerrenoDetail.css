@@ -183,26 +183,29 @@
 }
 
 .btn-add-to-cart {
-  background: var(--primary-green);
+  background-color: var(--primary-green);
   color: white;
   border: none;
-  padding: 1rem 2rem;
   border-radius: 25px;
   font-size: 1.1rem;
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  transition: background-color 0.3s ease, transform 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1rem 2rem;
+  line-height: 1.1;
+  position: relative;
+  overflow: hidden;
+  font-weight: 600;
   gap: 0.5rem;
-  box-shadow: 0 5px 15px rgba(0, 119, 182, 0.3);
 }
 
 .btn-add-to-cart:hover {
-  background: var(--accent-green);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 119, 182, 0.4);
+  background-color: var(--accent-green);
+  transform: translateY(-1px);
 }
 
 /* Tabs Navigation */

@@ -21,7 +21,7 @@ longitude = coords[2]
 
 oggi = datetime.today().strftime("%Y-%m-%d")
 
-print("📍 Coordinate plot:", plot_id, latitude, longitude)
+print("Coordinate plot:", plot_id, latitude, longitude)
 
 # === FETCH METEO E SALVATAGGIO ===
 async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float, lon: float) -> bool:

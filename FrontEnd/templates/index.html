@@ -5,7 +5,207 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Airvana: Il Terreno che Respira!</title>
     <link rel="icon" href="/static/favicon-16x16.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+    /* Navbar styles only */
+    .navbar {
+        background-color: #0056b3;
+        padding: 15px 20px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .navbar .logo {
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        text-decoration: none;
+    }
+    
+    .nav-links {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 20px;
+        align-items: center;
+    }
+    
+    .nav-links li {
+        margin: 0;
+    }
+    
+    .nav-links a {
+        color: white;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: background-color 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .nav-links a:hover {
+        background-color: rgba(255,255,255,0.1);
+    }
+    
+    .btn-auth-register {
+        background-color: transparent;
+        border: 1px solid white;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-auth-register:hover {
+        background-color: white;
+        color: #0056b3;
+    }
+    
+    .hamburger {
+        display: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+    }
+    
+    @media (max-width: 768px) {
+        .nav-links {
+            position: fixed;
+            top: 70px;
+            left: -100%;
+            width: 100%;
+            height: calc(100vh - 70px);
+            background-color: #0056b3;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding-top: 50px;
+            transition: left 0.3s ease;
+        }
+        
+        .nav-links.active {
+            left: 0;
+        }
+        
+        .hamburger {
+            display: block;
+        }
+        
+        .desktop-only {
+            display: none;
+        }
+    }
+    
+    /* Sidebar styles */
+    .dashboard-sidebar {
+        width: 64px;
+        background-color: white;
+        box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+        transition: width 0.3s ease;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    
+    .dashboard-sidebar:hover {
+        width: 250px;
+    }
+    
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px 0;
+    }
+    
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        text-decoration: none;
+        color: #374151;
+        transition: background-color 0.2s ease;
+        white-space: nowrap;
+    }
+    
+    .sidebar-link:hover {
+        background-color: #e0e7ff;
+    }
+    
+    .sidebar-text {
+        margin-left: 12px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .dashboard-sidebar:hover .sidebar-text {
+        opacity: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .dashboard-sidebar {
+            width: 0;
+            overflow: hidden;
+        }
+        
+        .dashboard-sidebar:hover {
+            width: 0;
+        }
+    }
+    
+    /* Loading spinner */
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #0056b3;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        z-index: 1000;
+    }
+    
+    .loading-card {
+        background: linear-gradient(-90deg, #f0f0f0 0%, #e0e0e0 50%, #f0f0f0 100%);
+        background-size: 400% 400%;
+        animation: shimmer 1.5s ease-in-out infinite;
+        border-radius: 8px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes shimmer {
+        0% { background-position: 0% 0%; }
+        100% { background-position: -200% 0%; }
+    }
+    
+    .hidden { display: none !important; }
+    </style>
     <!-- nuove librerie: -->
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -14,79 +214,104 @@
     <link rel="stylesheet" href="/static/Dashstyle.css">
 </head>
 <body class="bg-gray-100 text-gray-900 font-sans">
-  <div class="flex h-screen">
+  <nav class="navbar">
+    <a href="#" class="logo">Airvana</a>
+    <ul class="nav-links" id="navLinks">
+        <li class="desktop-only">
+            <a href="/logreg" class="btn-auth-register">Logout</a>
+        </li>
+    </ul>
+
+    <div class="hamburger" id="hamburger">
+        <i class="fas fa-bars"></i>
+    </div>
+</nav>
+
+  <div class="flex" style="height: calc(100vh - 70px);">
     <!-- Sidebar -->
-    <aside class="group bg-white w-16 hover:w-64 transition-all duration-300 shadow-md flex flex-col items-center py-4 overflow-hidden">
-      <nav class="flex flex-col gap-6 w-full items-center mt-4">
-        <a href="/home" class="w-full text-center py-2 hover:bg-blue-100">
-          🏠 <span class="hidden group-hover:inline text-white group-hover:text-gray-800 transition">Home</span>
+    <aside class="dashboard-sidebar">
+      <nav class="sidebar-nav">
+        <a href="/home" class="sidebar-link">
+          🏠 <span class="sidebar-text">Home</span>
         </a>
-        <a href="/inserisciterreno" class="w-full text-center py-2 hover:bg-blue-100">
-          🌱 <span class="hidden group-hover:inline text-white group-hover:text-gray-800 transition">Terreno</span>
+        <a href="/inserisciterreno" class="sidebar-link">
+          🌱 <span class="sidebar-text">Terreno</span>
         </a>
-        <a href="#" id="exportPdfBtn" class="w-full text-center py-2 hover:bg-blue-100">
-          📄 <span class="hidden group-hover:inline text-white group-hover:text-gray-800 transition">Report PDF</span>
+        <a href="#" id="exportPdfBtn" class="sidebar-link">
+          📄 <span class="sidebar-text">Report PDF</span>
         </a>
-        <a href="#" class="w-full text-center py-2 hover:bg-blue-100">
-          ⚙️ <span class="hidden group-hover:inline text-white group-hover:text-gray-800 transition">Impostazioni</span>
+        <a href="#" class="sidebar-link">
+          ⚙️ <span class="sidebar-text">Impostazioni</span>
         </a>
-        <a href="#" class="w-full text-center py-2 hover:bg-blue-100">
-          ❓ <span class="hidden group-hover:inline text-white group-hover:text-gray-800 transition">Aiuto</span>
+        <a href="#" class="sidebar-link">
+          ❓ <span class="sidebar-text">Aiuto</span>
         </a>
       </nav>
     </aside>
 
     <!-- Main Content -->
     <main class="flex-1 p-6 overflow-y-auto">
-      <div class="max-w-6xl mx-auto px-6 py-8"></div>
       <!-- Header -->
       <header class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold">Dashboard CO₂ & O₂</h1>
-        <button class="border border-blue-600 text-blue-600 bg-white hover:bg-blue-600 hover:text-white px-4 py-2 rounded transition">
-          Logout
-        </button>
       </header>
 
       <!-- Summary Tabs -->
       <section class="mt-4 mb-8">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" id="summaryCards">
           <div class="bg-white shadow rounded p-4 text-center transform transition-transform hover:scale-105">
             <h3 class="text-sm font-semibold text-gray-600 mb-1">Terreno</h3>
-            <p class="text-xl font-bold text-blue-700">2000m2</p>
+            <p class="text-xl font-bold text-blue-700" id="terrenoValue">
+              <span class="loading-spinner"></span>
+            </p>
           </div>
           <div class="bg-white shadow rounded p-4 text-center transform transition-transform hover:scale-105">
             <h3 class="text-sm font-semibold text-gray-600 mb-1">CO₂ Totale</h3>
-            <p class="text-xl font-bold text-green-600">245.2 kg</p>
+            <p class="text-xl font-bold text-green-600" id="co2Value">
+              <span class="loading-spinner"></span>
+            </p>
           </div>
           <div class="bg-white shadow rounded p-4 text-center transform transition-transform hover:scale-105">
             <h3 class="text-sm font-semibold text-gray-600 mb-1">O₂ Totale</h3>
-            <p class="text-xl font-bold text-green-800">181.4 kg</p>
+            <p class="text-xl font-bold text-green-800" id="o2Value">
+              <span class="loading-spinner"></span>
+            </p>
           </div>
           <div class="bg-white shadow rounded p-4 text-center transform transition-transform hover:scale-105">
             <h3 class="text-sm font-semibold text-gray-600 mb-1">Pioggia Media</h3>
-            <p class="text-xl font-bold text-blue-500">4.3 mm</p>
+            <p class="text-xl font-bold text-blue-500" id="pioggiaValue">
+              <span class="loading-spinner"></span>
+            </p>
           </div>
           <div class="bg-white shadow rounded p-4 text-center transform transition-transform hover:scale-105">
             <h3 class="text-sm font-semibold text-gray-600 mb-1">Temp Max / Min</h3>
-            <p class="text-xl font-bold text-rose-600">28°C / 16°C</p>
+            <p class="text-xl font-bold text-rose-600" id="tempValue">
+              <span class="loading-spinner"></span>
+            </p>
           </div>
         </div>
       </section>
 
       <!-- Chart -->
       <section class="mb-8 max-w-6xl mx-auto">
-      <h2 class="text-xl font-semibold mb-4 text-center">Assorbimento CO₂ / Emissione O₂</h2>
-      <div id="lineChart" class="bg-white shadow rounded p-4" style="width: 100%; height: 300px;"></div>
-      <div class="flex justify-between mt-2 text-sm px-4">
-          <span id="co2Display">CO₂: -- kg/h</span>
-          <span id="o2Display">O₂: -- kg/h</span>
-      </div>
+        <h2 class="text-xl font-semibold mb-4 text-center">Assorbimento CO₂ / Emissione O₂</h2>
+        <div class="bg-white shadow rounded p-4 relative" style="width: 100%; height: 300px;">
+          <div id="lineChart" style="width: 100%; height: 100%;"></div>
+          <div id="chartLoader" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p class="mt-2 text-gray-600">Caricamento grafico...</p>
+          </div>
+        </div>
+        <div class="flex justify-between mt-2 text-sm px-4">
+          <span id="co2Display">CO₂: <span class="loading-spinner"></span></span>
+          <span id="o2Display">O₂: <span class="loading-spinner"></span></span>
+        </div>
       </section>
 
       <!-- Table -->
         <section class="max-w-5xl mx-auto mt-8">
         <h2 class="text-xl font-semibold mb-4 text-center">Dati Meteo</h2>
-        <div class="overflow-x-auto rounded shadow">
+        <div class="overflow-x-auto rounded shadow bg-white relative">
             <table class="min-w-full text-sm text-center border border-gray-300 table-auto">
             <thead class="bg-gray-100">
                 <tr class="text-xs text-gray-700">
@@ -99,13 +324,40 @@
                 <th class="px-2 py-1">O₂</th>
                 </tr>
             </thead>
-            <tbody id="meteoTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+            <tbody id="meteoTableBody" class="bg-white divide-y divide-gray-200">
+              <tr id="tableLoader">
+                <td colspan="7" class="py-8">
+                  <div class="flex items-center justify-center">
+                    <div class="loading-spinner mr-2"></div>
+                    <span class="text-gray-600">Caricamento dati meteo...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
             </table>
         </div>
         </section>
+        
+        <section class="max-w-5xl mx-auto mt-12">
+          <h2 class="text-xl font-semibold mb-4 text-center">Confronto Assorbimento CO₂ - Ultimo Mese</h2>
+          <div class="bg-white shadow rounded p-4 relative" style="width: 100%; height: 400px;">
+            <div id="waterfallChart" style="width: 100%; height: 100%;"></div>
+            <div id="waterfallLoader" class="loading-overlay">
+              <div class="loading-spinner"></div>
+              <p class="mt-2 text-gray-600">Caricamento grafico cascata...</p>
+            </div>
+          </div>
+        </section>
+
         <section class="max-w-5xl mx-auto mt-12">
           <h2 class="text-xl font-semibold mb-4 text-center">Heatmap Giornaliera</h2>
-          <div id="heatmapChart" class="bg-white shadow rounded p-4" style="width: 100%; height: 400px;"></div>
+          <div class="bg-white shadow rounded p-4 relative" style="width: 100%; height: 400px;">
+            <div id="heatmapChart" style="width: 100%; height: 100%;"></div>
+            <div id="heatmapLoader" class="loading-overlay">
+              <div class="loading-spinner"></div>
+              <p class="mt-2 text-gray-600">Caricamento heatmap...</p>
+            </div>
+          </div>
         </section>
 
 
@@ -115,5 +367,204 @@
   <!-- JS & Chart -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5"></script>
   <script src="/static/Dashscript.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const navbar = document.querySelector('.navbar');
+        const navLinks = document.getElementById('navLinks');
+        const hamburger = document.getElementById('hamburger');
+
+        // Funzione per la navbar sticky
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Toggle del menu hamburger per mobile
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        // Chiudi il menu hamburger quando si clicca su un link (utile per mobile)
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (navLinks.classList.contains('active')) {
+                    navLinks.classList.remove('active');
+                }
+            });
+        });
+    });
+
+    // Simula il caricamento dei dati e nasconde i loader
+    setTimeout(() => {
+        // Nasconde i loader delle cards
+        document.getElementById('terrenoValue').innerHTML = '2000m2';
+        document.getElementById('co2Value').innerHTML = '245.2 kg';
+        document.getElementById('o2Value').innerHTML = '181.4 kg';
+        document.getElementById('pioggiaValue').innerHTML = '4.3 mm';
+        document.getElementById('tempValue').innerHTML = '28°C / 16°C';
+        
+        // Nasconde i loader dei display CO₂ e O₂
+        document.getElementById('co2Display').innerHTML = 'CO₂: -- kg/h';
+        document.getElementById('o2Display').innerHTML = 'O₂: -- kg/h';
+        
+        // Nasconde il loader del grafico
+        const chartLoader = document.getElementById('chartLoader');
+        if (chartLoader) chartLoader.classList.add('hidden');
+        
+        // Nasconde il loader della tabella
+        const tableLoader = document.getElementById('tableLoader');
+        if (tableLoader) tableLoader.style.display = 'none';
+        
+        // Nasconde il loader della heatmap
+        const heatmapLoader = document.getElementById('heatmapLoader');
+        if (heatmapLoader) heatmapLoader.classList.add('hidden');
+
+        // Nasconde il loader del grafico a cascata
+        const waterfallLoader = document.getElementById('waterfallLoader');
+        if (waterfallLoader) waterfallLoader.classList.add('hidden');
+
+        // Inizializza il grafico a cascata
+        initWaterfallChart();
+    }, 2000); // Simula 2 secondi di caricamento
+
+    function initWaterfallChart() {
+        const waterfallChartDom = document.getElementById('waterfallChart');
+        const waterfallChart = echarts.init(waterfallChartDom);
+        
+        // Genera dati per l'ultimo mese (30 giorni)
+        const generateMonthlyData = () => {
+            const data = [];
+            const today = new Date();
+            
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                
+                // Simula variazioni realistiche: più assorbimento nei giorni soleggiati, meno nei giorni piovosi
+                let baseValue = 8 + Math.random() * 12; // Base 8-20 kg
+                
+                // Simula pattern meteorologici
+                if (i % 7 === 0 || i % 7 === 6) baseValue *= 0.7; // Weekend meno attivit√†
+                if (Math.random() < 0.2) baseValue *= 0.3; // 20% giorni piovosi
+                if (Math.random() < 0.1) baseValue *= -0.5; // 10% giorni molto negativi
+                
+                // Prima entry √® il valore base, le altre sono variazioni
+                const value = i === 29 ? baseValue : (Math.random() - 0.5) * 10;
+                
+                data.push({
+                    name: i === 0 ? 'Oggi' : 
+                          i === 1 ? 'Ieri' : 
+                          `${i} giorni fa`,
+                    date: date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }),
+                    value: parseFloat(value.toFixed(1))
+                });
+            }
+            return data;
+        };
+        
+        const data = generateMonthlyData();
+
+        let accumulate = 0;
+        const chartData = data.map((item, index) => {
+            const start = accumulate;
+            accumulate += item.value;
+            return {
+                name: item.name,
+                value: [index, start, accumulate],
+                itemStyle: {
+                    color: item.value > 0 ? '#00a651' : '#dc3545' // Verde per aumento, rosso per diminuzione
+                }
+            };
+        });
+
+        const option = {
+            title: {
+                text: 'kg CO₂ assorbiti',
+                left: 'left',
+                textStyle: {
+                    fontSize: 14,
+                    color: '#666'
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                    const param = params[0];
+                    const dataIndex = param.dataIndex;
+                    const dayInfo = data[dataIndex];
+                    const change = param.value[2] - param.value[1];
+                    const total = param.value[2];
+                    return `${dayInfo.date} (${dayInfo.name})<br/>
+                            Variazione: ${change > 0 ? '+' : ''}${change.toFixed(1)} kg<br/>
+                            Totale cumulativo: ${total.toFixed(1)} kg`;
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: data.map(item => item.date),
+                axisLabel: {
+                    rotate: -45,
+                    fontSize: 10,
+                    interval: 2 // Mostra solo ogni 3° giorno per evitare sovrapposizioni
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: 'kg CO₂',
+                axisLabel: {
+                    formatter: '{value} kg'
+                }
+            },
+            series: [
+                {
+                    name: 'Assorbimento CO₂',
+                    type: 'custom',
+                    renderItem: function (params, api) {
+                        const yValue = api.value(2);
+                        const start = api.coord([api.value(0), api.value(1)]);
+                        const end = api.coord([api.value(0), api.value(2)]);
+                        const height = end[1] - start[1];
+                        
+                        return {
+                            type: 'rect',
+                            shape: {
+                                x: start[0] - 8,
+                                y: start[1],
+                                width: 16,
+                                height: height
+                            },
+                            style: api.style()
+                        };
+                    },
+                    data: chartData,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowOffsetY: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        };
+
+        waterfallChart.setOption(option);
+
+        // Responsive
+        window.addEventListener('resize', function () {
+            waterfallChart.resize();
+        });
+    }
+  </script>
 </body>
 </html>

@@ -7,23 +7,33 @@ from sqlalchemy import select
 from BackEnd.app.co2_o2_calculator import get_coefficients_from_db, calculate_co2_o2_hourly
 from sqlalchemy import delete
 from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List, Dict
+from sqlalchemy import select
+from BackEnd.app.models import PlotSpecies, Species
 
+async def get_species_distribution_by_plot(plot_id, db: AsyncSession):
+    """
+    Ottiene la distribuzione delle specie per un determinato plot utilizzando una sessione asincrona.
+    
+    Args:
+        plot_id (int): ID del plot
+        db (AsyncSession): Sessione database asincrona
+        
+    Returns:
+        List[Dict]: Lista di dizionari con nome specie e area di superficie
+    """
 
-def get_species_distribution_by_plot(plot_id):
-    import psycopg2
-    conn = psycopg2.connect(...)  # Usa la tua stringa di connessione!
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT species.name, plot_species.surface_area
-        FROM plot_species
-        JOIN species ON species.id = plot_species.species_id
-        WHERE plot_species.plot_id = %s
-    """, (plot_id,))
-    result = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    
+    stmt = select(Species.name, PlotSpecies.surface_area).select_from(
+        PlotSpecies.__table__.join(Species.__table__)
+    ).where(PlotSpecies.plot_id == plot_id)
+    
+    result = await db.execute(stmt)
+    rows = result.fetchall()
+    
     # Restituisci una lista di dizionari per il frontend
-    return [{"name": row[0], "surface_area": row[1]} for row in result]
+    return [{"name": row.name, "surface_area": row.surface_area} for row in rows]
 
 async def inserisci_terreno(payload: SaveCoordinatesRequest) -> SaveCoordinatesResponse:
     try:

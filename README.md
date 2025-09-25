@@ -10,12 +10,13 @@
 
 ## 📋 Panoramica del Progetto
 
-Airvana è una piattaforma completa che combina **monitoraggio ambientale**, **calcoli CO₂/O₂** e **marketplace di crediti di carbonio**. Il sistema permette agli utenti di:
+L'obbiettivo di Airvana è creare una piattaforma completa che combina **monitoraggio ambientale**, **calcoli CO₂/O₂** e **marketplace di crediti di carbonio**. Il sistema permette agli utenti di:
+
 
 - **Registrare terreni agricoli** con coordinate geografiche precise
 - **Monitorare dati meteorologici** in tempo reale tramite API Open-Meteo
 - **Calcolare assorbimento CO₂** e produzione O₂ delle piante
-- **Acquistare crediti di carbonio** da terreni certificati
+- **Acquistare crediti di carbonio** da terreni certificati*
 - **Visualizzare classifiche** e statistiche ambientali
 
 ## 🏗️ Architettura del Sistema
@@ -27,13 +28,13 @@ Airvana è una piattaforma completa che combina **monitoraggio ambientale**, **c
 - **API**: RESTful con documentazione automatica (Swagger/OpenAPI)
 - **CORS**: Configurato per supportare frontend React
 
-### Frontend (React + Vite)
+### Frontend (HTML + CSS + Js)
 - **Framework**: React 19 con Hooks
 - **Build Tool**: Vite per sviluppo veloce
 - **Styling**: Bootstrap 5 + CSS personalizzato
 - **Icons**: Font Awesome per icone moderne
 
-### Marketplace (React SPA)
+### Marketplace (React)
 - **Applicazione separata** per la vendita di crediti CO₂
 - **Carrello dinamico** con gestione stato
 - **Modal dettagli** per ogni terreno
@@ -53,7 +54,7 @@ Airvana è una piattaforma completa che combina **monitoraggio ambientale**, **c
 - **Coefficienti dinamici** basati su specie e condizioni
 - **Report orari** con dettagli completi
 
-### 🛒 Marketplace Crediti
+### 🛒 Marketplace Crediti (demo)
 - **Catalogo terreni certificati** con immagini
 - **Sistema carrello** con gestione quantità
 - **Checkout sicuro** con validazione dati
@@ -124,7 +125,6 @@ Airvana/
 
 ### Prerequisiti
 - Python 3.8+
-- Node.js 16+
 - PostgreSQL 13+ con PostGIS
 - Git
 
@@ -153,26 +153,13 @@ createdb airvana_db
 python -c "from BackEnd.app.database import init_db; init_db()"
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-# PER AVVIARE LA PIATTAFORMA (EMMA)
+# PER AVVIARE LA PIATTAFORMA
 4. Setup Frontend Marketplace
-
 
 
 QUESTO SOLO LA PRIMA VOLTA
 ```bash
 # Installa dipendenze Node.js
-npm install
 cd airvana-marketplace
 npm install
 ```
@@ -189,20 +176,6 @@ Dalla root del progetto
 ```bash
 uvicorn BackEnd.app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ### Accesso alle Applicazioni
@@ -243,24 +216,10 @@ ALGORITHM=HS256
 - `GET /marketplace` - SPA React marketplace
 - `GET /assets/*` - Asset statici marketplace
 
-## 🤝 Contribuire
-
-1. Fork del repository
-2. Crea branch per feature (`git checkout -b feature/nuova-funzionalita`)
-3. Commit delle modifiche (`git commit -am 'Aggiunge nuova funzionalità'`)
-4. Push del branch (`git push origin feature/nuova-funzionalita`)
-5. Crea Pull Request
-
 ## 📄 Licenza
 
 Questo progetto è sotto licenza MIT. Vedi il file `LICENSE` per i dettagli.
 
-## 👥 Team
-
-- **Sviluppo Backend**: FastAPI, PostgreSQL, GeoAlchemy2
-- **Sviluppo Frontend**: React, Bootstrap, Vite
-- **Calcoli Ambientali**: Algoritmi CO₂/O₂ personalizzati
-- **Integrazione API**: Open-Meteo per dati meteorologici
 
 ---
 
