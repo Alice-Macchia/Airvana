@@ -5,7 +5,7 @@
 
 /* Variables per consistenza con il design esistente */
 :root {
-me i  --airvana-primary: #0077B6;      /* Blu profondo, usato come colore principale */
+  --airvana-primary: #0077B6;      /* Blu profondo, usato come colore principale */
   --airvana-secondary: #0046b0;    /* Blu accentato per hover, bottoni e highlight */
   --airvana-dark: #023E8A;         /* Blu scuro per testo e header */
   --airvana-light: #E0F4FF;        /* Azzurro molto chiaro per sfondi */
