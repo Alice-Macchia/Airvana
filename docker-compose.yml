@@ -47,25 +47,25 @@ services:
     volumes:
       - medusa_pgdata:/var/lib/postgresql/data
 
-  # 5) Server Medusa
-  medusa:
-    image: node:18-slim
-    container_name: medusa
-    working_dir: /usr/src/app
-    volumes:
-      - ./medusa-server:/usr/src/app
-      - /usr/src/app/node_modules
-    env_file:
-      - ./medusa-server/.env
-    command: >
-      sh -c "npm install &&
-             npx medusa develop"
-    ports:
-      - "9000:9000"
-    depends_on:
-      - medusa_postgres
-      - medusa_redis
+#   # 5) Server Medusa
+#   medusa:
+#     image: node:18-slim
+#     container_name: medusa
+#     working_dir: /usr/src/app
+#     volumes:
+#       - ./medusa-server:/usr/src/app
+#       - /usr/src/app/node_modules
+#     env_file:
+#       - ./medusa-server/.env
+#     command: >
+#       sh -c "npm install &&
+#              npx medusa develop"
+#     ports:
+#       - "9000:9000"
+#     depends_on:
+#       - medusa_postgres
+#       - medusa_redis
 
-volumes:
-  airvana_pgdata:
-  medusa_pgdata:
+# volumes:
+#   airvana_pgdata:
+#   medusa_pgdata:
