@@ -23,7 +23,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: co2app
     ports:
-      - "15432:5432"
+      - "15433:5432"
     volumes:
       - airvana_pgdata:/var/lib/postgresql/data
 
