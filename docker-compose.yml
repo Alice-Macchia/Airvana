@@ -27,25 +27,25 @@ services:
     volumes:
       - airvana_pgdata:/var/lib/postgresql/data
 
-  # 3) Redis per Medusa
-  medusa_redis:
-    image: redis:7
-    container_name: medusa_redis
-    ports:
-      - "6379:6379"
+  # # 3) Redis per Medusa
+  # medusa_redis:
+  #   image: redis:7
+  #   container_name: medusa_redis
+  #   ports:
+  #     - "6379:6379"
 
-  # 4) Postgres per Medusa
-  medusa_postgres:
-    image: postgres:15
-    container_name: medusa_postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: medusa_db
-    ports:
-      - "5433:5432"
-    volumes:
-      - medusa_pgdata:/var/lib/postgresql/data
+  # # 4) Postgres per Medusa
+  # medusa_postgres:
+  #   image: postgres:15
+  #   container_name: medusa_postgres
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: medusa_db
+  #   ports:
+  #     - "5433:5432"
+  #   volumes:
+  #     - medusa_pgdata:/var/lib/postgresql/data
 
 #   # 5) Server Medusa
 #   medusa:
