@@ -10,7 +10,7 @@ services:
     env_file:
       - ./.env   # contiene DATABASE_URL, etc.
     ports:
-      - "8000:80"
+      - "8001:80"
     depends_on:
       - airvana_postgres
 
