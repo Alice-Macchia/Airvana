@@ -7,16 +7,21 @@ import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, cast, Date
 from BackEnd.app.models import Species, WeatherData, PlotSpecies
+import psycopg2
 
-# DATABASE_URL = "postgresql://postgres:postgres@165.22.75.145:15432/co2app"
-# print("Mi connetto a:", DATABASE_URL)
-# conn = psycopg2.connect(
-#     host=os.getenv("DB_HOST", "165.22.75.145"),
-#     user=os.getenv("DB_USER", "postgres"),
-#     password=os.getenv("DB_PASS", "postgres"),
-#     dbname=os.getenv("DB_NAME", "co2app"),
-#     port=int(os.getenv("DB_PORT", "15432"))   # <-- Importante il cast a int!
-# )
+# Carica le variabili dal file .env
+load_dotenv()
+
+# Usa DATABASE_URL_SYNC dal .env per connessioni psycopg2
+DATABASE_URL = os.getenv("DATABASE_URL_SYNC")
+print("Mi connetto a:", DATABASE_URL)
+conn = psycopg2.connect(
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASS"),
+    dbname=os.getenv("DB_NAME"),
+    port=int(os.getenv("DB_PORT"))   # <-- Importante il cast a int!
+)
 
 
 async def get_coefficients_from_db(db: AsyncSession) -> Dict[str, Dict[str, float]]:
