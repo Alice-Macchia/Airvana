@@ -205,6 +205,181 @@
     }
     
     .hidden { display: none !important; }
+    
+    /* Stili per pulsanti terreno - MINIMAL DATABRICKS STYLE */
+    .terreno-indicator {
+        width: 3px;
+        height: 32px;
+        background: #e5e7eb;
+        border-radius: 2px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+    }
+    
+    .terreno-indicator:hover {
+        background: #9ca3af;
+        width: 4px;
+    }
+    
+    .terreno-indicator.active {
+        background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+        width: auto;
+        padding: 0 12px;
+        box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+        min-width: 140px;
+    }
+    
+    /* Label interno che appare solo quando active */
+    .terreno-indicator .terreno-label {
+        opacity: 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: white;
+        transform: translateX(-10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+    }
+    
+    .terreno-indicator.active .terreno-label {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    /* Tooltip minimal per nome terreno (solo quando NON active) */
+    .terreno-indicator::after {
+        content: attr(data-name);
+        position: absolute;
+        right: calc(100% + 8px);
+        top: 50%;
+        transform: translateY(-50%);
+        background: #1f2937;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        z-index: 10;
+    }
+    
+    .terreno-indicator:hover::after {
+        opacity: 1;
+    }
+    
+    /* Nascondi tooltip quando active (perché il nome è già visibile) */
+    .terreno-indicator.active::after {
+        display: none;
+    }
+    
+    /* Tabella minimal style */
+    #meteoTableBody tr {
+        transition: background-color 0.15s ease;
+    }
+    
+    #meteoTableBody tr:hover {
+        background-color: #f9fafb;
+    }
+    
+    #meteoTableBody td {
+        padding: 8px 12px;
+        font-size: 11px;
+        color: #374151;
+    }
+    
+    #meteoTableBody td:first-child {
+        font-weight: 500;
+        color: #1f2937;
+    }
+    
+    /* Colori per valori positivi/negativi */
+    #meteoTableBody td.positive {
+        color: #059669;
+    }
+    
+    #meteoTableBody td.negative {
+        color: #dc2626;
+    }
+    
+    /* CRITICAL FIX - Tabella scrollabile con altezza massima */
+    .table-scrollable {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: auto;
+    }
+    
+    /* Sticky header per tabella */
+    .table-scrollable table thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f9fafb;
+    }
+    
+    /* Layout Charts - Vista Normale vs Compatta */
+    .charts-normal {
+        display: block;
+    }
+    
+    .charts-normal .chart-section {
+        width: 100%;
+    }
+    
+    .charts-normal .chart-box {
+        height: 280px;  /* Ridotto da 350px */
+    }
+    
+    /* Vista Compatta - Grid 2x2 PURO (4 elementi uguali) */
+    .charts-compact {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        max-width: 1400px;  /* Larghezza massima container */
+        margin: 0 auto;      /* Centra il grid */
+    }
+    
+    .charts-compact .chart-section {
+        margin-top: 0 !important;
+        width: 100%;
+    }
+    
+    .charts-compact .chart-box {
+        height: 300px;  /* Tutti i grafici stessa altezza */
+        width: 100%;    /* Larghezza piena della colonna */
+    }
+    
+    /* Tabella in vista compatta - altezza fissa come i grafici */
+    .charts-compact .table-scrollable {
+        max-height: 300px;
+        width: 100%;
+    }
+    
+    .charts-compact h2 {
+        font-size: 11px;
+    }
+    
+    .charts-compact .text-xs {
+        font-size: 10px;
+    }
+    
+    /* Chart content full size */
+    .chart-content {
+        width: 100%;
+        height: 100%;
+    }
+    
+    /* Responsive - Mobile torna a vista normale */
+    @media (max-width: 768px) {
+        .charts-compact {
+            grid-template-columns: 1fr;
+        }
+    }
     </style>
     <!-- nuove librerie: -->
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -251,114 +426,167 @@
 
     <!-- Main Content -->
     <main class="flex-1 p-6 overflow-y-auto">
-      <!-- Header -->
-      <header class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Dashboard CO₂ & O₂</h1>
+      <!-- Header con selezione terreno -->
+      <header class="mb-6">
+        <div class="flex justify-between items-center mb-4">
+          <h1 class="text-2xl font-bold">Dashboard CO₂ & O₂</h1>
+        </div>
+        
+        <!-- Selezione Terreno - Stile Minimal -->
+        <div class="bg-white border border-gray-200 rounded p-3 mb-6">
+          <div class="flex items-center justify-between gap-4">
+            <!-- Dropdown compatto -->
+            <div class="flex items-center gap-2 flex-1">
+              <span class="text-xs text-gray-500">Terreno:</span>
+              <select id="terrenoSelector" class="text-sm border-0 border-b border-gray-300 focus:border-blue-500 focus:ring-0 bg-transparent outline-none px-2 py-1">
+                <option value="" disabled selected>Caricamento...</option>
+              </select>
+            </div>
+            
+            <!-- Pulsanti terreni - minimal side indicators -->
+            <div class="flex items-center gap-1" id="terrenoButtonsGrid">
+              <!-- Placeholder durante il caricamento -->
+              <div class="h-8 w-1 bg-gray-200 rounded animate-pulse"></div>
+              <div class="h-8 w-1 bg-gray-200 rounded animate-pulse"></div>
+              <div class="h-8 w-1 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            
+            <!-- Refresh button minimal -->
+            <button onclick="refreshData()" class="text-gray-400 hover:text-blue-600 transition-colors p-2" title="Aggiorna dati">
+              <i class="fas fa-sync-alt text-sm"></i>
+            </button>
+          </div>
+        </div>
       </header>
 
-      <!-- Summary Tabs -->
-      <section class="mt-4 mb-8">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" id="summaryCards">
-          <div class="bg-white shadow rounded p-4 text-center transform transition-transform hover:scale-105">
-            <h3 class="text-sm font-semibold text-gray-600 mb-1">Terreno</h3>
-            <p class="text-xl font-bold text-blue-700" id="terrenoValue">
+      <!-- Summary Cards - Minimal Style -->
+      <section class="mb-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" id="summaryCards">
+          <div class="bg-white border border-gray-200 rounded p-3 hover:border-blue-300 transition-colors">
+            <p class="text-xs text-gray-500 mb-1">Terreno</p>
+            <p class="text-lg font-semibold text-gray-900" id="terrenoValue">
               <span class="loading-spinner"></span>
             </p>
           </div>
-          <div class="bg-white shadow rounded p-4 text-center transform transition-transform hover:scale-105">
-            <h3 class="text-sm font-semibold text-gray-600 mb-1">CO₂ Totale</h3>
-            <p class="text-xl font-bold text-green-600" id="co2Value">
+          <div class="bg-white border border-gray-200 rounded p-3 hover:border-green-300 transition-colors">
+            <p class="text-xs text-gray-500 mb-1">CO₂ Totale</p>
+            <p class="text-lg font-semibold text-green-600" id="co2Value">
               <span class="loading-spinner"></span>
             </p>
           </div>
-          <div class="bg-white shadow rounded p-4 text-center transform transition-transform hover:scale-105">
-            <h3 class="text-sm font-semibold text-gray-600 mb-1">O₂ Totale</h3>
-            <p class="text-xl font-bold text-green-800" id="o2Value">
+          <div class="bg-white border border-gray-200 rounded p-3 hover:border-green-300 transition-colors">
+            <p class="text-xs text-gray-500 mb-1">O₂ Totale</p>
+            <p class="text-lg font-semibold text-green-700" id="o2Value">
               <span class="loading-spinner"></span>
             </p>
           </div>
-          <div class="bg-white shadow rounded p-4 text-center transform transition-transform hover:scale-105">
-            <h3 class="text-sm font-semibold text-gray-600 mb-1">Pioggia Media</h3>
-            <p class="text-xl font-bold text-blue-500" id="pioggiaValue">
+          <div class="bg-white border border-gray-200 rounded p-3 hover:border-blue-300 transition-colors">
+            <p class="text-xs text-gray-500 mb-1">Pioggia Media</p>
+            <p class="text-lg font-semibold text-blue-600" id="pioggiaValue">
               <span class="loading-spinner"></span>
             </p>
           </div>
-          <div class="bg-white shadow rounded p-4 text-center transform transition-transform hover:scale-105">
-            <h3 class="text-sm font-semibold text-gray-600 mb-1">Temp Max / Min</h3>
-            <p class="text-xl font-bold text-rose-600" id="tempValue">
+          <div class="bg-white border border-gray-200 rounded p-3 hover:border-orange-300 transition-colors">
+            <p class="text-xs text-gray-500 mb-1">Temp Max / Min</p>
+            <p class="text-lg font-semibold text-orange-600" id="tempValue">
               <span class="loading-spinner"></span>
             </p>
           </div>
         </div>
       </section>
 
-      <!-- Chart -->
-      <section class="mb-8 max-w-6xl mx-auto">
-        <h2 class="text-xl font-semibold mb-4 text-center">Assorbimento CO₂ / Emissione O₂</h2>
-        <div class="bg-white shadow rounded p-4 relative" style="width: 100%; height: 300px;">
-          <div id="lineChart" style="width: 100%; height: 100%;"></div>
-          <div id="chartLoader" class="loading-overlay">
-            <div class="loading-spinner"></div>
-            <p class="mt-2 text-gray-600">Caricamento grafico...</p>
-          </div>
-        </div>
-        <div class="flex justify-between mt-2 text-sm px-4">
-          <span id="co2Display">CO₂: <span class="loading-spinner"></span></span>
-          <span id="o2Display">O₂: <span class="loading-spinner"></span></span>
-        </div>
-      </section>
+      <!-- Toggle View Button -->
+      <div class="flex justify-end mb-4">
+        <button onclick="toggleChartsView()" id="viewToggleBtn" class="flex items-center gap-2 px-3 py-2 text-xs bg-white border border-gray-200 rounded hover:border-blue-500 hover:text-blue-600 transition-colors">
+          <i class="fas fa-th" id="viewToggleIcon"></i>
+          <span id="viewToggleText">Vista Compatta</span>
+        </button>
+      </div>
 
-      <!-- Table -->
-        <section class="max-w-5xl mx-auto mt-8">
-        <h2 class="text-xl font-semibold mb-4 text-center">Dati Meteo</h2>
-        <div class="overflow-x-auto rounded shadow bg-white relative">
-            <table class="min-w-full text-sm text-center border border-gray-300 table-auto">
-            <thead class="bg-gray-100">
-                <tr class="text-xs text-gray-700">
-                <th class="px-2 py-1">Ora</th>
-                <th class="px-2 py-1">Precipitazioni</th>
-                <th class="px-2 py-1">Temp (°C)</th>
-                <th class="px-2 py-1">Radiazione</th>
-                <th class="px-2 py-1">Umidità</th>
-                <th class="px-2 py-1">CO₂</th>
-                <th class="px-2 py-1">O₂</th>
-                </tr>
-            </thead>
-            <tbody id="meteoTableBody" class="bg-white divide-y divide-gray-200">
-              <tr id="tableLoader">
-                <td colspan="7" class="py-8">
-                  <div class="flex items-center justify-center">
-                    <div class="loading-spinner mr-2"></div>
-                    <span class="text-gray-600">Caricamento dati meteo...</span>
-                  </div>
+      <!-- Charts Container - Switchable Layout -->
+      <div id="chartsContainer" class="charts-normal">
+        
+        <!-- Chart Line CO2/O2 -->
+        <section class="chart-section mb-8">
+          <h2 class="text-xl font-semibold mb-4 text-center"></h2>
+          <div class="bg-white shadow rounded p-4 relative chart-box">
+            <div id="lineChart" class="chart-content"></div>
+            <div id="chartLoader" class="loading-overlay">
+              <div class="loading-spinner"></div>
+              <p class="mt-2 text-gray-600">Caricamento grafico...</p>
+            </div>
+          </div>
+          <div class="flex justify-between mt-2 text-sm px-4">
+            <span id="co2Display">CO₂: <span class="loading-spinner"></span></span>
+            <span id="o2Display">O₂: <span class="loading-spinner"></span></span>
+          </div>
+        </section>
+
+        <!-- Tabella Dati Orari - SCROLLABLE -->
+        <section class="chart-section mt-8">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-700">Dati Orari</h2>
+            <span class="text-xs text-gray-400">Ultimi aggiornamenti</span>
+          </div>
+          <div class="table-scrollable bg-white border border-gray-200 rounded">
+              <table class="min-w-full text-xs">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr class="text-gray-600">
+                  <th class="px-3 py-2 text-left font-medium">Ora</th>
+                  <th class="px-3 py-2 text-right font-medium">Prec (mm)</th>
+                  <th class="px-3 py-2 text-right font-medium">Temp (°C)</th>
+                  <th class="px-3 py-2 text-right font-medium">Rad</th>
+                  <th class="px-3 py-2 text-right font-medium">Umid (%)</th>
+                  <th class="px-3 py-2 text-right font-medium text-green-600">CO₂ (kg/h)</th>
+                  <th class="px-3 py-2 text-right font-medium text-green-700">O₂ (kg/h)</th>
+                  </tr>
+              </thead>
+              <tbody id="meteoTableBody" class="divide-y divide-gray-100">
+                <tr id="tableLoader">
+                  <td colspan="7" class="py-6 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                      <div class="loading-spinner"></div>
+                      <span class="text-xs text-gray-400">Caricamento...</span>
+                    </div>
                 </td>
               </tr>
             </tbody>
             </table>
-        </div>
+          </div>
         </section>
         
-        <section class="max-w-5xl mx-auto mt-12">
-          <h2 class="text-xl font-semibold mb-4 text-center">Confronto Assorbimento CO₂ - Ultimo Mese</h2>
-          <div class="bg-white shadow rounded p-4 relative" style="width: 100%; height: 400px;">
-            <div id="waterfallChart" style="width: 100%; height: 100%;"></div>
+        <!-- Grafico Waterfall -->
+        <section class="chart-section mt-8">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-700">Confronto Assorbimento CO₂</h2>
+            <span class="text-xs text-gray-400">Ultimo mese</span>
+          </div>
+          <div class="bg-white border border-gray-200 rounded p-4 relative chart-box">
+            <div id="waterfallChart" class="chart-content"></div>
             <div id="waterfallLoader" class="loading-overlay">
               <div class="loading-spinner"></div>
-              <p class="mt-2 text-gray-600">Caricamento grafico cascata...</p>
+              <p class="mt-2 text-xs text-gray-400">Caricamento...</p>
             </div>
           </div>
         </section>
 
-        <section class="max-w-5xl mx-auto mt-12">
-          <h2 class="text-xl font-semibold mb-4 text-center">Heatmap Giornaliera</h2>
-          <div class="bg-white shadow rounded p-4 relative" style="width: 100%; height: 400px;">
-            <div id="heatmapChart" style="width: 100%; height: 100%;"></div>
+        <!-- Heatmap -->
+        <section class="chart-section mt-8">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-700">Heatmap Giornaliera</h2>
+            <span class="text-xs text-gray-400">Variazioni orarie</span>
+          </div>
+          <div class="bg-white border border-gray-200 rounded p-4 relative chart-box">
+            <div id="heatmapChart" class="chart-content"></div>
             <div id="heatmapLoader" class="loading-overlay">
               <div class="loading-spinner"></div>
-              <p class="mt-2 text-gray-600">Caricamento heatmap...</p>
+              <p class="mt-2 text-xs text-gray-400">Caricamento...</p>
             </div>
           </div>
         </section>
+      
+      </div>
+      <!-- End Charts Container -->
 
 
     </main>
@@ -564,6 +792,169 @@
         window.addEventListener('resize', function () {
             waterfallChart.resize();
         });
+    }
+
+    // ========== GESTIONE TERRENI ==========
+    let currentTerrenoId = null;
+
+    // Carica lista terreni e popola dropdown + indicators
+    async function loadTerreni() {
+        try {
+            // Usa l'endpoint che restituisce dati dettagliati (area, specie, etc)
+            const response = await fetch('/api/users/me/plots');
+            if (!response.ok) throw new Error('Errore nel caricamento dei terreni');
+            
+            const terreni = await response.json();
+            
+            if (!terreni || terreni.length === 0) {
+                console.warn('Nessun terreno trovato per questo utente');
+                document.getElementById('terrenoSelector').innerHTML = 
+                    '<option>Nessun terreno disponibile</option>';
+                document.getElementById('terrenoButtonsGrid').innerHTML = 
+                    '<div class="text-xs text-gray-400">Nessun terreno</div>';
+                return;
+            }
+            
+            // Popola il dropdown
+            const selector = document.getElementById('terrenoSelector');
+            selector.innerHTML = terreni.map(t => 
+                `<option value="${t.id}">${t.name || `Terreno ${t.id}`}</option>`
+            ).join('');
+            
+            // Popola gli indicators minimal (barrette stile Databricks)
+            const indicatorsContainer = document.getElementById('terrenoButtonsGrid');
+            indicatorsContainer.innerHTML = terreni.map(t => {
+                return `
+                    <div class="terreno-indicator" 
+                         data-terreno-id="${t.id}" 
+                         data-name="${t.name || `Terreno ${t.id}`}"
+                         onclick="selectTerreno(${t.id})"
+                         title="${t.name || `Terreno ${t.id}`}">
+                        <span class="terreno-label">${t.name || `Terreno ${t.id}`}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            // Seleziona il primo terreno automaticamente
+            if (terreni.length > 0) {
+                selectTerreno(terreni[0].id);
+            }
+        } catch (error) {
+            console.error('❌ Errore nel caricamento dei terreni:', error);
+            document.getElementById('terrenoSelector').innerHTML = 
+                '<option>Errore nel caricamento</option>';
+            document.getElementById('terrenoButtonsGrid').innerHTML = 
+                '<div class="text-xs text-red-500">Errore</div>';
+        }
+    }
+
+    // Seleziona un terreno (chiamato sia dal dropdown che dagli indicators)
+    async function selectTerreno(terrenoId) {
+        if (currentTerrenoId === terrenoId) return; // Già selezionato
+        
+        currentTerrenoId = terrenoId;
+        
+        // Aggiorna UI
+        document.getElementById('terrenoSelector').value = terrenoId;
+        
+        // Aggiorna classi attive sugli indicators
+        document.querySelectorAll('.terreno-indicator').forEach(indicator => {
+            if (parseInt(indicator.dataset.terrenoId) === terrenoId) {
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.remove('active');
+            }
+        });
+        
+        // Ricarica i dati per il terreno selezionato
+        await refreshData();
+    }
+
+    // Funzione per ricaricare i dati
+    async function refreshData() {
+        if (!currentTerrenoId) {
+            console.warn('⚠️ Nessun terreno selezionato');
+            return;
+        }
+        
+        console.log(`🔄 Ricarico dati per terreno ${currentTerrenoId}`);
+        
+        // Mostra loader
+        showLoaders();
+        
+        try {
+            // Prima chiama meteo, poi CO2/O2
+            const meteoResponse = await fetch(`/get_open_meteo/${currentTerrenoId}`, {
+                method: "POST"
+            });
+            
+            if (!meteoResponse.ok) throw new Error("Errore nel fetch meteo");
+            
+            console.log("☁️ Meteo salvato correttamente.");
+            
+            // Ricarica i grafici
+            await fetchAndDraw(currentTerrenoId);
+            
+        } catch (error) {
+            console.error("❌ Errore nel refresh dei dati:", error);
+            alert('Errore nel caricamento dei dati. Riprova.');
+        } finally {
+            hideLoaders();
+        }
+    }
+
+    // Mostra/nascondi loader
+    function showLoaders() {
+        document.querySelectorAll('.loading-spinner').forEach(el => el.style.display = 'inline-block');
+    }
+
+    function hideLoaders() {
+        document.querySelectorAll('.loading-spinner').forEach(el => el.style.display = 'none');
+    }
+
+    // Listener per il cambio dal dropdown
+    document.addEventListener('DOMContentLoaded', () => {
+        const selector = document.getElementById('terrenoSelector');
+        selector.addEventListener('change', (e) => {
+            const terrenoId = parseInt(e.target.value);
+            selectTerreno(terrenoId);
+        });
+        
+        // Carica i terreni all'avvio
+        loadTerreni();
+    });
+    
+    // ========== TOGGLE CHARTS VIEW ==========
+    let isCompactView = false;
+    
+    function toggleChartsView() {
+        const container = document.getElementById('chartsContainer');
+        const btn = document.getElementById('viewToggleBtn');
+        const icon = document.getElementById('viewToggleIcon');
+        const text = document.getElementById('viewToggleText');
+        
+        isCompactView = !isCompactView;
+        
+        if (isCompactView) {
+            // Passa a vista compatta 2x2
+            container.classList.remove('charts-normal');
+            container.classList.add('charts-compact');
+            icon.className = 'fas fa-list';
+            text.textContent = 'Vista Normale';
+        } else {
+            // Torna a vista normale
+            container.classList.remove('charts-compact');
+            container.classList.add('charts-normal');
+            icon.className = 'fas fa-th';
+            text.textContent = 'Vista Compatta';
+        }
+        
+        // Ridimensiona i grafici per adattarsi al nuovo layout
+        setTimeout(() => {
+            if (lineChartInstance) lineChartInstance.resize();
+            if (heatmapInstance) heatmapInstance.resize();
+            if (window.waterfallChart) window.waterfallChart.resize();
+        }, 300);
     }
   </script>
 </body>
