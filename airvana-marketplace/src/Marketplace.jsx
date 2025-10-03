@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import TerrenoCardV2 from './TerrenoCardV2';
 import Checkout from './components/Checkout';
 import TerrenoDetail from './components/TerrenoDetail';
-import './MarketplaceV2.css';
+import './Marketplace_Fixed.css';
 
 const Marketplace = () => {
   const [terreni, setTerreni] = useState([]);
@@ -106,7 +106,6 @@ const Marketplace = () => {
 
     // Simula caricamento dati da API
     const loadTerreni = async () => {
-      // Simula chiamata API
       setTimeout(() => {
         setTerreni(terreniData);
         setLoading(false);
@@ -115,14 +114,7 @@ const Marketplace = () => {
 
     loadTerreni();
 
-    // Assicura che le sezioni siano visibili
-    const sections = document.querySelectorAll('section');
-    sections.forEach(section => {
-      section.style.opacity = '1';
-      section.style.transform = 'translateY(0)';
-    });
-
-    // Cleanup degli event listeners
+    // Cleanup
     return () => {
       window.removeEventListener('scroll', handleScroll);
       
@@ -139,7 +131,6 @@ const Marketplace = () => {
     };
   }, []);
 
-  // Funzione per gestire l'aggiunta al carrello
   const handleAggiungiAlCarrello = (terrenoId) => {
     const terreno = terreni.find(t => t.id === terrenoId);
     if (terreno) {
@@ -148,19 +139,16 @@ const Marketplace = () => {
     }
   };
 
-  // Funzione per aprire i dettagli del terreno
   const handleTerrenoClick = (terreno) => {
     setSelectedTerreno(terreno);
     setShowTerrenoDetail(true);
   };
 
-  // Funzione per chiudere i dettagli del terreno
   const handleCloseTerrenoDetail = () => {
     setShowTerrenoDetail(false);
     setSelectedTerreno(null);
   };
 
-  // Funzione per aprire il checkout
   const handleOpenCheckout = () => {
     if (cart.length > 0) {
       setShowCheckout(true);
@@ -169,12 +157,10 @@ const Marketplace = () => {
     }
   };
 
-  // Funzione per chiudere il checkout
   const handleCloseCheckout = () => {
     setShowCheckout(false);
   };
 
-  // Funzione per completare l'ordine
   const handleCompleteOrder = (orderData) => {
     alert(`Ordine completato! ID: ${orderData.orderId}\nTotale: €${orderData.total.toFixed(2)}`);
     setCart([]);
@@ -183,60 +169,54 @@ const Marketplace = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Caricamento...</span>
-          </div>
-          <p className="mt-3">Caricamento terreni certificati...</p>
-        </div>
+      <div className="loading-container">
+        <div className="spinner-border"></div>
+        <p style={{marginTop: '1rem', color: 'var(--gray-600)'}}>Caricamento terreni certificati...</p>
       </div>
     );
   }
 
   return (
     <>
-      {/* Navbar V2 */}
-      <nav className="navbar-v2" ref={navbarRef}>
+      {/* Navbar */}
+      <nav className="navbar" ref={navbarRef}>
         <a href="/" className="logo">
-          <i className="fas fa-leaf logo-icon"></i>
+          <i className="fas fa-leaf" style={{color: 'var(--secondary)'}}></i>
           Airvana
         </a>
         <ul className="nav-links" ref={navLinksRef}>
-          <li><a href="/"><i className="fas fa-home"></i> Home</a></li>
+          <li><a href="#home"><i className="fas fa-home"></i> Home</a></li>
           <li><a href="#terreni"><i className="fas fa-seedling"></i> Terreni</a></li>
           <li><a href="#benefici"><i className="fas fa-award"></i> Benefici</a></li>
           <li><a href="#contatti"><i className="fas fa-envelope"></i> Contatti</a></li>
           <li className="desktop-only">
-            <a href="/logreg" className="btn-auth-v2">
+            <a href="/logreg" className="btn-auth-register">
               <i className="fas fa-user"></i>
               Accedi / Registrati
             </a>
           </li>
         </ul>
-        <div className="hamburger mobile-menu" ref={hamburgerRef}>
+        <button className="hamburger" ref={hamburgerRef} aria-label="Menu">
           <i className="fas fa-bars"></i>
-        </div>
+        </button>
       </nav>
 
-      {/* Header Hero Section V2 */}
-      <header className="marketplace-header-v2">
-        <div className="title-container">
-          <h1>🌿 Marketplace Crediti CO₂</h1>
-          <p className="lead">
-            Acquista crediti di carbonio da terreni agricoli certificati e sostenibili
-          </p>
-        </div>
+      {/* Header Hero */}
+      <header className="marketplace-header">
+        <h1>🌿 Marketplace Crediti CO₂</h1>
+        <p className="lead">
+          Acquista crediti di carbonio da terreni agricoli certificati e sostenibili
+        </p>
       </header>
 
       {/* Main Container */}
       <main>
-        {/* Sezione Terreni V2 */}
+        {/* Sezione Terreni */}
         <section id="terreni">
-          <div className="section-header-v2">
+          <div className="section-header">
             <h2>Terreni Certificati Disponibili</h2>
             <button 
-              className="btn-cart-v2"
+              className="btn-cart"
               onClick={handleOpenCheckout}
               disabled={cart.length === 0}
             >
@@ -246,19 +226,18 @@ const Marketplace = () => {
           </div>
           <div className="terreni-grid">
             {terreni.map((terreno) => (
-              <div key={terreno.id}>
-                <TerrenoCardV2 
-                  terreno={terreno}
-                  onAggiungiAlCarrello={handleAggiungiAlCarrello}
-                  onTerrenoClick={() => handleTerrenoClick(terreno)}
-                />
-              </div>
+              <TerrenoCardV2 
+                key={terreno.id}
+                terreno={terreno}
+                onAggiungiAlCarrello={handleAggiungiAlCarrello}
+                onTerrenoClick={() => handleTerrenoClick(terreno)}
+              />
             ))}
           </div>
         </section>
 
-        {/* Sezione Benefici V2 */}
-        <section id="benefici" className="benefici-section-v2">
+        {/* Sezione Benefici */}
+        <section id="benefici" className="benefici-section">
           <h2>🌱 Perché scegliere i nostri crediti CO₂?</h2>
           <div className="benefici-grid">
             <div className="benefit-card">
@@ -280,8 +259,8 @@ const Marketplace = () => {
         </section>
       </main>
 
-      {/* Footer V2 */}
-      <footer id="contatti" className="marketplace-footer-v2">
+      {/* Footer */}
+      <footer id="contatti" className="marketplace-footer">
         <p>&copy; 2025 Airvana Marketplace. Tutti i diritti riservati.</p>
       </footer>
 
@@ -305,4 +284,4 @@ const Marketplace = () => {
   );
 };
 
-export default Marketplace; 
+export default Marketplace;

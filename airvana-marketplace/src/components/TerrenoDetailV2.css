@@ -1,32 +1,41 @@
-/* 🌿 Terreno Detail Component V2 Styles */
+/* 🌿 Terreno Detail Component V2 Styles - Premium Edition */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Nuova palette colori più moderna */
-  --primary: #2563eb;           /* Blu moderno */
-  --primary-dark: #1d4ed8;      /* Blu scuro */
-  --secondary: #10b981;         /* Verde smeraldo */
-  --accent: #8b5cf6;            /* Viola accentato */
-  --dark: #1e293b;              /* Grigio scuro */
-  --light: #f8fafc;             /* Grigio chiaro */
-  --white: #ffffff;
-  --gray-100: #f1f5f9;
-  --gray-200: #e2e8f0;
-  --gray-300: #cbd5e1;
-  --gray-400: #94a3b8;
-  --gray-500: #64748b;
+  /* Premium Blue Palette */
+  --primary: #0066CC;
+  --primary-dark: #004499;
+  --primary-light: #1177DD;
+  --secondary: #003D7A;
+  --accent: #0088FF;
+  --dark: #0F1419;
+  --light: #FAFBFC;
+  --white: #FFFFFF;
+  --gray-50: #F8FAFC;
+  --gray-100: #F1F5F9;
+  --gray-200: #E2E8F0;
+  --gray-300: #CBD5E1;
+  --gray-400: #94A3B8;
+  --gray-500: #64748B;
   --gray-600: #475569;
   --gray-700: #334155;
-  --gray-800: #1e293b;
-  --gray-900: #0f172a;
+  --gray-800: #1E293B;
+  --gray-900: #0F172A;
   
-  /* Ombre moderne */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  /* Premium shadows with glass effect */
+  --shadow-xs: 0 1px 2px rgba(15, 20, 25, 0.04);
+  --shadow-sm: 0 2px 4px rgba(15, 20, 25, 0.06);
+  --shadow: 0 4px 8px rgba(15, 20, 25, 0.08);
+  --shadow-md: 0 8px 16px rgba(15, 20, 25, 0.12);
+  --shadow-lg: 0 16px 32px rgba(15, 20, 25, 0.16);
+  --shadow-xl: 0 24px 48px rgba(15, 20, 25, 0.20);
+  --shadow-premium: 0 32px 64px rgba(0, 102, 204, 0.12);
+  
+  /* Glass morphism */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-backdrop: blur(20px);
   
   /* Bordi arrotondati */
   --radius-xs: 0.125rem;
@@ -73,9 +82,9 @@
 }
 
 .detail-header-v2 {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 60%, var(--primary-dark) 100%);
   color: white;
-  padding: 2rem;
+  padding: 2.5rem;
   border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
   display: flex;
   justify-content: space-between;
@@ -90,27 +99,33 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="30" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="70" r="2.5" fill="rgba(255,255,255,0.1)"/><circle cx="70" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
-  background-size: cover;
-  opacity: 0.2;
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.15) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%);
+  opacity: 1;
   border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
 }
 
 .header-content-v2 h2 {
   font-family: 'Playfair Display', serif;
-  font-size: 2rem;
+  font-size: 2.25rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.75rem 0;
   position: relative;
   z-index: 2;
+  letter-spacing: -0.02em;
+  text-shadow: 2px 4px 8px rgba(0,0,0,0.3);
 }
 
 .terreno-subtitle-v2 {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: rgba(255, 255, 255, 0.9);
   margin: 0;
   position: relative;
   z-index: 2;
+  font-weight: 400;
+  text-shadow: 1px 2px 4px rgba(0,0,0,0.2);
 }
 
 .close-btn-v2 {

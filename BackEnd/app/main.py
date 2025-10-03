@@ -37,8 +37,8 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="FrontEnd/static"), name="static")
 
 # Marketplace React - Mount dei file statici
-app.mount("/marketplace", StaticFiles(directory="marketplace_dist"), name="marketplace")
-app.mount("/assets", StaticFiles(directory="marketplace_dist/assets"), name="assets")
+app.mount("/marketplace", StaticFiles(directory="airvana-marketplace/dist"), name="marketplace")
+app.mount("/assets", StaticFiles(directory="airvana-marketplace/dist/assets"), name="assets")
 
 templates = Jinja2Templates(directory="FrontEnd/templates")
 
@@ -363,4 +363,5 @@ async def check_weather_data_exists(plot_id: int, giorno: str = Query(...), db: 
 @app.get("/marketplace", include_in_schema=False)
 @app.get("/marketplace/", include_in_schema=False)
 async def serve_marketplace_index():
-    return FileResponse("marketplace_dist/index.html")
+    # Serve il file index.html dalla directory dist di airvana-marketplace
+    return FileResponse(os.path.join("airvana-marketplace", "dist", "index.html"))

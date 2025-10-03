@@ -5,12 +5,11 @@ const TerrenoCardV2 = ({ terreno, onAggiungiAlCarrello, onTerrenoClick }) => {
   const [imageError, setImageError] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Gestione errore caricamento immagine
   const handleImageError = () => {
     setImageError(true);
   };
 
-  // Immagini di fallback per tipo di terreno
+  // Emoji di fallback per tipo di terreno
   const getFallbackImage = (nome) => {
     if (nome.toLowerCase().includes('vigneto')) return '🍷';
     if (nome.toLowerCase().includes('olivo')) return '🫒';
@@ -21,14 +20,13 @@ const TerrenoCardV2 = ({ terreno, onAggiungiAlCarrello, onTerrenoClick }) => {
     return '🌿';
   };
 
-  // Funzione per troncare il testo
   const truncateText = (text, maxLength) => {
     if (text.length <= maxLength) return text;
     return text.substr(0, maxLength) + '...';
   };
 
   return (
-    <div className="terreno-card-v2">
+    <div className="terreno-card">
       {/* Immagine del terreno */}
       <div className="card-img-top" onClick={onTerrenoClick} style={{ cursor: 'pointer' }}>
         {!imageError ? (
@@ -44,7 +42,7 @@ const TerrenoCardV2 = ({ terreno, onAggiungiAlCarrello, onTerrenoClick }) => {
             <span className="fallback-text">{nome}</span>
           </div>
         )}
-        <div className="certified-badge-v2">
+        <div className="certified-badge">
           <i className="fas fa-certificate"></i>
           Certificato
         </div>
@@ -62,73 +60,94 @@ const TerrenoCardV2 = ({ terreno, onAggiungiAlCarrello, onTerrenoClick }) => {
           {isExpanded ? descrizione : truncateText(descrizione, 100)}
         </p>
 
-        {/* Statistiche CO₂ */}
-        <div className="stats-container-v2">
-          <div className="stat-box-v2">
-            <div className="stat-value-v2 co2">{co2Assorbita.toLocaleString()}</div>
-            <div className="stat-label-v2">kg CO₂/anno</div>
+        {/* Statistiche CO₂ e Prezzo */}
+        <div className="stats-container">
+          <div className="stat-box">
+            <div className="stat-value co2">{co2Assorbita.toLocaleString()}</div>
+            <div className="stat-label">kg CO₂/anno</div>
           </div>
-          <div className="stat-box-v2">
-            <div className="stat-value-v2 price">€{prezzo}</div>
-            <div className="stat-label-v2">/anno</div>
+          <div className="stat-box">
+            <div className="stat-value price">€{prezzo}</div>
+            <div className="stat-label">/anno</div>
           </div>
         </div>
 
         {/* Calcolo impatto - solo quando espanso */}
         {isExpanded && (
-          <div className="impact-alert-v2">
+          <div className="impact-alert">
             <i className="fas fa-calculator"></i>
-            <div className="alert-content">
+            <div>
               <strong>Impatto:</strong>
-              <p>Compensa {Math.round(co2Assorbita / 1000 * 100) / 100} tonnellate di CO₂</p>
+              <p style={{margin: '0.25rem 0 0 0', fontSize: '0.9rem'}}>
+                Compensa {Math.round(co2Assorbita / 1000 * 100) / 100} tonnellate di CO₂
+              </p>
             </div>
           </div>
         )}
 
-        {/* Pulsante per espandere/contrarre */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+        {/* Pulsante per espandere/contrarre + Aggiungi al carrello */}
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
           <button 
-            className="btn btn-sm btn-outline-primary"
             onClick={() => setIsExpanded(!isExpanded)}
             style={{ 
-              flex: 1, 
+              flex: 1,
+              background: 'transparent',
+              border: '1px solid var(--primary)',
+              color: 'var(--primary)',
               borderRadius: 'var(--radius-lg)',
               fontSize: '0.8rem',
-              padding: '0.5rem'
+              padding: '0.5rem',
+              cursor: 'pointer',
+              transition: 'var(--transition)',
+              fontWeight: '500'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = 'var(--primary)';
+              e.target.style.color = 'white';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = 'transparent';
+              e.target.style.color = 'var(--primary)';
             }}
           >
             {isExpanded ? 'Mostra meno' : 'Mostra di più'}
           </button>
-          
-          {/* Bottone Aggiungi al carrello */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAggiungiAlCarrello(id);
-            }}
-            className="btn-add-to-cart-v2"
-          >
-            <i className="fas fa-shopping-cart"></i>
-            Aggiungi
-          </button>
         </div>
+
+        {/* Bottone Aggiungi al carrello */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAggiungiAlCarrello(id);
+          }}
+          className="btn-airvana"
+        >
+          <i className="fas fa-shopping-cart"></i>
+          Aggiungi al carrello
+        </button>
       </div>
 
-      {/* Footer della card */}
-      <div className="card-footer">
-        <div className="footer-info-v2">
-          <small>
-            <i className="fas fa-map-marker-alt"></i>
-            <span>Italia</span>
-          </small>
-          <small>
-            <i className="fas fa-certificate"></i>
-            <span>Certificato</span>
-          </small>
-          <small>
-            <i className="fas fa-search"></i>
-            <span>Monitorato</span>
-          </small>
+      {/* Footer della card con info */}
+      <div style={{
+        background: 'var(--gray-100)',
+        borderTop: '1px solid var(--gray-200)',
+        padding: '1rem',
+        display: 'flex',
+        justifyContent: 'space-around',
+        fontSize: '0.75rem',
+        color: 'var(--gray-500)'
+      }}>
+        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem'}}>
+          <i className="fas fa-map-marker-alt" style={{color: 'var(--gray-400)'}}></i>
+          <span>Italia</span>
+        </div>
+        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem'}}>
+          <i className="fas fa-certificate" style={{color: 'var(--gray-400)'}}></i>
+          <span>Certificato</span>
+        </div>
+        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem'}}>
+          <i className="fas fa-search" style={{color: 'var(--gray-400)'}}></i>
+          <span>Monitorato</span>
         </div>
       </div>
     </div>
