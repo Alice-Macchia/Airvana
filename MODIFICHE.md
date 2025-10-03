@@ -93,52 +93,30 @@ async def get_species_distribution_by_plot(plot_id: int, db: AsyncSession) -> di
 
 ### 🟡 **LIVELLO 2: Problemi di Sicurezza** (4-6 ore totali)
 
-#### **4. Hardcoded user_id=41 - CRITICO 🔴**
-**Dove**: `BackEnd/app/routes.py` riga 707
+#### **4. Hardcoded user_id=41 - RISOLTO ✅**
+**Dove**: `BackEnd/app/routes.py` e `BackEnd/app/auth.py`
 
 **Il codice problematico**:
 ```python
 new_plot = Plot(
-    user_id=41,  # ⚠️ SEMPRE LO STESSO UTENTE
+    user_id=41,  # ⚠️ SEMPRE LO STESSO UTENTE - RISOLTO
     name=plot_data.get("name"),
     ...
 )
 ```
 
-**Perché è GRAVE**:
-1. **Chiunque può salvare terreni come se fosse l'utente 41**
-2. Se l'utente 41 non esiste → crash
-3. Tutti i terreni finiscono sullo stesso utente
+**Perché era GRAVE**:
+1. **Chiunque poteva salvare terreni come se fosse l'utente 41**
+2. Se l'utente 41 non esisteva → crash
+3. Tutti i terreni finivano sullo stesso utente
 4. **Scenario reale**: Utente A crea terreno → salva su utente 41 → Utente B vede terreni di A
 
-**Perché succede**:
-Probabilmente durante sviluppo usavate sempre l'utente 41 per testare, e poi è rimasto hardcoded.
+**Cosa abbiamo fatto**:
+1. **Fix Google OAuth**: Aggiunto auto-insert dell'utente nella tabella `users` durante login Google
+2. **Fix save terreni**: Ora usa `currentUserId` dall'utente autenticato invece di hardcode 41
+3. **Fix dashboard**: Carica solo terreni dell'utente loggato tramite `user_id` dal token
 
-**Cosa fare**:
-Usare l'utente che ha effettivamente fatto login
-
-**Soluzione**:
-```python
-@router.post("/api/plots")
-async def create_plot(
-    plot_data: dict,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user)  # ← Prende utente loggato
-):
-    new_plot = Plot(
-        user_id=current_user["id"],  # ✅ Utente corretto
-        name=plot_data.get("name"),
-        ...
-    )
-```
-
-**Come verificare che funziona**:
-1. Login come User A → crea terreno → salva
-2. Login come User B → crea terreno → salva
-3. Ogni utente vede SOLO i propri terreni
-
-**Priorità**: CRITICA - blocca uso multi-utente  
-**Tempo stimato**: 4 ore
+**Risultato**: ✅ Multi-utente funzionante, ogni utente vede solo i propri terreni
 
 ---
 
