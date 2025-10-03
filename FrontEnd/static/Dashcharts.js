@@ -331,6 +331,15 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTerreni();
 });
 
+// Listener per ridimensionamento finestra - assicura che i grafici si adattino
+window.addEventListener('resize', () => {
+    // Debounce il resize per evitare troppe chiamate
+    clearTimeout(window.resizeTimeout);
+    window.resizeTimeout = setTimeout(() => {
+        resizeAllCharts();
+    }, 250);
+});
+
 // ========== TOGGLE CHARTS VIEW ==========
 let isCompactView = false;
 
@@ -356,10 +365,31 @@ function toggleChartsView() {
         text.textContent = 'Vista Compatta';
     }
     
-    // Ridimensiona i grafici per adattarsi al nuovo layout
+    // Ridimensiona i grafici per adattarsi al nuovo layout con più tentativi
+    // Aspetta che il CSS abbia effetto prima di ridimensionare
     setTimeout(() => {
-        if (lineChartInstance) lineChartInstance.resize();
-        if (heatmapInstance) heatmapInstance.resize();
+        resizeAllCharts();
+    }, 100);
+    
+    // Backup resize dopo più tempo per essere sicuri
+    setTimeout(() => {
+        resizeAllCharts();
+    }, 500);
+}
+
+// Funzione helper per ridimensionare tutti i grafici
+function resizeAllCharts() {
+    try {
+        if (lineChartInstance) {
+            lineChartInstance.resize();
+            console.log('📊 Line chart ridimensionato');
+        }
+        if (heatmapInstance) {
+            heatmapInstance.resize();
+            console.log('🔥 Heatmap ridimensionato');
+        }
         // Il waterfallChart è creato inline quindi non serve resize manuale
-    }, 300);
+    } catch (error) {
+        console.error('❌ Errore nel ridimensionamento grafici:', error);
+    }
 }

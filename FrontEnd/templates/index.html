@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=0.8" />
     <title>Airvana: Il Terreno che Respira!</title>
     <link rel="icon" href="/static/favicon-16x16.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -336,12 +336,12 @@
         padding: 16px;  /* Padding ridotto */
     }
     
-    /* Assicura che i grafici ECharts mantengano proporzioni quadrate */
+    /* Assicura che i grafici ECharts mantengano proporzioni corrette */
     .chart-content {
-        width: 50%;
+        width: 100%;
         height: 100%;
     }
-    
+
     /* Vista Compatta - Grid 2x2 PURO (4 elementi uguali) */
     .charts-compact {
         display: grid;
@@ -350,19 +350,23 @@
         max-width: 1400px;  /* Larghezza massima container */
         margin: 0 auto;      /* Centra il grid */
     }
-    
+
     .charts-compact .chart-section {
         margin-top: 0 !important;
         width: 100%;
     }
-    
+
     .charts-compact .chart-box {
         height: 400px;  /* Aumentato per proporzioni più quadrate nella vista compatta */
         width: 100%;
         padding: 16px;
     }
-    
-    /* Tabella in vista compatta - altezza fissa come i grafici */
+
+    /* In vista compatta, assicura che i grafici prendano tutto lo spazio */
+    .charts-compact .chart-content {
+        width: 100% !important;
+        height: 100% !important;
+    }    /* Tabella in vista compatta - altezza fissa come i grafici */
     .charts-compact .table-scrollable {
         max-height: 400px;  /* Allineata con i grafici */
         width: 100%;
@@ -376,11 +380,6 @@
         font-size: 10px;
     }
     
-    /* Chart content full size */
-    .chart-content {
-        width: 100%;
-        height: 100%;
-    }
     
     /* Responsive - Mobile torna a vista normale */
     @media (max-width: 768px) {
