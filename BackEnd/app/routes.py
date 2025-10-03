@@ -257,6 +257,123 @@ async def fetch_weather(plot_id: str):
 async def home(request: Request):
     return templates.TemplateResponse("homepagedefinitiva.html", {"request": request})
 
+@router.get("/profilo", response_class=HTMLResponse)
+async def profilo_utente(request: Request, user: dict = Depends(get_current_user)):
+    """
+    Mostra la pagina del profilo utente
+    """
+    return templates.TemplateResponse("schedaUtente.html", {"request": request})
+
+@router.get("/api/user/profile")
+async def get_user_profile(user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """
+    Restituisce i dati del profilo utente completo
+    """
+    try:
+        user_id = user["id"]
+        user_type = user.get("user_type", "farmer")
+        
+        # Query per recuperare l'utente base
+        user_query = select(User).where(User.id == user_id)
+        user_result = await db.execute(user_query)
+        user_obj = user_result.scalar_one_or_none()
+        
+        if not user_obj:
+            raise HTTPException(status_code=404, detail="Utente non trovato")
+        
+        # Recupera i dati specifici in base al tipo di utente
+        profile_data = {
+            "id": user_obj.id,
+            "email": user_obj.email,
+            "user_type": user_obj.user_type,
+            "created_at": user_obj.created_at.isoformat() if hasattr(user_obj, 'created_at') and user_obj.created_at else None
+        }
+        
+        # Recupera dati da tabella Farmer
+        if user_type == "farmer":
+            farmer_query = select(Farmer).where(Farmer.user_id == user_id)
+            farmer_result = await db.execute(farmer_query)
+            farmer = farmer_result.scalar_one_or_none()
+            
+            if farmer:
+                profile_data.update({
+                    "username": farmer.username,
+                    "first_name": farmer.first_name,
+                    "last_name": farmer.last_name,
+                    "cod_fis": farmer.cod_fis,
+                    "farm_name": farmer.farm_name,
+                    "phone_number": farmer.phone_number,
+                    "province": farmer.province,
+                    "city": farmer.city,
+                    "address": farmer.address
+                })
+        
+        # Recupera dati da tabella Society
+        elif user_type == "society":
+            society_query = select(Society).where(Society.user_id == user_id)
+            society_result = await db.execute(society_query)
+            society = society_result.scalar_one_or_none()
+            
+            if society:
+                profile_data.update({
+                    "username": society.username,
+                    "first_name": society.ragione_sociale,
+                    "last_name": "",
+                    "cod_fis": society.p_iva,
+                    "farm_name": society.ragione_sociale,
+                    "phone_number": society.phone_number,
+                    "province": society.province,
+                    "city": society.city,
+                    "address": society.address
+                })
+        
+        # Recupera dati da tabella Agronomist
+        elif user_type == "agronomist":
+            agro_query = select(Agronomist).where(Agronomist.user_id == user_id)
+            agro_result = await db.execute(agro_query)
+            agro = agro_result.scalar_one_or_none()
+            
+            if agro:
+                profile_data.update({
+                    "username": agro.username,
+                    "first_name": agro.first_name,
+                    "last_name": agro.last_name,
+                    "cod_fis": agro.cod_fis,
+                    "farm_name": agro.nome_studio if hasattr(agro, 'nome_studio') else None,
+                    "phone_number": agro.phone_number if hasattr(agro, 'phone_number') else None,
+                    "province": agro.province if hasattr(agro, 'province') else None,
+                    "city": agro.city if hasattr(agro, 'city') else None,
+                    "address": agro.address if hasattr(agro, 'address') else None
+                })
+        
+        # Conta i terreni dell'utente
+        plots_query = select(Plot).where(Plot.user_id == user_id)
+        plots_result = await db.execute(plots_query)
+        plots = plots_result.scalars().all()
+        profile_data["terreno_count"] = len(plots)
+        
+        # Calcola area totale (se disponibile)
+        total_area = 0
+        for plot in plots:
+            if plot.geom:
+                try:
+                    geom_wkb = plot.geom.data
+                    shapely_geom = loads(geom_wkb)
+                    if isinstance(shapely_geom, Polygon):
+                        area_m2 = shapely_geom.area * 111320 * 111320  # Approssimazione
+                        total_area += area_m2 / 10000  # Converti in ettari
+                except:
+                    pass
+        
+        profile_data["total_area"] = round(total_area, 2)
+        
+        return profile_data
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore nel recupero profilo: {str(e)}")
+
 @router.get("/api/users/me/plots", response_model=List[PlotInfo])
 async def get_user_plots(user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """

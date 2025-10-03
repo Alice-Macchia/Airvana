@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Il Tuo Profilo - Airvana</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="static/schedaUtente.css">
+</head>
+
+<body>
+    <!-- Header come nelle altre pagine -->
+    <header>
+        <div class="header-left">
+            <h1 class="site-title">Airvana</h1>
+        </div>
+        <div class="user-profile">
+            <form action="/home" method="get">
+                <button type="submit"><i class="fas fa-home" aria-hidden="true"></i></button>
+            </form>
+            <form action="/dashboard" method="get">
+                <button type="submit">Dashboard</button>
+            </form>
+            <form action="/aggiungi-terreno" method="get">
+                <button type="submit">I tuoi terreni</button>
+            </form>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="profile-section">
+            <div class="profile-header">
+                <div class="avatar-container">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2 id="user-fullname">Caricamento...</h2>
+                <span id="user-badge" class="user-badge">Utente</span>
+            </div>
+
+            <div class="profile-content">
+                <!-- Informazioni Personali -->
+                <div class="info-section">
+                    <h3><i class="fas fa-user"></i> Informazioni Personali</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Nome Completo</label>
+                            <p id="fullname">-</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Username</label>
+                            <p id="username">-</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Codice Fiscale</label>
+                            <p id="cod-fis">-</p>
+                        </div>
+                        <div class="info-item" id="farm-name-container" style="display: none;">
+                            <label>Nome Azienda</label>
+                            <p id="farm-name">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contatti -->
+                <div class="info-section">
+                    <h3><i class="fas fa-envelope"></i> Contatti</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Email</label>
+                            <p id="email">-</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Telefono</label>
+                            <p id="phone">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Residenza -->
+                <div class="info-section">
+                    <h3><i class="fas fa-map-marker-alt"></i> Residenza</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Provincia</label>
+                            <p id="province">-</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Città</label>
+                            <p id="city">-</p>
+                        </div>
+                        <div class="info-item full-width">
+                            <label>Indirizzo</label>
+                            <p id="address">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistiche -->
+                <div class="info-section">
+                    <h3><i class="fas fa-chart-line"></i> Statistiche Account</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <i class="fas fa-map"></i>
+                            <div class="stat-value" id="terreno-count">0</div>
+                            <div class="stat-label">Terreni</div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-leaf"></i>
+                            <div class="stat-value" id="total-co2">0 kg</div>
+                            <div class="stat-label">CO₂ Assorbita/anno</div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-ruler-combined"></i>
+                            <div class="stat-value" id="total-area">0 ha</div>
+                            <div class="stat-label">Area Totale</div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div class="stat-value" id="created-at">-</div>
+                            <div class="stat-label">Iscritto dal</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Azioni Account -->
+                <div class="info-section">
+                    <h3><i class="fas fa-cog"></i> Gestione Account</h3>
+                    <div class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editProfile()">
+                            <i class="fas fa-edit"></i> Modifica Profilo
+                        </button>
+                        <button class="btn-action btn-password" onclick="changePassword()">
+                            <i class="fas fa-key"></i> Cambia Password
+                        </button>
+                        <button class="btn-action btn-danger" onclick="confirmDelete()">
+                            <i class="fas fa-trash-alt"></i> Elimina Account
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/schedaUtente.js"></script>
+</body>
+</html>
