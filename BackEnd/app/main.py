@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from geoalchemy2.shape import to_shape
 from BackEnd.app.models import Base, Plot, PlotSpecies, Species
 from BackEnd.app.routes import router
+from BackEnd.app.auth import router as auth_router
 
 from BackEnd.app.schemas import (SaveCoordinatesRequest, SaveCoordinatesResponse, ClassificaRequest, ClassificaResponse, EsportaRequest, EsportaResponse)
 from BackEnd.app.utils import (inserisci_terreno, mostra_classifica, Esporta, get_species_distribution_by_plot)
@@ -51,6 +52,7 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(auth_router)
 
 
 @app.on_event("startup")
@@ -78,11 +80,33 @@ def decode_token(token: str):
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, user=Depends(get_current_user)):
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "user_id": user["id"],
-        "username": user["username"]
-    })
+    try:
+        print(f"Dati utente: {user}")
+        print("Caricamento dati per la dashboard...")
+
+        # Controlla che le chiavi necessarie siano presenti nel payload
+        required_keys = ["name"]
+        if "id" in user:
+            # Usa l'ID numerico mappato se disponibile
+            user_id = user["id"]
+        elif "google_id" in user:
+            # Fallback al google_id se l'ID non è disponibile
+            user_id = user["google_id"]
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Dati utente mancanti nel token"
+            )
+
+        return templates.TemplateResponse("index.html", {
+            "request": request,
+            "user_id": user_id,
+            "username": user["name"],
+            "user_email": user.get("email", "")
+        })
+    except Exception as e:
+        print(f"Errore nel caricamento della dashboard: {e}")
+        raise HTTPException(status_code=500, detail="Errore nel caricamento della dashboard")
 
 @app.post("/save-coordinates", response_model=SaveCoordinatesResponse)
 async def inserisci_coordinate(payload: SaveCoordinatesRequest):
@@ -204,7 +228,7 @@ async def calcola_co2(plot_id: int, giorno: str = None, user: dict = Depends(get
         species = await get_species_from_db(db, plot_id)
         weather = await get_weather_data_from_db(db, plot_id, giorno)
         print(f"🌤️ Meteo trovato: {len(weather)} ore")
-        coefs = await get_coefficients_from_db(db)
+        coefs = await get_coefficients_from_db(db, plot_id)
         
         results = calculate_co2_o2_hourly(species, weather, coefs)
         print("📊 Results:", results)

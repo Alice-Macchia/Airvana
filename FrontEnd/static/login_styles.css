@@ -242,6 +242,136 @@ body {
     box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
 
+.btn-google {
+    background-color: #ffffff;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    padding: 0;
+    height: 36px;
+    min-width: 120px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Google Sans', 'Roboto', arial, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    box-shadow: 0 1px 3px 0 rgba(60,64,67,.30), 0 4px 8px 3px rgba(60,64,67,.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-google:hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 1px 3px 0 rgba(60,64,67,.30), 0 4px 8px 3px rgba(60,64,67,.15);
+    transform: none;
+}
+
+.btn-google:active {
+    background-color: #f1f3f4;
+    box-shadow: 0 1px 3px 0 rgba(60,64,67,.30), 0 4px 8px 3px rgba(60,64,67,.15);
+}
+
+.btn-google:focus {
+    outline: none;
+    border-color: #4285f4;
+    box-shadow: 0 1px 3px 0 rgba(66,133,244,.30), 0 4px 8px 3px rgba(66,133,244,.15);
+}
+
+.btn-google::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZyBmaWxsLXJ1bGU9Im5vbnplcm8iIGZpbGw9Im5vbmUiPgogICAgPHBhdGggZD0iTTE3LjY0IDkuMjA0NTVjMC0uNjM5MzItLjA1Njg3LS45OTEwNy0uMTY0NzgtMS40MjM4N2gtOC4yOTQ1djIuNjk3OGg0Ljg0NGMtLjE5NTI3IDEuMDI5MS0uNzc2IDEuODMwNS0xLjY1MDggMi4zOTQzdjEuOTkyN2gyLjY4MjJjMS41NjQ3LTEuNDQwOCAyLjQ2NTUtMy41NjI5IDIuNDY1NS02LjAzOTh6IiBmaWxsPSIjNDI4NUY0Ii8+CiAgICA8cGF0aCBkPSJNOSAxOGMzLjI0IDAgNS45NTU2LTEuMDc0NyA3Ljk0MTEtMi45MTU4bC0yLjY4MjItMS45OTI3Yy0uOTE0NSAuNjEyNi0yLjA4OTYuOTc1LTMuMjU4OS45NzUtMi41MDU0IDAtNC42MzA1LTEuNjkyLTUuMzg2OS00LjE1ODZoLTIuNzY1NHYyLjA2NzNDMy45NjExIDE1LjAyNDYgNi4zNzYgMTggOSAxOHoiIGZpbGw9IiMzNEE4NTMiLz4KICAgIDxwYXRoIGQ9Ik0zLjYxMzEgMTAuODU4NmMtLjE5NTMtLjU4NTYtLjMwNjItMS4yMDMzLS4zMDYyLTEuODU4NnMuMTEwOS0xLjI3MyAuMzA2Mi0xLjg1ODZWNS4wNzM2SDguODQ3N2MtLjE5NTMuNTg1Ni0uMzA2MiAxLjIwMzMtLjMwNjIgMS44NTg2cy4xMTA5IDEuMjczLjMwNjIgMS44NTg2djIuMDY3M2gyLjc2NTR6IiBmaWxsPSIjRkJCQzA0Ii8+CiAgICA8cGF0aCBkPSJNOSAzLjU3OTU1YzEuMzIxNSAwIDIuNTA4MS40NjU5IDMuNDQgMS4zODg2bDIuNTgyMy0yLjU4MjNDMTMuNDU4MSAuODkyNSAxMS40MjggMCA5IDBjLTIuNjI0IDAtNC45Mzg5IDEuNDc1NC02LjA4NjkgMy42MzY0bDIuNzY1NCAyLjA2NzNDNi4zNjk1IDUuMjcxNSA4LjQ5NDYgMy41Nzk1NSA5IDMuNTc5NTV6IiBmaWxsPSIjRUE0MzM1Ii8+CiAgPC9nPgo8L3N2Zz4K');
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.btn-google .btn-text {
+    padding-left: 20px;
+    font-weight: 500;
+    color: #3c4043;
+}
+
+/* Separatore "oppure" */
+.login-separator {
+    margin: 2px 0;
+    text-align: center;
+    position: relative;
+}
+
+.login-separator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: #dadce0;
+}
+
+.separator-text {
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 0 2px;
+    color: #5f6368;
+    font-size: 13px;
+    font-weight: 400;
+    position: relative;
+    z-index: 1;
+}
+
+/* Container per login alternativi */
+.alternative-login {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+/* Pulsante SPID migliorato */
+.btn-spid {
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    padding: 0;
+    height: 36px;
+    min-width: 120px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    box-shadow: 0 1px 3px 0 rgba(0,102,204,.30), 0 4px 8px 3px rgba(0,102,204,.15);
+}
+
+.btn-spid:hover {
+    background-color: #0052a3;
+    box-shadow: 0 2px 4px 0 rgba(0,102,204,.40), 0 6px 12px 4px rgba(0,102,204,.20);
+}
+
+.btn-spid:active {
+    background-color: #004182;
+}
+
+.spid-text {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
 .btn-back { /* Stile per il bottone "Indietro" */
     background: #6c757d; /* Grigio scuro */
     color: white;
@@ -798,6 +928,22 @@ body {
     .btn-primary, .btn-register, .btn-secondary, .btn-back {
         padding: 0.8rem 1.5rem; 
         font-size: 0.85rem;
+    }
+    
+    /* Responsive per pulsanti Google e SPID */
+    .btn-google, .btn-spid {
+        width: 100%;
+        min-width: unset;
+        font-size: 13px;
+        height: 34px;
+    }
+    
+    .alternative-login {
+        gap: 10px;
+    }
+    
+    .login-separator {
+        margin: 14px 0;
     }
     .form-group-inline {
         flex-direction: column; 

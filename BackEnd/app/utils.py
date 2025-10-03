@@ -13,27 +13,18 @@ from sqlalchemy import select
 from BackEnd.app.models import PlotSpecies, Species
 
 async def get_species_distribution_by_plot(plot_id, db: AsyncSession):
-    """
-    Ottiene la distribuzione delle specie per un determinato plot utilizzando una sessione asincrona.
-    
-    Args:
-        plot_id (int): ID del plot
-        db (AsyncSession): Sessione database asincrona
-        
-    Returns:
-        List[Dict]: Lista di dizionari con nome specie e area di superficie
-    """
-
-    
-    stmt = select(Species.name, PlotSpecies.surface_area).select_from(
-        PlotSpecies.__table__.join(Species.__table__)
-    ).where(PlotSpecies.plot_id == plot_id)
-    
-    result = await db.execute(stmt)
-    rows = result.fetchall()
-    
-    # Restituisci una lista di dizionari per il frontend
-    return [{"name": row.name, "surface_area": row.surface_area} for row in rows]
+    try:
+        print(f"Recupero specie per plot_id: {plot_id}")
+        stmt = select(Species.name, PlotSpecies.surface_area).select_from(
+            PlotSpecies.__table__.join(Species.__table__)
+        ).where(PlotSpecies.plot_id == plot_id)
+        result = await db.execute(stmt)
+        rows = result.fetchall()
+        print(f"Specie recuperate: {rows}")
+        return [{"name": row.name, "surface_area": row.surface_area} for row in rows]
+    except Exception as e:
+        print(f"Errore nel recupero delle specie: {e}")
+        raise HTTPException(status_code=500, detail="Errore nel recupero delle specie")
 
 async def inserisci_terreno(payload: SaveCoordinatesRequest) -> SaveCoordinatesResponse:
     try:
@@ -67,6 +58,7 @@ async def inserisci_terreno(payload: SaveCoordinatesRequest) -> SaveCoordinatesR
                 print(f"Plot salvato con ID: {plot.id}")
                 print(f"Geometria salvata: {plot.geom}")
                 print(f"Centroide salvato: {plot.centroid}")
+                print(f"Terreno salvato con nome: {plot.name}, ID utente: {plot.user_id}")
 
                 for specie_input in payload.species:
                     # Recupera o fallisce se specie non esiste

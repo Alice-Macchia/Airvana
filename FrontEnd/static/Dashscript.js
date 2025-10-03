@@ -119,6 +119,50 @@ window.addEventListener("DOMContentLoaded", () => {
     // --- FINE CODICE ESPORTAZIONE PDF ---
 });
 
+// Recupera user_id dal body
+let currentUserId = null;
+document.addEventListener('DOMContentLoaded', () => {
+  currentUserId = document.body.dataset.userId;
+  if (!currentUserId) {
+    alert('Errore: user_id non trovato.');
+    return;
+  }
+  loadUserTerreni();
+});
+
+async function loadUserTerreni() {
+  try {
+    // Carica i terreni dell'utente
+    const terreniRes = await fetch(`/debug/user/${currentUserId}/plots`);
+    const terreniData = await terreniRes.json();
+    const terreni = terreniData.plots || [];
+    populateTerrenoSelector(terreni);
+    if (terreni.length > 0) {
+      fetchAndDraw(terreni[0].id);
+    } else {
+      // Svuota grafici/tabella se nessun terreno
+      updateMeteoTable([]);
+      if (lineChartInstance) lineChartInstance.clear();
+      if (heatmapInstance) heatmapInstance.clear();
+    }
+  } catch (err) {
+    console.error('Errore nel caricamento terreni utente:', err);
+  }
+}
+
+function populateTerrenoSelector(terreni) {
+  const select = document.getElementById('terrenoSelector');
+  if (!select) return;
+  select.innerHTML = '';
+  terreni.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.name;
+    select.appendChild(opt);
+  });
+  select.onchange = e => fetchAndDraw(e.target.value);
+}
+
 // 📦 Load CO2/O2 data from FastAPI and launch the 3 renders
 async function fetchAndDraw(plot_id) {
   try {

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Security, Request, Form, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,6 +42,17 @@ async def get_db():
             
 @router.get("/logreg", response_class=HTMLResponse)
 async def root(request: Request):
+    # Controlla se l'utente è già autenticato
+    token = request.cookies.get("access_token")
+    if token:
+        # Prova a decodificare il token
+        from BackEnd.app.auth import decode_access_token
+        payload = decode_access_token(token)
+        if payload:
+            # Token valido, reindirizza alla dashboard
+            return RedirectResponse(url="/dashboard")
+    
+    # Nessun token o token non valido, mostra la pagina di login
     return templates.TemplateResponse("login_main.html", {"request": request})
 
     

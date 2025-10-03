@@ -9,7 +9,7 @@ let draftTerreno = null;
 let drawControl = null;
 
 // Variabili globali per i dati dell'utente (da popolare al DOMContentLoaded)
-let currentUserId = 41; // Valore di default per il testing
+let currentUserId = null;
 let currentUserEmail = "test@example.com"; // Valore di default per il testing
 
 const stilePoligono = {
@@ -686,7 +686,7 @@ function addSpeciesToSelectedTerrain() {
         
         // Messaggio diverso per terreni in bozza vs salvati
         if (draftTerreno) {
-            showCustomAlert(`Specie "${correctlyCasedName}" aggiunta al terreno in bozza "${selectedTerreno.name}". Clicca "Salva dati terreno" per salvare definitivamente.`);
+            showCustomAlert(`Specie "${correctlyCasedName}" aggiunta al terreno in bozza "${selectedTerreno.name}". Clicca "Salva dati terreno" per salvarlo definitivamente.`);
         } else {
             showCustomAlert(`Specie "${correctlyCasedName}" aggiunta al terreno "${selectedTerreno.name}". Ricorda di cliccare 'Salva dati terreno' per salvare le modifiche.`);
         }
@@ -713,7 +713,7 @@ function editSpeciesInSelectedTerrain(index) {
              showCustomAlert("Nome specie non valido per la modifica. Assicurati che il nome inserito sia presente nell'elenco dei suggerimenti.");
              return;
         }
-        // Usa il nome validato, o l'originale se l'input era vuoto (e l'utente non ha annullato)
+        // Usa il nome validato, o l'originale se l'input era vuoto (e l'utente non ha annullato).
         // o se il nome non è stato modificato.
         const nameToUse = newCorrectlyCasedName || (newName.trim() === '' ? currentSpecies.name : newName.trim());
 
@@ -1294,8 +1294,16 @@ function updateTerreniTable() {
     }
     
     tableBody.innerHTML = ''; // Pulisce la tabella
+    if (terreni.length === 0) {
+        const row = tableBody.insertRow();
+        const cell = row.insertCell();
+        cell.colSpan = 4;
+        cell.textContent = 'Nessun terreno registrato.';
+        cell.style.textAlign = 'center';
+        cell.style.color = '#888';
+        return;
+    }
     console.log(`Creando ${terreni.length} righe per la tabella`);
-    
     terreni.forEach((t, index) => {
         console.log(`Creando riga ${index + 1} per terreno:`, t);
         const row = tableBody.insertRow();
@@ -1555,7 +1563,8 @@ function showLoadingModal(message) {
     // Aggiungiamo uno spinner per un feedback visivo migliore
     const spinner = document.createElement('div');
     spinner.style.cssText = `border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;`;
-    
+
+
     // Keyframes per l'animazione dello spinner
     const styleSheet = document.createElement("style");
     styleSheet.type = "text/css";
@@ -1584,8 +1593,16 @@ function hideLoadingModal() {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Recupera i dati dell'utente dagli attributi data-* del body
-    currentUserId = document.body.dataset.userId;
-    currentUserEmail = document.body.dataset.userEmail;
+    const bodyUserId = document.body.dataset.userId;
+    const bodyUserEmail = document.body.dataset.userEmail;
+    
+    // Usa i dati dal body se disponibili, altrimenti mantieni i valori di default
+    if (bodyUserId && bodyUserId !== 'undefined' && bodyUserId !== 'null') {
+        currentUserId = bodyUserId;
+    }
+    if (bodyUserEmail && bodyUserEmail !== 'undefined' && bodyUserEmail !== 'null') {
+        currentUserEmail = bodyUserEmail;
+    }
 
     // Log per verifica (puoi rimuoverlo in produzione)
     console.log('User ID caricato:', currentUserId);
@@ -1673,7 +1690,8 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadTerreniFromDatabase() {
     try {
         console.log('Tentativo di caricamento terreni dal database...');
-        const response = await fetch('http://127.0.0.1:8000/debug/user/41/plots');
+        console.log('Caricamento terreni per user ID:', currentUserId);
+        const response = await fetch(`http://127.0.0.1:8000/debug/user/${currentUserId}/plots`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -1693,107 +1711,23 @@ async function loadTerreniFromDatabase() {
                 coordinate: plot.coordinate || [],
                 leafletLayer: null
             }));
-            
             // Aggiorna la UI
             renderTerreniList(); // Aggiorna la sidebar del primo menu
             updateTerreniTable();
             updateDashboard();
-            
             console.log(`Caricati ${terreni.length} terreni dal database:`, terreni);
         } else {
-            console.log('Nessun terreno trovato nel database, uso localStorage');
-            loadTerreniFromLocalStorage();
+            terreni = [];
+            renderTerreniList();
+            updateTerreniTable();
+            updateDashboard();
+            // Mostra messaggio se vuoi: "Nessun terreno registrato"
         }
     } catch (error) {
         console.error('Errore nel caricamento dei terreni dal database:', error);
-        console.log('Fallback a localStorage...');
-        // Fallback: prova a caricare da localStorage se disponibile
-        loadTerreniFromLocalStorage();
+        // Fallback: salva in localStorage
+        saveTerreniToLocalStorage();
     }
-}
-
-// Carica i terreni da localStorage (fallback)
-function loadTerreniFromLocalStorage() {
-    console.log('loadTerreniFromLocalStorage chiamata');
-    try {
-        const savedTerreni = localStorage.getItem('terreni');
-        console.log('Dati salvati in localStorage:', savedTerreni);
-        
-        if (savedTerreni) {
-            terreni = JSON.parse(savedTerreni);
-            console.log('Terreni caricati da localStorage:', terreni);
-            renderTerreniList(); // Aggiorna la sidebar del primo menu
-            updateTerreniTable();
-            updateDashboard();
-            console.log(`Caricati ${terreni.length} terreni da localStorage`);
-        } else {
-            console.log('Nessun dato in localStorage, creo dati di esempio');
-            // Se non ci sono dati salvati, crea dati di esempio per test
-            createSampleData();
-        }
-    } catch (error) {
-        console.error('Errore nel caricamento da localStorage:', error);
-        console.log('Creo dati di esempio per errore');
-        // Crea dati di esempio per test
-        createSampleData();
-    }
-}
-
-// Crea dati di esempio per test
-function createSampleData() {
-    console.log('createSampleData chiamata');
-    terreni = [
-        {
-            id: 1,
-            name: "Campo Nord",
-            species: [
-                { name: "Mais", quantity: 5000 },
-                { name: "Grano", quantity: 3000 }
-            ],
-            area_ha: 8.5,
-            perimetro_m: 1200,
-            coordinate: [],
-            leafletLayer: null
-        },
-        {
-            id: 2,
-            name: "Vigneto Sud",
-            species: [
-                { name: "Vite", quantity: 2000 }
-            ],
-            area_ha: 3.2,
-            perimetro_m: 800,
-            coordinate: [],
-            leafletLayer: null
-        },
-        {
-            id: 3,
-            name: "Frutteto Est",
-            species: [
-                { name: "Melo", quantity: 150 },
-                { name: "Pero", quantity: 120 },
-                { name: "Ciliegio", quantity: 80 }
-            ],
-            area_ha: 2.1,
-            perimetro_m: 600,
-            coordinate: [],
-            leafletLayer: null
-        }
-    ];
-    
-    console.log('Array terreni creato:', terreni);
-    console.log('Primo terreno species:', terreni[0].species);
-    
-    // Salva i dati di esempio in localStorage
-    saveTerreniToLocalStorage();
-    
-    // Aggiorna la UI
-    console.log('Terreni creati:', terreni); // Debug
-    renderTerreniList(); // Aggiorna la sidebar del primo menu
-    updateTerreniTable();
-    updateDashboard();
-    
-    console.log(`Creati ${terreni.length} terreni di esempio per test`);
 }
 
 // Salva i terreni nel database
@@ -1889,6 +1823,7 @@ function editSpeciesInTerrain(terrenoId) {
                             species.name = newName.trim();
                             species.quantity = parseFloat(newQuantity);
                             
+
                             // Aggiorna la UI
                             if (draftTerreno) {
                                 // Se è un terreno in bozza, aggiorna solo la sidebar
@@ -2063,3 +1998,13 @@ function updateCoordinatesFromAddress(lat, lon) {
         console.log('Coordinate aggiornate nel draftTerreno:', draftTerreno.coordinates);
     }
 }
+
+// Recupera user_id dal body
+document.addEventListener('DOMContentLoaded', () => {
+  currentUserId = document.body.dataset.userId;
+  if (!currentUserId) {
+    alert('Errore: user_id non trovato.');
+    return;
+  }
+  // Altre inizializzazioni se necessarie
+});

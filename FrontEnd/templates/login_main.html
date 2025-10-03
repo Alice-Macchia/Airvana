@@ -41,15 +41,29 @@
                     </div>
 
                         <div class="btn-group">
-                            <button type="submit" class="btn btn-primary">Login</button>
-                            <!--<a href="/auth/spid-cie" class="btn btn-primary">SPID/CIE</a>-->
-                            <button type="button" class="btn btn-secondary" onclick="window.location.href='/auth/spid-cie'">SPID/CIE</button>
+                            <button type="submit" class="btn btn-primary">Accedi</button>
                         </div>
+                        
                         <div class="form-group">
                             <a href="#" class="forgot-password">Password dimenticata?</a>
                         </div>
 
                 </form>
+
+                <!-- Separatore e opzioni alternative -->
+                <div class="login-separator">
+                    <span class="separator-text">oppure</span>
+                </div>
+
+                <div class="alternative-login">
+                    <button type="button" class="btn btn-google" onclick="loginWithGoogle()">
+                        <span class="btn-text">Accedi con Google</span>
+                    </button>
+                    
+                    <button type="button" class="btn btn-spid" onclick="window.location.href='/auth/spid-cie'">
+                        <span class="spid-text">SPID/CIE</span>
+                    </button>
+                </div>
             </div>
 
             <div class="register-section" id="registerSection">
@@ -320,6 +334,18 @@
             alert(data.detail || "Login fallito");
         }
         });
+
+        // Funzione per login con Google
+        async function loginWithGoogle() {
+            try {
+                const response = await fetch('/auth/google');
+                const data = await response.json();
+                window.location.href = data.auth_url;
+            } catch (error) {
+                alert('Errore durante il login con Google');
+                console.error('Errore:', error);
+            }
+        }
 
     </script>
 

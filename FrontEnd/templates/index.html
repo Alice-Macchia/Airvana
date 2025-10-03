@@ -332,7 +332,14 @@
     }
     
     .charts-normal .chart-box {
-        height: 350px;  /* Tutti i grafici stessa altezza per proporzioni quadrate */
+        height: 450px;  /* Aumentato per proporzioni più quadrate */
+        padding: 16px;  /* Padding ridotto */
+    }
+    
+    /* Assicura che i grafici ECharts mantengano proporzioni quadrate */
+    .chart-content {
+        width: 50%;
+        height: 100%;
     }
     
     /* Vista Compatta - Grid 2x2 PURO (4 elementi uguali) */
@@ -350,13 +357,14 @@
     }
     
     .charts-compact .chart-box {
-        height: 300px;  /* Tutti i grafici stessa altezza */
-        width: 100%;    /* Larghezza piena della colonna */
+        height: 400px;  /* Aumentato per proporzioni più quadrate nella vista compatta */
+        width: 100%;
+        padding: 16px;
     }
     
     /* Tabella in vista compatta - altezza fissa come i grafici */
     .charts-compact .table-scrollable {
-        max-height: 300px;
+        max-height: 400px;  /* Allineata con i grafici */
         width: 100%;
     }
     
@@ -388,7 +396,9 @@
   
     <link rel="stylesheet" href="/static/Dashstyle.css">
 </head>
-<body class="bg-gray-100 text-gray-900 font-sans">
+<body class="bg-gray-100 text-gray-900 font-sans" 
+      data-user-id="{{ user_id }}" 
+      data-user-email="{{ user_email|default('') }}">
   <nav class="navbar">
     <a href="#" class="logo">Airvana</a>
     <ul class="nav-links" id="navLinks">
@@ -888,7 +898,10 @@
                 method: "POST"
             });
             
-            if (!meteoResponse.ok) throw new Error("Errore nel fetch meteo");
+            if (!meteoResponse.ok) {
+                const errorData = await meteoResponse.json().catch(() => ({}));
+                throw new Error(errorData.detail || "Errore nel fetch meteo");
+            }
             
             console.log("☁️ Meteo salvato correttamente.");
             
@@ -897,7 +910,7 @@
             
         } catch (error) {
             console.error("❌ Errore nel refresh dei dati:", error);
-            alert('Errore nel caricamento dei dati. Riprova.');
+            alert(`⚠️ ${error.message}\n\nPossibili cause:\n- Il terreno non ha specie associate\n- Dati meteo non disponibili\n- Problema di connessione`);
         } finally {
             hideLoaders();
         }
@@ -953,7 +966,7 @@
         setTimeout(() => {
             if (lineChartInstance) lineChartInstance.resize();
             if (heatmapInstance) heatmapInstance.resize();
-            if (window.waterfallChart) window.waterfallChart.resize();
+            // Il waterfallChart è creato inline quindi non serve resize manuale
         }, 300);
     }
   </script>
