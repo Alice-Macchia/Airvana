@@ -15,7 +15,7 @@ body {
 /* Stili della pagina di login */
 .login-page {
     min-height: 100vh;
-    background: linear-gradient(45deg, #0077B6, #ffffff, #0049b6, #ffffff);
+    background: linear-gradient(45deg, #023E8A, #ffffff, #023E8A, #ffffff);
     background-size: 400% 400%;
     animation: gradientShift 15s ease infinite;
     position: relative;

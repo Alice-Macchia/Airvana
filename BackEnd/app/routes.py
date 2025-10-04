@@ -24,6 +24,7 @@ from typing import List
 from pydantic import BaseModel
 from shapely.wkb import loads
 from shapely.geometry import Polygon
+from sqlalchemy import func
 
 
 # router = APIRouter()
@@ -39,6 +40,42 @@ async def get_db():
     finally:
         if async_session:
             await async_session.close()
+
+@router.get("/api/plots/{plot_id}/summary")
+async def get_plot_summary(plot_id: int, user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Restituisce metriche sintetiche per popolare le schede della dashboard.
+    Metriche calcolate sull'insieme dei dati meteo disponibili per il plot:
+      - name: nome del terreno
+      - co2_totale: somma total_co2_absorption
+      - o2_totale: somma total_o2_production
+      - pioggia_media: media precipitation
+      - temp_max_min: stringa "max/min" temperatura
+    """
+    plot_result = await db.execute(select(Plot).where(Plot.id == plot_id, Plot.user_id == user.get("id")))
+    plot = plot_result.scalar_one_or_none()
+    if not plot:
+        raise HTTPException(status_code=404, detail="Terreno non trovato o non autorizzato")
+
+    from .models import WeatherData
+    weather_q = await db.execute(
+        select(
+            func.coalesce(func.sum(WeatherData.total_co2_absorption), 0),
+            func.coalesce(func.sum(WeatherData.total_o2_production), 0),
+            func.coalesce(func.avg(WeatherData.precipitation), 0),
+            func.coalesce(func.max(WeatherData.temperature), 0),
+            func.coalesce(func.min(WeatherData.temperature), 0)
+        ).where(WeatherData.plot_id == plot_id)
+    )
+    co2_tot, o2_tot, pioggia_media, t_max, t_min = weather_q.one()
+
+    return {
+        "plot_id": plot_id,
+        "name": plot.name,
+        "co2_totale": round(co2_tot, 2),
+        "o2_totale": round(o2_tot, 2),
+        "pioggia_media": round(pioggia_media, 2),
+        "temp_max_min": f"{round(t_max,1)}/{round(t_min,1)}" if t_max is not None and t_min is not None else "--/--"
+    }
             
 @router.get("/logreg", response_class=HTMLResponse)
 async def root(request: Request):

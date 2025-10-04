@@ -1,8 +1,8 @@
 :root {
-    --primary-green: #283da7;
-    --dark-green: #0077B6;
-    --primary-blue: #007bff;
-    --dark-blue: #0056b3;
+    --primary-green: #023E8A;
+    --dark-green: #023E8A;
+    --primary-blue: #023E8A;
+    --dark-blue: #023E8A;
     --light-bg: #eef1f5;
     --white-bg: #ffffff;
     --border-color: #e0e0e0;
@@ -225,7 +225,7 @@ body, html {
 }
 
 header {
-    background-color: var(--primary-blue);
+    background-color: #023E8A; /* Blu Airvana ufficiale */
     color: white;
     padding: 15px 20px;
     display: flex;
@@ -269,7 +269,7 @@ header {
 
 .user-profile button:hover {
     background-color: white;
-    color: var(--primary-blue);
+    color: #023E8A; /* Blu Airvana ufficiale */
 }
 
 .user-profile button i {

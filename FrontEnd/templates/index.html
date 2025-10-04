@@ -7,10 +7,25 @@
     <link rel="icon" href="/static/favicon-16x16.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configurazione Tailwind per usare i colori Airvana
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'airvana-primary': '#023E8A',
+                        'airvana-primary-light': '#0077B6',
+                        'airvana-primary-dark': '#01305F',
+                        'airvana-secondary': '#00a651',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
     /* Navbar styles only */
     .navbar {
-        background-color: #0056b3;
+        background-color: #023E8A; /* Blu Airvana ufficiale */
         padding: 15px 20px;
         position: sticky;
         top: 0;
@@ -68,7 +83,7 @@
     
     .btn-auth-register:hover {
         background-color: white;
-        color: #0056b3;
+        color: #023E8A; /* Blu Airvana ufficiale */
     }
     
     .hamburger {
@@ -85,7 +100,7 @@
             left: -100%;
             width: 100%;
             height: calc(100vh - 70px);
-            background-color: #0056b3;
+            background-color: #023E8A; /* Blu Airvana ufficiale */
             flex-direction: column;
             justify-content: flex-start;
             align-items: center;
@@ -168,7 +183,7 @@
         width: 20px;
         height: 20px;
         border: 2px solid #f3f3f3;
-        border-top: 2px solid #0056b3;
+        border-top: 2px solid #023E8A; /* Blu Airvana ufficiale */
         border-radius: 50%;
         animation: spin 1s linear infinite;
     }
@@ -321,70 +336,217 @@
         z-index: 10;
         background: #f9fafb;
     }
-    
-    /* Layout Charts - Vista Normale vs Compatta */
-    .charts-normal {
-        display: block;
-    }
-    
-    .charts-normal .chart-section {
-        width: 100%;
-    }
-    
-    .charts-normal .chart-box {
-        height: 450px;  /* Aumentato per proporzioni più quadrate */
-        padding: 16px;  /* Padding ridotto */
-    }
-    
-    /* Assicura che i grafici ECharts mantengano proporzioni corrette */
-    .chart-content {
-        width: 100%;
-        height: 100%;
-    }
 
-    /* Vista Compatta - Grid 2x2 PURO (4 elementi uguali) */
-    .charts-compact {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-        max-width: 1400px;  /* Larghezza massima container */
-        margin: 0 auto;      /* Centra il grid */
+    /* ========== WINDOWS STYLE GRID (UNICA VISTA) ========== */
+    #chartsContainer.compact-view {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-rows: repeat(2, 1fr) !important;
+        gap: 16px !important;
+        width: 100% !important;
+        height: calc(100vh - 280px) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
     }
-
-    .charts-compact .chart-section {
-        margin-top: 0 !important;
-        width: 100%;
-    }
-
-    .charts-compact .chart-box {
-        height: 400px;  /* Aumentato per proporzioni più quadrate nella vista compatta */
-        width: 100%;
-        padding: 16px;
-    }
-
-    /* In vista compatta, assicura che i grafici prendano tutto lo spazio */
-    .charts-compact .chart-content {
+    
+    #chartsContainer.compact-view .chart-section {
+        margin: 0 !important;
         width: 100% !important;
         height: 100% !important;
-    }    /* Tabella in vista compatta - altezza fissa come i grafici */
-    .charts-compact .table-scrollable {
-        max-height: 400px;  /* Allineata con i grafici */
-        width: 100%;
+        display: flex !important;
+        flex-direction: column !important;
+        box-sizing: border-box !important;
     }
     
-    .charts-compact h2 {
-        font-size: 11px;
+    #chartsContainer.compact-view .chart-box {
+        width: 100% !important;
+        height: 100% !important;
+        flex: 1 !important;
+        padding: 12px !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
     
-    .charts-compact .text-xs {
-        font-size: 10px;
+    #chartsContainer.compact-view .chart-content {
+        width: 100% !important;
+        height: 100% !important;
+        flex: 1 !important;
     }
     
+    #chartsContainer.compact-view .table-scrollable {
+        height: 100% !important;
+        width: 100% !important;
+        flex: 1 !important;
+    }
     
-    /* Responsive - Mobile torna a vista normale */
-    @media (max-width: 768px) {
-        .charts-compact {
-            grid-template-columns: 1fr;
+    #chartsContainer.compact-view h2 {
+        font-size: 13px !important;
+        margin-bottom: 6px !important;
+    }
+    
+    /* Responsive - Mobile e tablet */
+    @media (max-width: 1024px) {
+        #chartsContainer.compact-view {
+            grid-template-columns: 1fr !important;
+            grid-template-rows: auto !important;
+            height: auto !important;
+        }
+        
+        #chartsContainer.compact-view .chart-box {
+            height: 350px !important;
+        }
+    }
+    /* ========== PREMIUM ENHANCEMENTS ========== */
+    
+    /* Premium cards con gradiente */
+    .bg-white {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .bg-white:hover {
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1), 0 6px 12px rgba(0, 0, 0, 0.06);
+        transform: translateY(-3px);
+    }
+    
+    /* Premium chart boxes */
+    .chart-box {
+        background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    
+    .chart-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #023E8A, #0077B6, #00a651);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .chart-box:hover::before {
+        opacity: 1;
+    }
+    
+    .chart-box:hover {
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 6px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-4px);
+        border-color: rgba(0, 119, 182, 0.15);
+    }
+    
+    /* Premium table */
+    tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    tbody tr:hover {
+        background: linear-gradient(90deg, rgba(0, 119, 182, 0.04), rgba(0, 166, 81, 0.04));
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* Premium buttons */
+    button, .btn {
+        background: linear-gradient(135deg, #023E8A 0%, #0077B6 100%);
+        box-shadow: 0 4px 12px rgba(2, 62, 138, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    button:hover, .btn:hover {
+        box-shadow: 0 8px 20px rgba(2, 62, 138, 0.4);
+        transform: translateY(-2px);
+    }
+    
+    /* Premium navbar */
+    .navbar {
+        background: linear-gradient(135deg, #023E8A 0%, #01305F 100%);
+        box-shadow: 0 4px 16px rgba(2, 62, 138, 0.25);
+    }
+    
+    /* Premium sidebar */
+    .dashboard-sidebar {
+        background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+        box-shadow: 4px 0 16px rgba(0, 0, 0, 0.08);
+    }
+    
+    .sidebar-link {
+        border-radius: 8px;
+        margin: 0 8px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .sidebar-link:hover {
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+        transform: translateX(4px);
+    }
+    
+    /* ========== COMPACT VIEW CSS (Usata dal JS) ========== */
+    #chartsContainer.compact-view {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-rows: repeat(2, 1fr) !important;
+        gap: 16px !important;
+        width: 100% !important;
+        height: calc(100vh - 280px) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+    }
+    
+    #chartsContainer.compact-view .chart-section {
+        margin: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-sizing: border-box !important;
+    }
+    
+    #chartsContainer.compact-view .chart-box {
+        width: 100% !important;
+        height: 100% !important;
+        flex: 1 !important;
+        padding: 12px !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    #chartsContainer.compact-view .chart-content {
+        width: 100% !important;
+        height: 100% !important;
+        flex: 1 !important;
+    }
+    
+    #chartsContainer.compact-view .table-scrollable {
+        height: 100% !important;
+        width: 100% !important;
+        flex: 1 !important;
+    }
+    
+    #chartsContainer.compact-view h2 {
+        font-size: 13px !important;
+        margin-bottom: 6px !important;
+    }
+    
+    @media (max-width: 1024px) {
+        #chartsContainer.compact-view {
+            grid-template-columns: 1fr !important;
+            grid-template-rows: auto !important;
+            height: auto !important;
+        }
+        
+        #chartsContainer.compact-view .chart-box {
+            height: 350px !important;
         }
     }
     </style>
@@ -468,52 +630,49 @@
         </div>
       </header>
 
-      <!-- Summary Cards - Minimal Style -->
+      <!-- Summary Cards - Dynamic (popolate da JS) -->
       <section class="mb-6">
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" id="summaryCards">
-          <div class="bg-white border border-gray-200 rounded p-3 hover:border-blue-300 transition-colors">
-            <p class="text-xs text-gray-500 mb-1">Terreno</p>
-            <p class="text-lg font-semibold text-gray-900" id="terrenoValue">
-              <span class="loading-spinner"></span>
-            </p>
-          </div>
-          <div class="bg-white border border-gray-200 rounded p-3 hover:border-green-300 transition-colors">
-            <p class="text-xs text-gray-500 mb-1">CO₂ Totale</p>
-            <p class="text-lg font-semibold text-green-600" id="co2Value">
-              <span class="loading-spinner"></span>
-            </p>
-          </div>
-          <div class="bg-white border border-gray-200 rounded p-3 hover:border-green-300 transition-colors">
-            <p class="text-xs text-gray-500 mb-1">O₂ Totale</p>
-            <p class="text-lg font-semibold text-green-700" id="o2Value">
-              <span class="loading-spinner"></span>
-            </p>
-          </div>
-          <div class="bg-white border border-gray-200 rounded p-3 hover:border-blue-300 transition-colors">
-            <p class="text-xs text-gray-500 mb-1">Pioggia Media</p>
-            <p class="text-lg font-semibold text-blue-600" id="pioggiaValue">
-              <span class="loading-spinner"></span>
-            </p>
-          </div>
-          <div class="bg-white border border-gray-200 rounded p-3 hover:border-orange-300 transition-colors">
-            <p class="text-xs text-gray-500 mb-1">Temp Max / Min</p>
-            <p class="text-lg font-semibold text-orange-600" id="tempValue">
-              <span class="loading-spinner"></span>
-            </p>
-          </div>
+        <div id="summaryCards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <!-- Placeholder skeletons -->
+          <div class="bg-white border border-gray-200 rounded p-3 animate-pulse h-20"></div>
+          <div class="bg-white border border-gray-200 rounded p-3 animate-pulse h-20"></div>
+          <div class="bg-white border border-gray-200 rounded p-3 animate-pulse h-20"></div>
+          <div class="bg-white border border-gray-200 rounded p-3 animate-pulse h-20"></div>
+          <div class="bg-white border border-gray-200 rounded p-3 animate-pulse h-20"></div>
         </div>
       </section>
 
-      <!-- Toggle View Button -->
-      <div class="flex justify-end mb-4">
-        <button onclick="toggleChartsView()" id="viewToggleBtn" class="flex items-center gap-2 px-3 py-2 text-xs bg-white border border-gray-200 rounded hover:border-blue-500 hover:text-blue-600 transition-colors">
-          <i class="fas fa-th" id="viewToggleIcon"></i>
-          <span id="viewToggleText">Vista Compatta</span>
-        </button>
-      </div>
 
-      <!-- Charts Container - Switchable Layout -->
-      <div id="chartsContainer" class="charts-normal">
+      <!-- Charts Container - Windows Style Grid -->
+      <div id="chartsContainer" class="compact-view">
+        
+        <!-- 🌳 GRAFICO SPECIE - FILTRO MASTER (SEMPRE IN CIMA) -->
+        <section class="chart-section mb-8">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xl font-semibold text-gray-700">🌳 CO₂ per Specie</h2>
+            <div class="flex items-center gap-2">
+              <span id="speciesFilterStatus" class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-500">
+                Tutte le specie
+              </span>
+              <button 
+                id="clearSpeciesFilter" 
+                class="hidden text-xs px-2 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                onclick="clearSpeciesFilter()">
+                ✕ Rimuovi filtro
+              </button>
+            </div>
+          </div>
+          <div class="bg-white shadow rounded p-4 relative chart-box">
+            <div id="speciesChart" class="chart-content" style="min-height: 400px;"></div>
+            <div id="speciesLoader" class="loading-overlay">
+              <div class="loading-spinner"></div>
+              <p class="mt-2 text-gray-600">Caricamento specie...</p>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2 text-center italic">
+            💡 Clicca su una barra per filtrare tutti i grafici sotto
+          </p>
+        </section>
         
         <!-- Chart Line CO2/O2 -->
         <section class="chart-section mb-8">
@@ -525,9 +684,21 @@
               <p class="mt-2 text-gray-600">Caricamento grafico...</p>
             </div>
           </div>
-          <div class="flex justify-between mt-2 text-sm px-4">
-            <span id="co2Display">CO₂: <span class="loading-spinner"></span></span>
-            <span id="o2Display">O₂: <span class="loading-spinner"></span></span>
+          <div class="flex justify-between items-center mt-2 px-4">
+            <div class="flex space-x-4 text-sm">
+              <span id="co2Display">CO₂: <span class="loading-spinner"></span></span>
+              <span id="o2Display">O₂: <span class="loading-spinner"></span></span>
+            </div>
+            <!-- 🎚️ ZOOM Y SLIDER -->
+            <div class="flex items-center space-x-2 text-sm">
+              <label for="yZoomSlider" class="text-gray-600">Zoom Y:</label>
+              <input type="range" 
+                     id="yZoomSlider" 
+                     min="10" max="100" value="100" step="5"
+                     class="w-24 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                     title="Zoom asse Y del CO₂">
+              <span id="yZoomValue" class="text-gray-500 w-8">100%</span>
+            </div>
           </div>
         </section>
 
@@ -564,21 +735,6 @@
           </div>
         </section>
         
-        <!-- Grafico Waterfall -->
-        <section class="chart-section mt-8">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold text-gray-700">Confronto Assorbimento CO₂</h2>
-            <span class="text-xs text-gray-400">Ultimo mese</span>
-          </div>
-          <div class="bg-white border border-gray-200 rounded p-4 relative chart-box">
-            <div id="waterfallChart" class="chart-content"></div>
-            <div id="waterfallLoader" class="loading-overlay">
-              <div class="loading-spinner"></div>
-              <p class="mt-2 text-xs text-gray-400">Caricamento...</p>
-            </div>
-          </div>
-        </section>
-
         <!-- Heatmap -->
         <section class="chart-section mt-8">
           <div class="flex items-center justify-between mb-3">
@@ -603,7 +759,6 @@
 
   <!-- JS & Chart -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5"></script>
-  <script src="/static/Dashscript.js"></script>
-  <script src="/static/Dashcharts.js"></script>
+  <script src="/static/Dashscript.js?v=11"></script>
 </body>
 </html>

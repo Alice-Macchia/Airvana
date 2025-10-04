@@ -1,0 +1,25 @@
+/* AUTO-HIDE LOADING OVERLAYS dopo 2 secondi */
+.loading-overlay {
+  animation: fadeOutLoader 0.5s ease-in-out 2s forwards;
+}
+
+@keyframes fadeOutLoader {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    display: none;
+  }
+}
+
+/* Terreno indicators - barrette verticali minimali */
+.terreno-indicator:hover {
+  background: #0077B6 !important;
+  transform: scaleX(1.5);
+}
+
+.terreno-indicator.active {
+  background: #023E8A !important;
+  height: 40px !important;
+  box-shadow: 0 0 0 2px rgba(2, 62, 138, 0.2);
+}

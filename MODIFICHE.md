@@ -286,6 +286,36 @@ frontend/
 
 ---
 
+#### **9. Dashboard Cards Dinamiche - RISOLTO ✅**
+**Dove**: `FrontEnd/templates/index.html` e `FrontEnd/static/Dashscript.js`
+
+**Il problema iniziale**:
+- Schede riepilogo dashboard hardcoded (terreno, CO2, O2, pioggia, temperatura)
+- Valori fissi che non cambiavano con il terreno selezionato
+- Nessun caricamento dinamico dei dati dal database
+
+**Cosa abbiamo fatto**:
+1. **Nuovo endpoint API**: `/api/plots/{plot_id}/summary` per metriche terreno
+2. **Frontend dinamico**: Rimosso HTML statico, generazione via JS
+3. **Caricamento automatico**: Cards si aggiornano al cambio terreno
+4. **Gestione errori**: Fallback per terreni senza dati
+
+**File modificati**:
+- ✅ `BackEnd/app/routes.py` - Endpoint summary con auth utente
+- ✅ `FrontEnd/templates/index.html` - Container dinamico al posto delle card statiche
+- ✅ `FrontEnd/static/Dashscript.js` - Fetch e render delle card + fix loader grafici
+
+**Risultato**:
+- Cards responsive che mostrano dati reali dal database
+- Aggiornamento automatico al cambio terreno
+- Gestione graceful di errori e terreni vuoti
+- Eliminati ricaricamenti multipli grafici
+
+**Priorità**: COMPLETATO - Dashboard completamente dinamica  
+**Tempo impiegato**: 3 ore
+
+---
+
 ### 🔴 **LIVELLO 4: Professional** (1 mese+)
 
 #### **8. Zero test = Bug in produzione**

@@ -1,0 +1,84 @@
+/* 🎨 AIRVANA COLOR SYSTEM - UNIFORMATO */
+/* Colore ufficiale primario: #023E8A */
+
+:root {
+  /* Colori Brand Airvana */
+  --airvana-primary: #023E8A;      /* BLU UFFICIALE AIRVANA */
+  --airvana-primary-light: #0077B6;
+  --airvana-primary-dark: #01305F;
+  --airvana-secondary: #00a651;     /* Verde Airvana */
+  --airvana-accent: #0046b0;
+  
+  /* Neutrals */
+  --light-bg: #eef1f5;
+  --white-bg: #ffffff;
+  --border-color: #e0e0e0;
+  --text-color: #333;
+  
+  /* Shadows */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --border-radius: 8px;
+  
+  /* Stati */
+  --danger-red: #dc3545;
+  --success-green: #28a745;
+}
+
+/* Base uniformata per tutti i file CSS */
+body {
+  color: var(--text-color);
+  background-color: var(--light-bg);
+}
+
+/* Pulsanti primari uniformati */
+.btn-primary,
+.btn-airvana,
+button.primary {
+  background-color: var(--airvana-primary);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(2, 62, 138, 0.3);
+}
+
+.btn-primary:hover,
+.btn-airvana:hover,
+button.primary:hover {
+  background-color: var(--airvana-primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(2, 62, 138, 0.4);
+}
+
+/* Links */
+a {
+  color: var(--airvana-primary);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--airvana-primary-light);
+}
+
+/* Headers/Navbar uniformati */
+.navbar,
+header.primary {
+  background-color: var(--airvana-primary);
+  color: white;
+}
+
+/* Text utilities */
+.text-primary {
+  color: var(--airvana-primary) !important;
+}
+
+.bg-primary {
+  background-color: var(--airvana-primary) !important;
+}
+
+.border-primary {
+  border-color: var(--airvana-primary) !important;
+}

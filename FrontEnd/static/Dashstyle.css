@@ -1,45 +1,68 @@
-/* --- Utility conservate --- */
-.rounded {
-  border-radius: 0.5rem;
-}
-.shadow {
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+/* ========== PREMIUM AIRVANA DASHBOARD STYLES ========== */
+
+/* AUTO-HIDE LOADING OVERLAYS dopo 2 secondi */
+.loading-overlay {
+  animation: fadeOutLoader 0.5s ease-in-out 2s forwards;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
 }
 
-/* --- Bottoni stile login_styles.css --- */
-.btn {
-  padding: 0.7rem 1.2rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: 600;
-  text-decoration: none;
-  display: inline-block;
-  transition: all 0.3s ease;
-  text-align: center;
-  font-size: 0.9rem;
-  background: linear-gradient(45deg, #00a6ff, #0077B6);
-  color: white;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-}
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+@keyframes fadeOutLoader {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    display: none;
+  }
 }
 
-/* --- Colori e background --- */
-.bg-light {
-  background: #f8f9fa !important;
-}
-.text-primary {
-  color: #0077B6 !important;
+/* ========== TERRENO INDICATORS PREMIUM ========== */
+.terreno-indicator {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* --- Card esempio (opzionale, se usate) --- */
-.card {
-  background: #f8f9fa;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-  padding: 2rem;
-  margin-bottom: 2rem;
+.terreno-indicator:hover {
+  background: #0077B6 !important;
+  transform: scaleX(1.8) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 119, 182, 0.5);
+  z-index: 10;
+}
+
+.terreno-indicator.active {
+  background: linear-gradient(180deg, #023E8A 0%, #01305F 100%) !important;
+  height: 40px !important;
+  box-shadow: 0 4px 16px rgba(2, 62, 138, 0.4),
+              0 0 0 3px rgba(2, 62, 138, 0.2);
+  z-index: 5;
+}
+
+/* ========== PREMIUM GLOBAL ENHANCEMENTS ========== */
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #023E8A 0%, #0077B6 100%);
+  border-radius: 10px;
+  border: 2px solid #f1f3f4;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #01305F 0%, #023E8A 100%);
+}
+
+/* Global transitions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

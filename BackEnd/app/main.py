@@ -359,6 +359,78 @@ async def check_weather_data_exists(plot_id: int, giorno: str = Query(...), db: 
         print(f"Errore durante la verifica dell'esistenza dei dati meteo per plot {plot_id}: {e}")
         return {"exists": False}
 
+# 📊 NUOVO ENDPOINT: CO2/O2 breakdown per specie
+@app.post("/co2_by_species/{plot_id}")
+async def get_co2_by_species(plot_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Restituisce il breakdown di CO₂ e O₂ per ogni specie di pianta nel terreno.
+    Utile per grafici interattivi che mostrano il contributo di ogni specie.
+    """
+    try:
+        # Verifica che il plot esista
+        result = await db.execute(select(Plot).where(Plot.id == plot_id))
+        plot = result.scalar_one_or_none()
+        if not plot:
+            raise HTTPException(status_code=404, detail=f"Plot {plot_id} non trovato")
+        
+        # Ottieni specie e dati meteo
+        species = await get_species_from_db(db, plot_id)
+        if not species:
+            raise HTTPException(status_code=404, detail=f"Nessuna specie trovata per plot {plot_id}")
+        
+        oggi = datetime.today().strftime("%Y-%m-%d")
+        weather = await get_weather_data_from_db(db, plot_id, oggi)
+        if not weather:
+            raise HTTPException(status_code=404, detail="Dati meteo non disponibili")
+        
+        coefs = await get_coefficients_from_db(db)
+        
+        # Calcola CO2/O2 orari per specie
+        results = calculate_co2_o2_hourly(species, weather, coefs)
+        df = pd.DataFrame(results)
+        
+        # Aggrega per specie (somma totale giornaliera)
+        species_totals = df.groupby("species")[["co2_kg_hour", "o2_kg_hour"]].sum().reset_index()
+        species_totals = species_totals.rename(columns={
+            "co2_kg_hour": "total_co2_kg",
+            "o2_kg_hour": "total_o2_kg"
+        })
+        
+        # Aggiungi dati meteo all'hourly breakdown
+        # Crea un dizionario di lookup per i dati meteo per datetime
+        weather_lookup = {w.get("datetime"): w for w in weather}
+        
+        # Calcola anche il breakdown orario per specie (per filtraggio)
+        hourly_by_species = df.groupby(["datetime", "species"])[["co2_kg_hour", "o2_kg_hour"]].sum().reset_index()
+        
+        # Aggiungi dati meteo a hourly_by_species
+        hourly_by_species["precipitazioni_mm"] = hourly_by_species["datetime"].apply(
+            lambda x: weather_lookup.get(x, {}).get("precipitation", 0)
+        )
+        hourly_by_species["temperatura_c"] = hourly_by_species["datetime"].apply(
+            lambda x: weather_lookup.get(x, {}).get("temperature", 0)
+        )
+        hourly_by_species["radiazione"] = hourly_by_species["datetime"].apply(
+            lambda x: weather_lookup.get(x, {}).get("radiation", 0)
+        )
+        hourly_by_species["umidita"] = hourly_by_species["datetime"].apply(
+            lambda x: weather_lookup.get(x, {}).get("humidity", 0)
+        )
+        
+        hourly_by_species["datetime"] = hourly_by_species["datetime"].apply(lambda x: x.strftime("%Y-%m-%d %H:%M:%S"))
+        
+        return {
+            "totals": species_totals.to_dict(orient="records"),
+            "hourly": hourly_by_species.to_dict(orient="records")
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore server: {str(e)}")
+
 # Route fallback SOLO per /marketplace e /marketplace/
 @app.get("/marketplace", include_in_schema=False)
 @app.get("/marketplace/", include_in_schema=False)

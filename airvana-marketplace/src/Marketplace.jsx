@@ -4,6 +4,58 @@ import Checkout from './components/Checkout';
 import TerrenoDetail from './components/TerrenoDetail';
 import './Marketplace_Fixed.css';
 
+// Dati statici per i terreni certificati
+const terreniData = [
+  {
+    id: 1,
+    nome: "Vigneto Toscano - Chianti Classico",
+    co2Assorbita: 2500,
+    prezzo: 89,
+    descrizione: "Vigneto biologico certificato in Toscana. Produzione di vino sostenibile con pratiche agricole a basso impatto ambientale.",
+    immagine: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&h=300&fit=crop&auto=format&q=80"
+  },
+  {
+    id: 2,
+    nome: "Olivo Centenario - Puglia",
+    co2Assorbita: 1800,
+    prezzo: 65,
+    descrizione: "Ulivi secolari in Puglia. Produzione di olio extra vergine biologico con alberi che hanno oltre 100 anni.",
+    immagine: "https://images.unsplash.com/photo-1515589666096-8e0cb23dec2e?w=400&h=300&fit=crop&auto=format&q=80"
+  },
+  {
+    id: 3,
+    nome: "Bosco Misto - Trentino",
+    co2Assorbita: 4200,
+    prezzo: 145,
+    descrizione: "Bosco misto certificato FSC in Trentino. Biodiversità preservata con specie autoctone.",
+    immagine: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop&auto=format&q=80"
+  },
+  {
+    id: 4,
+    nome: "Agrumeto Siciliano - Catania",
+    co2Assorbita: 2100,
+    prezzo: 75,
+    descrizione: "Agrumeto biologico in Sicilia. Produzione di arance, limoni e mandarini con metodi tradizionali.",
+    immagine: "https://images.unsplash.com/photo-1557800636-894a64c1696f?w=400&h=300&fit=crop&auto=format&q=80"
+  },
+  {
+    id: 5,
+    nome: "Castagneto - Piemonte",
+    co2Assorbita: 3200,
+    prezzo: 110,
+    descrizione: "Castagneto secolare in Piemonte. Produzione di castagne e legname sostenibile.",
+    immagine: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&auto=format&q=80"
+  },
+  {
+    id: 6,
+    nome: "Prati Alpini - Valle d'Aosta",
+    co2Assorbita: 1600,
+    prezzo: 55,
+    descrizione: "Prati alpini certificati in Valle d'Aosta. Pascolo sostenibile per bovini e ovini.",
+    immagine: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&auto=format&q=80"
+  }
+];
+
 const Marketplace = () => {
   const [terreni, setTerreni] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,60 +67,10 @@ const Marketplace = () => {
   const navLinksRef = useRef(null);
   const navbarRef = useRef(null);
 
-  // Dati statici per i terreni certificati
-  const terreniData = [
-    {
-      id: 1,
-      nome: "Vigneto Toscano - Chianti Classico",
-      co2Assorbita: 2500,
-      prezzo: 89,
-      descrizione: "Vigneto biologico certificato in Toscana. Produzione di vino sostenibile con pratiche agricole a basso impatto ambientale.",
-      immagine: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&h=300&fit=crop&auto=format&q=80"
-    },
-    {
-      id: 2,
-      nome: "Olivo Centenario - Puglia",
-      co2Assorbita: 1800,
-      prezzo: 65,
-      descrizione: "Ulivi secolari in Puglia. Produzione di olio extra vergine biologico con alberi che hanno oltre 100 anni.",
-      immagine: "https://images.unsplash.com/photo-1515589666096-8e0cb23dec2e?w=400&h=300&fit=crop&auto=format&q=80"
-    },
-    {
-      id: 3,
-      nome: "Bosco Misto - Trentino",
-      co2Assorbita: 4200,
-      prezzo: 145,
-      descrizione: "Bosco misto certificato FSC in Trentino. Biodiversità preservata con specie autoctone.",
-      immagine: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop&auto=format&q=80"
-    },
-    {
-      id: 4,
-      nome: "Agrumeto Siciliano - Catania",
-      co2Assorbita: 2100,
-      prezzo: 75,
-      descrizione: "Agrumeto biologico in Sicilia. Produzione di arance, limoni e mandarini con metodi tradizionali.",
-      immagine: "https://images.unsplash.com/photo-1557800636-894a64c1696f?w=400&h=300&fit=crop&auto=format&q=80"
-    },
-    {
-      id: 5,
-      nome: "Castagneto - Piemonte",
-      co2Assorbita: 3200,
-      prezzo: 110,
-      descrizione: "Castagneto secolare in Piemonte. Produzione di castagne e legname sostenibile.",
-      immagine: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&auto=format&q=80"
-    },
-    {
-      id: 6,
-      nome: "Prati Alpini - Valle d'Aosta",
-      co2Assorbita: 1600,
-      prezzo: 55,
-      descrizione: "Prati alpini certificati in Valle d'Aosta. Pascolo sostenibile per bovini e ovini.",
-      immagine: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop&auto=format&q=80"
-    }
-  ];
-
   // Gestione degli eventi per la navbar
   useEffect(() => {
+    const navLinksNode = navLinksRef.current;
+    const hamburgerNode = hamburgerRef.current;
     const handleScroll = () => {
       if (navbarRef.current) {
         if (window.scrollY > 50) {
@@ -80,25 +82,25 @@ const Marketplace = () => {
     };
 
     const handleHamburgerClick = () => {
-      if (navLinksRef.current) {
-        navLinksRef.current.classList.toggle('active');
+      if (navLinksNode) {
+        navLinksNode.classList.toggle('active');
       }
     };
 
-    const handleNavLinkClick = (e) => {
-      if (navLinksRef.current && navLinksRef.current.classList.contains('active')) {
-        navLinksRef.current.classList.remove('active');
+    const handleNavLinkClick = () => {
+      if (navLinksNode && navLinksNode.classList.contains('active')) {
+        navLinksNode.classList.remove('active');
       }
     };
 
     window.addEventListener('scroll', handleScroll);
     
-    if (hamburgerRef.current) {
-      hamburgerRef.current.addEventListener('click', handleHamburgerClick);
+    if (hamburgerNode) {
+      hamburgerNode.addEventListener('click', handleHamburgerClick);
     }
     
-    if (navLinksRef.current) {
-      const navLinks = navLinksRef.current.querySelectorAll('a');
+    if (navLinksNode) {
+      const navLinks = navLinksNode.querySelectorAll('a');
       navLinks.forEach(link => {
         link.addEventListener('click', handleNavLinkClick);
       });
@@ -118,12 +120,12 @@ const Marketplace = () => {
     return () => {
       window.removeEventListener('scroll', handleScroll);
       
-      if (hamburgerRef.current) {
-        hamburgerRef.current.removeEventListener('click', handleHamburgerClick);
+      if (hamburgerNode) {
+        hamburgerNode.removeEventListener('click', handleHamburgerClick);
       }
       
-      if (navLinksRef.current) {
-        const navLinks = navLinksRef.current.querySelectorAll('a');
+      if (navLinksNode) {
+        const navLinks = navLinksNode.querySelectorAll('a');
         navLinks.forEach(link => {
           link.removeEventListener('click', handleNavLinkClick);
         });
