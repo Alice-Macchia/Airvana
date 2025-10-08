@@ -306,6 +306,7 @@ async function drawSpeciesChartFromData(data) {
   }
   originalHourlyData = hourly;
   aggregatedTotalData = aggregateDataByDatetime(hourly);
+  window.currentHourlyData = hourly; // 💾 Salva per filtri e zoom
   await drawSpeciesChart(totals, hourly);
 }
 
@@ -337,6 +338,7 @@ async function fetchAndDrawSpeciesChart(plotId) {
     // Salva dati globali
     originalHourlyData = hourly;
     aggregatedTotalData = aggregateDataByDatetime(hourly);
+    window.currentHourlyData = hourly; // 💾 Salva per filtri e zoom
     
     console.log(`📥 Ricevute ${totals.length} specie, ${hourly.length} record orari`);
     
@@ -455,17 +457,30 @@ function drawLineChart(data) {
   const co2 = data.map(d => d.co2_kg_hour || 0);
   const o2 = data.map(d => d.o2_kg_hour || 0);
 
+  // 💾 Salva i valori massimi per lo zoom Y
+  window.originalMaxCO2 = Math.max(...co2, 0.1);
+  window.originalMaxO2 = Math.max(...o2, 0.1);
+  window.originalMaxValue = Math.max(window.originalMaxCO2, window.originalMaxO2);
+
   window.lineChartInstance.setOption({
     title: { text: "Assorbimento CO₂ / Emissione O₂", left: "center" },
     tooltip: { trigger: "axis" },
     legend: { data: ["CO₂", "O₂"], bottom: 0 },
     xAxis: { type: "category", data: times },
-    yAxis: { type: "value", name: "kg/h", min: 0 },
+    yAxis: { 
+      type: "value", 
+      name: "kg/h", 
+      min: 0,
+      max: Math.ceil(window.originalMaxValue * 1.1) // Margine 10%
+    },
     series: [
       { name: "CO₂", type: "line", smooth: true, data: co2, lineStyle: { color: "#0077B6" }},
       { name: "O₂", type: "line", smooth: true, data: o2, lineStyle: { color: "#00C49A" }}
     ]
   });
+  
+  // 🎚️ INIZIALIZZA ZOOM Y SLIDER
+  initializeYZoomSlider();
 }
 
 function drawHeatmap(data) {
@@ -599,7 +614,19 @@ async function drawSpeciesChart(totals, hourly) {
         data: co2Values,
         itemStyle: {
           color: function(params) {
-            return selectedSpecies === speciesNames[params.dataIndex] ? '#01305F' : '#023E8A';
+            const isSelected = selectedSpecies === speciesNames[params.dataIndex];
+            const hasSelection = selectedSpecies !== null;
+            
+            if (hasSelection && !isSelected) {
+              // Specie non selezionata -> trasparente
+              return 'rgba(2, 62, 138, 0.25)'; // #023E8A con opacity 0.25
+            } else if (isSelected) {
+              // Specie selezionata -> colore intenso
+              return '#01305F';
+            } else {
+              // Nessuna selezione -> colore normale
+              return '#023E8A';
+            }
           }
         },
         barWidth: '35%'
@@ -610,7 +637,19 @@ async function drawSpeciesChart(totals, hourly) {
         data: o2Values,
         itemStyle: {
           color: function(params) {
-            return selectedSpecies === speciesNames[params.dataIndex] ? '#00853f' : '#00a651';
+            const isSelected = selectedSpecies === speciesNames[params.dataIndex];
+            const hasSelection = selectedSpecies !== null;
+            
+            if (hasSelection && !isSelected) {
+              // Specie non selezionata -> trasparente
+              return 'rgba(0, 166, 81, 0.25)'; // #00a651 con opacity 0.25
+            } else if (isSelected) {
+              // Specie selezionata -> colore intenso
+              return '#00853f';
+            } else {
+              // Nessuna selezione -> colore normale
+              return '#00a651';
+            }
           }
         },
         barWidth: '35%'
@@ -618,26 +657,51 @@ async function drawSpeciesChart(totals, hourly) {
     ]
   };
 
-  // Click event
-  window.speciesChartInstance.off('click');
+  // ⚡ EVENTO CLICK: Filtra gli altri grafici con trasparenza
+  window.speciesChartInstance.off('click'); // Rimuovi listener precedenti
   window.speciesChartInstance.on('click', function (params) {
     if (params.componentType === 'series') {
       const clickedSpecies = speciesNames[params.dataIndex];
       
+      // Toggle selezione
       if (selectedSpecies === clickedSpecies) {
-        selectedSpecies = null;
-        console.log('🔄 Filtro rimosso');
-        updateFilterBadge(null);
+        selectedSpecies = null; // Deseleziona
+        console.log('🔄 Filtro rimosso - mostra tutti i dati');
       } else {
         selectedSpecies = clickedSpecies;
         console.log(`🌳 Filtro attivo: ${selectedSpecies}`);
-        updateFilterBadge(clickedSpecies);
       }
-      
+
+      // Aggiorna il grafico delle specie (evidenzia selezione)
       window.speciesChartInstance.setOption(option);
+
+      // 🔥 FILTRA GLI ALTRI GRAFICI
       filterChartsBySpecies(hourly, selectedSpecies);
+      
+      // Aggiorna l'indicatore del filtro
+      updateSpeciesFilterIndicator(selectedSpecies);
     }
   });
+
+  // ⚡ CLICK FUORI: Rimuovi filtro quando si clicca fuori dal grafico
+  const speciesContainer = document.getElementById('speciesChart').parentElement;
+  if (speciesContainer && !speciesContainer._clickOutsideAdded) {
+    document.addEventListener('click', function(event) {
+      const isInsideChart = speciesContainer.contains(event.target);
+      const isFilterButton = event.target.closest('#clearSpeciesFilter');
+      
+      if (!isInsideChart && !isFilterButton && selectedSpecies) {
+        selectedSpecies = null;
+        console.log('🔄 Filtro rimosso - click fuori dal grafico');
+        
+        // Aggiorna tutti i grafici
+        window.speciesChartInstance.setOption(option);
+        filterChartsBySpecies(hourly, null);
+        updateSpeciesFilterIndicator(null);
+      }
+    });
+    speciesContainer._clickOutsideAdded = true; // Evita duplicati
+  }
 
   window.speciesChartInstance.setOption(option);
   console.log(`✅ Species chart renderizzato: ${totals.length} specie`);
@@ -655,6 +719,51 @@ function updateFilterBadge(species) {
     if (badge) badge.textContent = 'Tutte le specie';
     if (clearBtn) clearBtn.classList.add('hidden');
   }
+}
+
+// 🏷️ INDICATORE FILTRO ATTIVO
+function updateSpeciesFilterIndicator(species) {
+  let indicator = document.getElementById('speciesFilterIndicator');
+  
+  if (species) {
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.id = 'speciesFilterIndicator';
+      indicator.style.cssText = `
+        position: absolute; top: 10px; right: 10px; z-index: 1000;
+        background: rgba(0,0,0,0.8); color: white; padding: 8px 12px;
+        border-radius: 15px; font-size: 12px; font-weight: bold;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      `;
+      const speciesContainer = document.getElementById('speciesChart');
+      if (speciesContainer) {
+        speciesContainer.style.position = 'relative';
+        speciesContainer.appendChild(indicator);
+      }
+    }
+    indicator.innerHTML = `🌳 Filtro: ${species} <span style="margin-left:8px;cursor:pointer;opacity:0.7;" onclick="clearSpeciesFilter()">✖</span>`;
+    indicator.style.display = 'block';
+  } else if (indicator) {
+    indicator.style.display = 'none';
+  }
+}
+
+// 🧹 RIMUOVI FILTRO SPECIE
+function clearSpeciesFilter() {
+  selectedSpecies = null;
+  console.log('🔄 Filtro rimosso - pulsante X');
+  
+  if (window.speciesChartInstance) {
+    const option = window.speciesChartInstance.getOption();
+    window.speciesChartInstance.setOption(option);
+  }
+  
+  if (window.currentHourlyData) {
+    filterChartsBySpecies(window.currentHourlyData, null);
+  }
+  
+  updateSpeciesFilterIndicator(null);
+  updateFilterBadge(null);
 }
 
 // Funzione per rimuovere il filtro (chiamata dal pulsante)
@@ -707,16 +816,21 @@ function updateLineChartFiltered(data) {
   const co2 = data.map(d => d.co2_kg_hour || 0);
   const o2 = data.map(d => d.o2_kg_hour || 0);
   
+  // 🎚️ Mantieni zoom Y corrente dallo slider
+  const currentZoom = parseInt(document.getElementById('yZoomSlider')?.value || 100);
+  const zoomFactor = currentZoom / 100;
+  
   // Calcola max fisso dai dati totali
   const maxCo2 = Math.max(...aggregatedTotalData.map(d => d.co2_kg_hour), 0.1);
   const maxO2 = Math.max(...aggregatedTotalData.map(d => d.o2_kg_hour), 0.1);
-  const maxValue = Math.max(maxCo2, maxO2);
+  const baseMaxValue = Math.max(maxCo2, maxO2);
+  const zoomedMaxValue = baseMaxValue * zoomFactor;
   
   window.lineChartInstance.setOption({
     xAxis: { data: times },
     yAxis: { 
       min: 0,
-      max: Math.ceil(maxValue * 1.1)
+      max: Math.ceil(zoomedMaxValue * 1.1) // Applica zoom e margine 10%
     },
     series: [
       { data: co2 },
@@ -724,7 +838,7 @@ function updateLineChartFiltered(data) {
     ]
   });
   
-  console.log(`📊 Line chart aggiornato - Y max: ${maxValue.toFixed(2)}`);
+  console.log(`📊 Line chart filtrato - zoom: ${currentZoom}%, max Y: ${zoomedMaxValue.toFixed(2)}`);
 }
 
 // ========== UTILITY ==========
@@ -1071,6 +1185,49 @@ function initializeCompactView() {
     console.log('🪟 Vista Windows Grid attivata permanentemente');
     // La vista è sempre attiva tramite classe CSS statica
     // Non serve toggle, è lo stile default
+}
+
+// 🎚️ INIZIALIZZAZIONE ZOOM Y SLIDER
+function initializeYZoomSlider() {
+  const slider = document.getElementById('yZoomSlider');
+  const valueDisplay = document.getElementById('yZoomValue');
+  
+  if (!slider || !valueDisplay) return;
+  
+  // Rimuovi listener precedenti per evitare duplicati
+  slider.removeEventListener('input', handleYZoom);
+  
+  // Aggiungi nuovo listener
+  slider.addEventListener('input', handleYZoom);
+  
+  // Imposta valore iniziale
+  valueDisplay.textContent = '100%';
+  slider.value = 100;
+}
+
+// 🔍 GESTIONE ZOOM Y
+function handleYZoom(event) {
+  const zoomPercent = parseInt(event.target.value);
+  const valueDisplay = document.getElementById('yZoomValue');
+  
+  if (valueDisplay) {
+    valueDisplay.textContent = `${zoomPercent}%`;
+  }
+  
+  // Applica zoom al line chart
+  if (window.lineChartInstance && window.originalMaxValue) {
+    const zoomFactor = zoomPercent / 100;
+    const newMaxValue = window.originalMaxValue * zoomFactor;
+    
+    window.lineChartInstance.setOption({
+      yAxis: {
+        min: 0,
+        max: Math.ceil(newMaxValue * 1.1) // Mantieni margine 10%
+      }
+    });
+    
+    console.log(`🔍 Zoom Y applicato: ${zoomPercent}% (max: ${newMaxValue.toFixed(2)} kg/h)`);
+  }
 }
 
 // ========== ESPORTA FUNZIONI GLOBALI ==========
