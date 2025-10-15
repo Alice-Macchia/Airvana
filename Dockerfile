@@ -25,7 +25,7 @@ CMD ["uvicorn", "BackEnd.app.main:app", "--host", "0.0.0.0", "--port", "80"]
 
 # #una volta dentro il server
 # git clone https://github.com/Alice-Macchia/Airvana.git
-# cd AIRVANA
+# cd Airvana
 
 # git pull
 
@@ -36,6 +36,8 @@ CMD ["uvicorn", "BackEnd.app.main:app", "--host", "0.0.0.0", "--port", "80"]
 
 
 #docker compose up -d airvana_app --build --force-recreate
+#docker compose up -d
 
 #docker ps 
 #docker images
+
