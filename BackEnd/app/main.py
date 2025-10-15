@@ -85,7 +85,7 @@ async def dashboard(request: Request, user=Depends(get_current_user)):
         print("Caricamento dati per la dashboard...")
 
         # Controlla che le chiavi necessarie siano presenti nel payload
-        required_keys = ["name"]
+        required_keys = ["username"] #forse non serve, non viene utilizzata
         if "id" in user:
             # Usa l'ID numerico mappato se disponibile
             user_id = user["id"]
@@ -101,8 +101,8 @@ async def dashboard(request: Request, user=Depends(get_current_user)):
         return templates.TemplateResponse("index.html", {
             "request": request,
             "user_id": user_id,
-            "username": user["name"],
-            "user_email": user.get("email", "")
+            "username": user["username"],
+            "user_email": user.get("mail", "")
         })
     except Exception as e:
         print(f"Errore nel caricamento della dashboard: {e}")
