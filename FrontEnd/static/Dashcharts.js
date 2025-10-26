@@ -142,8 +142,9 @@ async function refreshData() {
     
     try {
         // Prima chiama meteo, poi CO2/O2
-        const meteoResponse = await fetch(`/get_open_meteo/${currentTerrenoId}`, {
-            method: "POST"
+        const meteoResponse = await fetch(`/weather/${currentTerrenoId}`, {
+            method: "POST",
+            credentials: 'include'
         });
         
         if (!meteoResponse.ok) {

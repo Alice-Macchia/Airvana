@@ -1,3 +1,6 @@
+// URL del backend - usa URL relativo per chiamare lo stesso server
+const BACKEND_URL = '';
+
 // Variabili globali per la mappa
 let mainMap;
 let drawnItems;
@@ -896,7 +899,10 @@ async function saveData() {
         // --- 5. Scarica meteo e calcola ---
         showLoadingModal('Download dati meteo e calcoli...');
         const newTerrainId = coordResult.terrain_id;
-        const meteoResponse = await fetch(`/get_open_meteo/${newTerrainId}`, { method: 'POST' });
+        const meteoResponse = await fetch(`/weather/${newTerrainId}`, { 
+            method: 'POST',
+            credentials: 'include'
+        });
         if (!meteoResponse.ok) {
             const meteoErrorText = await meteoResponse.text();
             throw new Error(`Errore richiesta meteo/calcoli: ${meteoResponse.status} - ${meteoErrorText}`);
@@ -1691,7 +1697,9 @@ async function loadTerreniFromDatabase() {
     try {
         console.log('Tentativo di caricamento terreni dal database...');
         console.log('Caricamento terreni per user ID:', currentUserId);
-        const response = await fetch(`http://127.0.0.1:8000/debug/user/${currentUserId}/plots`);
+        const response = await fetch(`${BACKEND_URL}/api/users/me/plots`, {
+            credentials: 'include'
+        });
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

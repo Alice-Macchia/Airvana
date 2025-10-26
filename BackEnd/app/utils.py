@@ -14,35 +14,22 @@ from BackEnd.app.models import PlotSpecies, Species
 
 async def get_species_distribution_by_plot(plot_id, db: AsyncSession):
     try:
-        print(f"Recupero specie per plot_id: {plot_id}")
         stmt = select(Species.name, PlotSpecies.surface_area).select_from(
             PlotSpecies.__table__.join(Species.__table__)
         ).where(PlotSpecies.plot_id == plot_id)
         result = await db.execute(stmt)
         rows = result.fetchall()
-        print(f"Specie recuperate: {rows}")
         return [{"name": row.name, "surface_area": row.surface_area} for row in rows]
     except Exception as e:
-        print(f"Errore nel recupero delle specie: {e}")
         raise HTTPException(status_code=500, detail="Errore nel recupero delle specie")
 
 async def inserisci_terreno(payload: SaveCoordinatesRequest) -> SaveCoordinatesResponse:
     try:
-        print(f"=== DEBUG INSERIMENTO TERRENO ===")
-        print(f"Payload ricevuto: {payload}")
-        print(f"Vertici ricevuti: {payload.vertices}")
-        print(f"Centroide ricevuto: {payload.centroid}")
-        
         async with SessionLocal() as db:
             async with db.begin():
                 # --- Geometrie (POLYGON e POINT) ---
                 polygon = Polygon([(v.long, v.lat) for v in payload.vertices])
                 point = Point(payload.centroid.long, payload.centroid.lat)
-                
-                print(f"Poligono creato: {polygon}")
-                print(f"Punto centroide creato: {point}")
-                print(f"Area poligono (m²): {polygon.area}")
-                print(f"Perimetro poligono (m): {polygon.length}")
 
                 # --- Crea Plot ---
                 plot = Plot(
@@ -54,11 +41,6 @@ async def inserisci_terreno(payload: SaveCoordinatesRequest) -> SaveCoordinatesR
                 db.add(plot)
                 await db.flush()  # ottieni plot.id
                 await db.refresh(plot)
-                
-                print(f"Plot salvato con ID: {plot.id}")
-                print(f"Geometria salvata: {plot.geom}")
-                print(f"Centroide salvato: {plot.centroid}")
-                print(f"Terreno salvato con nome: {plot.name}, ID utente: {plot.user_id}")
 
                 for specie_input in payload.species:
                     # Recupera o fallisce se specie non esiste
@@ -75,16 +57,12 @@ async def inserisci_terreno(payload: SaveCoordinatesRequest) -> SaveCoordinatesR
                         surface_area=specie_input.quantity,
                     )
                     db.add(ps)
-                
-                print(f"Specie associate salvate: {len(payload.species)}")
-                print(f"=== FINE DEBUG INSERIMENTO TERRENO ===")
 
                 return SaveCoordinatesResponse(
                     message="Terreno salvato correttamente",
                     terrain_id=plot.id
                 )
     except Exception as e: 
-        print(f"Errore durante salvataggio: {e}")
         raise HTTPException(status_code=500, detail=f"Errore interno del server: {e}")
 
 async def aggiorna_nome_plot(user_id: int, old_name: str, new_name: str) -> dict:

@@ -1,6 +1,6 @@
 # 📋 PIANO DI REFACTORING AIRVANA
 
-> **Ultimo aggiornamento**: 02/10/2025  
+> **Ultimo aggiornamento**: 26/10/2025 - **LIVELLO 1 COMPLETATO** ✅
 > **Target**: Team junior - Guida pratica per migliorare il progetto
 
 ---
@@ -18,109 +18,41 @@ Preparare Airvana per presentazione a TIM/Ernest Young e scalabilità futura.
 
 ---
 
-### 🟢 **LIVELLO 1: Quick Wins** (1-3 ore totali)
+## 🟡 **LIVELLO 2: Problemi di Sicurezza** (4-6 ore totali)
 
-#### **1. Fix path marketplace - RISOLTO ✅**
-**Dove**: `BackEnd/app/main.py` righe 37-38
 
-**Perché era un problema**:
-- Backend leggeva da `marketplace_dist` (cartella che non dovrebbe esistere)
-- Dovevi copiare manualmente i file dopo ogni build
-- Workflow lento e prone-error
-
-**Cosa abbiamo fatto**:
-Cambiato path per puntare direttamente a `airvana-marketplace/dist`
-
-**Risultato**: Ora `npm run build` → file subito disponibili ✅
-
----
-
-#### **2. Credenziali hardcoded - RISOLTO ✅**
-**Dove**: `co2_o2_calculator.py`
-
-**Perché era un problema**:
-- Password database visibili nel codice
-- Se carichi su GitHub → chiunque può accedere al database
-- **Rischio**: Data breach, database cancellato, credenziali rubate
-
-**Cosa hai fatto**:
-Rimosso completamente la riga commentata
-
-**Risultato**: Tutte le credenziali ora in `.env` (file gitignored) ✅
-
----
-
-#### **3. Documentazione mancante**
-**Dove**: Funzioni senza spiegazioni
+### **7. SQL Injection potenziale**
+**Dove**: Query database con stringhe
 
 **Perché è un problema**:
-- Nessuno capisce cosa fa il codice
-- Difficile per nuovi dev (o voi tra 3 mesi)
-- Tempo perso a decifrare logica
+Se costruisci query SQL con stringhe, un hacker può "iniettare" codice SQL e leggere/cancellare tutto il database.
 
-**Esempio problema**:
+**Esempio vulnerabile**:
 ```python
-async def get_species_distribution_by_plot(plot_id: int, db: AsyncSession):
-    # Che fa? Quali parametri servono? Cosa ritorna?
-    ...
+# ❌ PERICOLOSO
+query = f"SELECT * FROM plots WHERE user_id = {user_id}"
+```
+
+Se qualcuno passa `user_id = "1 OR 1=1"` → la query diventa:
+```sql
+SELECT * FROM plots WHERE user_id = 1 OR 1=1
+```
+Risultato: ritorna TUTTI i terreni di TUTTI gli utenti!
+
+**Soluzione sicura**:
+```python
+# ✅ SICURO - SQLAlchemy gestisce l'escape
+from sqlalchemy import select
+query = select(Plot).where(Plot.user_id == user_id)
+result = await db.execute(query)
 ```
 
 **Cosa fare**:
-Aggiungere docstring (descrizione) alle funzioni principali
+1. Cercare tutte le query con `f"SELECT` o string formatting
+2. Convertirle a SQLAlchemy ORM (già lo usate per i models)
 
-**Esempio soluzione**:
-```python
-async def get_species_distribution_by_plot(plot_id: int, db: AsyncSession) -> dict:
-    """
-    Calcola la percentuale di ogni specie presente in un terreno.
-    
-    Args:
-        plot_id: ID del terreno da analizzare
-        db: Connessione database asincrona
-        
-    Returns:
-        {"Pino": 60, "Quercia": 40} # Percentuali
-        
-    Raises:
-        HTTPException(404): Se il terreno non esiste
-    """
-```
-
-**Priorità**: Media - aiuta manutenibilità  
-**Tempo stimato**: 2-3 ore per le funzioni principali
-
----
-
-### 🟡 **LIVELLO 2: Problemi di Sicurezza** (4-6 ore totali)
-
-#### **4. Hardcoded user_id=41 - RISOLTO ✅**
-**Dove**: `BackEnd/app/routes.py` e `BackEnd/app/auth.py`
-
-**Il codice problematico**:
-```python
-new_plot = Plot(
-    user_id=41,  # ⚠️ SEMPRE LO STESSO UTENTE - RISOLTO
-    name=plot_data.get("name"),
-    ...
-)
-```
-
-**Perché era GRAVE**:
-1. **Chiunque poteva salvare terreni come se fosse l'utente 41**
-2. Se l'utente 41 non esisteva → crash
-3. Tutti i terreni finivano sullo stesso utente
-4. **Scenario reale**: Utente A crea terreno → salva su utente 41 → Utente B vede terreni di A
-
-**Cosa abbiamo fatto**:
-1. **Fix Google OAuth**: Aggiunto auto-insert dell'utente nella tabella `users` durante login Google
-2. **Fix save terreni**: Ora usa `currentUserId` dall'utente autenticato invece di hardcode 41
-3. **Fix dashboard**: Carica solo terreni dell'utente loggato tramite `user_id` dal token
-
-**Risultato**: ✅ Multi-utente funzionante, ogni utente vede solo i propri terreni
-
----
-
-#### **5. SQL Injection potenziale**
+**Priorità**: ALTA - prevenire attacchi  
+**Tempo stimato**: 3-4 ore per audit completo
 **Dove**: Query database con stringhe
 
 **Perché è un problema**:
@@ -157,7 +89,7 @@ result = await db.execute(query)
 
 ### 🟠 **LIVELLO 3: Scalabilità** (1-2 settimane)
 
-#### **6. Troppi call API meteo - CRITICO per crescita 🔴**
+#### **8. Troppi call API meteo - CRITICO per crescita 🔴**
 
 **Il problema**:
 - Ogni volta che calcoli CO2 → chiamata API meteo
@@ -206,7 +138,7 @@ Salva dati meteo in database con timestamp, riusa se < 24h.
 
 ---
 
-#### **7. Frontend frammentato: HTML + React**
+#### **9. Frontend frammentato: HTML + React**
 
 **Il problema**:
 - Dashboard = Vanilla HTML/JS
@@ -257,68 +189,9 @@ frontend/
 
 ---
 
-#### **8. Marketplace Premium Styling - RISOLTO ✅**
-**Dove**: `airvana-marketplace/src/` - file CSS multipli
-
-**Il problema iniziale**:
-- Styling marketplace generico e poco professionale  
-- Colori inconsistenti tra componenti
-- Mancanza di branding premium per presentazione clienti
-
-**Cosa abbiamo fatto**:
-1. **Design System Premium**: Implementato schema colori #0066CC (blue premium)
-2. **Glass Morphism Effects**: Aggiunto backdrop-filter: blur(12px) per effetti moderni
-3. **Shadow System**: Sistema ombre coerente con rgba(0, 102, 204, 0.15)
-4. **Typography Enhancement**: Migliorato letter-spacing e text-shadow
-
-**File aggiornati**:
-- ✅ `Marketplace_Fixed.css` - Completo redesign premium
-- ✅ `CheckoutV2.css` - Checkout con styling premium  
-- ✅ `TerrenoDetailV2.css` - Modal dettagli con effetti glass
-
-**Risultato**: 
-- Marketplace con look professionale pronto per demo clienti
-- Branding Airvana mantenuto con palette colori premium
-- Consistency styling tra tutti i componenti marketplace
-
-**Priorità**: COMPLETATO - Pronto per presentazione  
-**Tempo impiegato**: 2 ore
-
----
-
-#### **9. Dashboard Cards Dinamiche - RISOLTO ✅**
-**Dove**: `FrontEnd/templates/index.html` e `FrontEnd/static/Dashscript.js`
-
-**Il problema iniziale**:
-- Schede riepilogo dashboard hardcoded (terreno, CO2, O2, pioggia, temperatura)
-- Valori fissi che non cambiavano con il terreno selezionato
-- Nessun caricamento dinamico dei dati dal database
-
-**Cosa abbiamo fatto**:
-1. **Nuovo endpoint API**: `/api/plots/{plot_id}/summary` per metriche terreno
-2. **Frontend dinamico**: Rimosso HTML statico, generazione via JS
-3. **Caricamento automatico**: Cards si aggiornano al cambio terreno
-4. **Gestione errori**: Fallback per terreni senza dati
-
-**File modificati**:
-- ✅ `BackEnd/app/routes.py` - Endpoint summary con auth utente
-- ✅ `FrontEnd/templates/index.html` - Container dinamico al posto delle card statiche
-- ✅ `FrontEnd/static/Dashscript.js` - Fetch e render delle card + fix loader grafici
-
-**Risultato**:
-- Cards responsive che mostrano dati reali dal database
-- Aggiornamento automatico al cambio terreno
-- Gestione graceful di errori e terreni vuoti
-- Eliminati ricaricamenti multipli grafici
-
-**Priorità**: COMPLETATO - Dashboard completamente dinamica  
-**Tempo impiegato**: 3 ore
-
----
-
 ### 🔴 **LIVELLO 4: Professional** (1 mese+)
 
-#### **8. Zero test = Bug in produzione**
+#### **10. Zero test = Bug in produzione**
 
 **Il problema**:
 Non avete test → non sapete se il codice funziona finché non lo provate manualmente.
@@ -354,7 +227,7 @@ def test_calcolo_co2_pino():
 
 ---
 
-#### **9. Zero monitoring = Non sai se qualcosa si rompe**
+#### **11. Zero monitoring = Non sai se qualcosa si rompe**
 
 **Il problema**:
 Se l'app crasha in produzione, non lo sapete finché un utente non vi scrive.
@@ -376,13 +249,17 @@ Se l'app crasha in produzione, non lo sapete finché un utente non vi scrive.
 
 ## 🎯 COSA FARE ORA (Priorità per demo investitori)
 
-### **Sprint 1 (Questa settimana - 2 giorni)**
-- [ ] Fix hardcoded `user_id=41` → usa utente autenticato
+### **Sprint 1 (Questa settimana - 3-4 ore)**
+- [x] Fix hardcoded `user_id=41` → usa utente autenticato ✅
+- [ ] Rimozione print di debug backend (30 min) - **CRITICO**
+- [ ] Docstring funzioni principali backend (1 ora)
+- [ ] Error handling migliorato backend (1 ora)
+- [ ] Costanti hardcoded estratte backend (30 min)
 - [ ] Test manuale: 2 utenti diversi, ognuno vede solo i suoi terreni
 
-### **Sprint 2 (Prossima settimana - 3 giorni)**
+### **Sprint 2 (Prossima settimana - 4 ore)**
+- [ ] Aggiorna configurazione produzione (Google OAuth, CORS, frontend URLs)
 - [ ] Audit SQL injection → converti query pericolose a SQLAlchemy
-- [ ] Aggiungi docstring alle 10 funzioni principali
 - [ ] Prepara demo script per presentazione
 
 ### **Sprint 3 (Tra 2 settimane - 1 settimana)**
@@ -444,9 +321,12 @@ A:
 
 **Q: Da dove iniziare se abbiamo poco tempo?**  
 A: In ordine:
-1. Fix user_id=41 (4h) - **BLOCCA MULTI-UTENTE**
-2. SQL injection audit (4h) - **SICUREZZA**
-3. Cache meteo base (1 giorno) - **SCALABILITÀ**
+1. ✅ Fix user_id=41 (4h) - **FATTO - MULTI-UTENTE OK**
+2. Rimozione print di debug backend (30 min) - **CRITICO - SICUREZZA**
+3. Error handling migliorato backend (1h) - **STABILITÀ**
+4. Docstring funzioni principali backend (1h) - **MANUTENIBILITÀ**
+5. Costanti hardcoded estratte backend (30 min) - **QUALITÀ**
+6. Configurazione produzione (Google OAuth, CORS, frontend URLs) - **PRONTO PER DEPLOY**
 
 ---
 

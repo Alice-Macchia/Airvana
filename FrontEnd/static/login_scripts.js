@@ -1,3 +1,6 @@
+// URL del backend - cambia questo per produzione
+const BACKEND_URL = 'http://165.22.75.145:8001';
+
 // Variabile per lo stato di registrazione e per i dati di localizzazione
 let isRegistering = false;
 let currentView = 'login'; // 'login', 'registerChoice', 'registerUser', 'registerCompany'
@@ -420,7 +423,7 @@ function handleFormSubmit(event) {
 
           // console.log("Payload inviato a /register-person:", payload); 
 
-            fetch('http://localhost:8000/login', {
+            fetch(`${BACKEND_URL}/login`, {
                 method: 'POST',
                 body: formData,
                 credentials: 'include',  // 🔑 ESSENZIALE per salvare i cookie!
@@ -444,7 +447,7 @@ function handleFormSubmit(event) {
     //        formData.append('loginEmail', data.loginEmail);
     //        formData.append('loginPassword', data.loginPassword);
 
-    //         fetch('http://localhost:8000/login', {
+    //         fetch(`${BACKEND_URL}/login`, {
     //             method: 'POST',
     //             body: formData,
     //         })
@@ -563,7 +566,7 @@ function handleFormSubmit(event) {
     };
 
     // Chiamata fetch POST JSON
-    fetch("http://127.0.0.1:8000/register-farmer", {
+    fetch(`${BACKEND_URL}/register-farmer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -612,7 +615,7 @@ function handleFormSubmit(event) {
         }
     };
 
-    fetch("http://localhost:8000/register-society", {
+    fetch(`${BACKEND_URL}/register-society`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -644,7 +647,7 @@ function handleFormSubmit(event) {
         }
     };
     console.log("Payload agronomo:", payload);
-    fetch("http://localhost:8000/register-agronomist", {
+    fetch(`${BACKEND_URL}/register-agronomist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -73,7 +73,9 @@ function setupNavbar() {
 async function loadUserTerreni() {
   try {
     console.log('📂 Caricamento terreni per user:', currentUserId);
-    const response = await fetch(`/debug/user/${currentUserId}/plots`);
+    const response = await fetch(`/api/users/me/plots`, {
+      credentials: 'include'  // IMPORTANTE: Include i cookies per l'autenticazione
+    });
     console.log('📂 Response status:', response.status);
     const data = await response.json();
     console.log('📂 Data received:', data);
@@ -235,9 +237,11 @@ async function loadTerreno(plotId) {
 async function fetchPlotInfo(plotId) {
   console.log('🔍 [1/4] Fetch plot info...');
   try {
-    const response = await fetch(`/api/users/me/plots`);
-    const plots = await response.json();
-    currentPlotData = plots.find(p => p.id === plotId);
+    const response = await fetch(`/api/users/me/plots`, {
+      credentials: 'include'
+    });
+    const data = await response.json();
+    currentPlotData = data.plots.find(p => p.id === plotId);
     
     if (currentPlotData) {
       console.log('✅ Plot info trovato:', currentPlotData);
@@ -253,7 +257,10 @@ async function fetchPlotInfo(plotId) {
 async function fetchAndSaveMeteo(plotId) {
   console.log('🔍 [2/4] Trigger salvataggio meteo...');
   try {
-    const response = await fetch(`/get_open_meteo/${plotId}`, { method: 'POST' });
+    const response = await fetch(`/weather/${plotId}`, { 
+      method: 'POST',
+      credentials: 'include'
+    });
     if (!response.ok) throw new Error('Errore fetch meteo');
     await response.json();
     console.log('✅ [2/4] Meteo salvato nel DB');
@@ -265,7 +272,9 @@ async function fetchAndSaveMeteo(plotId) {
 
 // Nuova funzione per fetch dati senza rendering
 async function fetchMainChartsData(plotId) {
-  const response = await fetch(`/get_open_meteo/${plotId}`, { method: 'POST' });
+  const response = await fetch(`/calcola_co2/${plotId}`, {
+    credentials: 'include'  // IMPORTANTE: Include i cookies per l'autenticazione
+  });
   if (!response.ok) throw new Error('Errore fetch CO2/O2');
   const data = await response.json();
   if (!Array.isArray(data) || data.length === 0) {
@@ -292,7 +301,10 @@ async function fetchAndDrawMainCharts(plotId) {
 
 // Nuova funzione per fetch species senza rendering
 async function fetchSpeciesData(plotId) {
-  const response = await fetch(`/co2_by_species/${plotId}`, { method: 'POST' });
+  const response = await fetch(`/co2_by_species/${plotId}`, { 
+    method: 'POST',
+    credentials: 'include'
+  });
   if (!response.ok) throw new Error(`Errore ${response.status}`);
   return await response.json();
 }
@@ -316,42 +328,6 @@ async function fetchAndDrawSpeciesChart(plotId) {
   const data = await fetchSpeciesData(plotId);
   await drawSpeciesChartFromData(data);
   console.log('✅ [4/4] Species chart completato');
-}
-    
-async function fetchAndDrawSpeciesChart(plotId) {
-  console.log('🔍 [4/4] Fetch species breakdown...');
-  try {
-    console.log('🌳 Calling /co2_by_species/' + plotId);
-    const response = await fetch(`/co2_by_species/${plotId}`, { method: 'POST' });
-    console.log('🌳 Response status:', response.status);
-    if (!response.ok) throw new Error(`Errore ${response.status}`);
-    
-    const data = await response.json();
-    console.log('🌳 Data received:', data);
-    const { totals, hourly } = data;
-    
-    if (!totals || totals.length === 0) {
-      console.warn('⚠️ Nessuna specie trovata');
-      return;
-    }
-    
-    // Salva dati globali
-    originalHourlyData = hourly;
-    aggregatedTotalData = aggregateDataByDatetime(hourly);
-    window.currentHourlyData = hourly; // 💾 Salva per filtri e zoom
-    
-    console.log(`📥 Ricevute ${totals.length} specie, ${hourly.length} record orari`);
-    
-    // Disegna species chart
-    console.log('🎨 Disegno species chart...');
-    await drawSpeciesChart(totals, hourly);
-    
-    console.log('✅ [4/4] Species chart completato');
-    
-  } catch (err) {
-    console.error('❌ Errore fetch species:', err);
-    console.error('❌ Stack:', err.stack);
-  }
 }
 
 // ========== AGGIORNAMENTO UI ==========

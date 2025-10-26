@@ -13,7 +13,7 @@ def predict_co2(temp_avg_7d, rad_avg_7d, meteo_avg_7d, precip_sum_7d):
 
 # 🧪 ESEMPIO 1: input singolo (simulato o reale)
 co2_val = predict_co2(12.4, 6.3, 0.45, 5.8)
-print("CO₂ prevista:", co2_val, "kg")
+# print("CO₂ prevista:", co2_val, "kg")
 
 # 🧪 ESEMPIO 2: batch di dati multipli (pandas DataFrame)
 df_test = pd.DataFrame([
@@ -24,4 +24,4 @@ df_test = pd.DataFrame([
 
 # Previsioni in batch
 df_test["co2_predicted"] = model.predict(df_test).round(5)
-print(df_test)
+# print(df_test)

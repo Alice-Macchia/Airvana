@@ -1,8 +1,11 @@
+// URL del backend admin - cambia questo per produzione
+const BACKEND_URL = 'http://165.22.75.145:8001';
+
 const axios = require("axios");
 
 const main = async () => {
   try {
-    const response = await axios.post("http://localhost:9000/admin/auth/login", {
+    const response = await axios.post(`${BACKEND_URL}/admin/auth/login`, {
       email: "admin@airvana.com",
       password: "airvana"
     });

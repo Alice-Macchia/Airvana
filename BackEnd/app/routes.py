@@ -51,35 +51,57 @@ async def get_plot_summary(plot_id: int, user: dict = Depends(get_current_user),
       - pioggia_media: media precipitation
       - temp_max_min: stringa "max/min" temperatura
     """
-    plot_result = await db.execute(select(Plot).where(Plot.id == plot_id, Plot.user_id == user.get("id")))
-    plot = plot_result.scalar_one_or_none()
-    if not plot:
-        raise HTTPException(status_code=404, detail="Terreno non trovato o non autorizzato")
+    try:
+        plot_result = await db.execute(select(Plot).where(Plot.id == plot_id, Plot.user_id == user.get("id")))
+        plot = plot_result.scalar_one_or_none()
+        if not plot:
+            raise HTTPException(status_code=404, detail="Terreno non trovato o non autorizzato")
 
-    from .models import WeatherData
-    weather_q = await db.execute(
-        select(
-            func.coalesce(func.sum(WeatherData.total_co2_absorption), 0),
-            func.coalesce(func.sum(WeatherData.total_o2_production), 0),
-            func.coalesce(func.avg(WeatherData.precipitation), 0),
-            func.coalesce(func.max(WeatherData.temperature), 0),
-            func.coalesce(func.min(WeatherData.temperature), 0)
-        ).where(WeatherData.plot_id == plot_id)
-    )
-    co2_tot, o2_tot, pioggia_media, t_max, t_min = weather_q.one()
+        from .models import WeatherData
+        weather_q = await db.execute(
+            select(
+                func.coalesce(func.sum(WeatherData.total_co2_absorption), 0),
+                func.coalesce(func.sum(WeatherData.total_o2_production), 0),
+                func.coalesce(func.avg(WeatherData.precipitation), 0),
+                func.coalesce(func.max(WeatherData.temperature), 0),
+                func.coalesce(func.min(WeatherData.temperature), 0)
+            ).where(WeatherData.plot_id == plot_id)
+        )
+        weather_data = weather_q.first()
+        if not weather_data:
+            # Nessun dato meteo disponibile, restituisci valori di default
+            co2_tot, o2_tot, pioggia_media, t_max, t_min = 0, 0, 0, None, None
+        else:
+            co2_tot, o2_tot, pioggia_media, t_max, t_min = weather_data
 
-    return {
-        "plot_id": plot_id,
-        "name": plot.name,
-        "co2_totale": round(co2_tot, 2),
-        "o2_totale": round(o2_tot, 2),
-        "pioggia_media": round(pioggia_media, 2),
-        "temp_max_min": f"{round(t_max,1)}/{round(t_min,1)}" if t_max is not None and t_min is not None else "--/--"
-    }
+        return {
+            "plot_id": plot_id,
+            "name": plot.name,
+            "co2_totale": round(co2_tot, 2),
+            "o2_totale": round(o2_tot, 2),
+            "pioggia_media": round(pioggia_media, 2),
+            "temp_max_min": f"{round(t_max,1)}/{round(t_min,1)}" if t_max is not None and t_min is not None else "--/--"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
             
 @router.get("/logreg", response_class=HTMLResponse)
 async def root(request: Request):
-    # Controlla se l'utente è già autenticato
+    """
+    Root endpoint that handles user authentication and redirection.
+
+    Checks if user has a valid JWT token in cookies and redirects to dashboard
+    if authenticated, otherwise serves the login page.
+
+    Args:
+        request: FastAPI request object
+
+    Returns:
+        RedirectResponse: To dashboard if authenticated
+        HTMLResponse: Login page if not authenticated
+    """
     token = request.cookies.get("access_token")
     if token:
         # Prova a decodificare il token
@@ -93,110 +115,90 @@ async def root(request: Request):
     return templates.TemplateResponse("login_main.html", {"request": request})
 
     
-@router.post("/register-farmer")
-async def register_farmer(data: FarmerRegistration, db: AsyncSession = Depends(get_db)):
-     # 1. Controllo esistenza email
-    result = await db.execute(select(User).where(User.email == data.user.email))
-    if result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email già usata")
-    # 2. Crea l'utente base
-    user = User(
-        email=data.user.email,
-        password=hash_password(data.user.password),
-        user_type=data.user.user_type
-    )
-    db.add(user)
-    await db.flush()
-
-    # 3. Crea il profilo Farmer
-    farmer = Farmer(
-        user_id=user.id,
-        username=data.farmer.username,
-        first_name=data.farmer.first_name,
-        last_name=data.farmer.last_name,
-        cod_fis=data.farmer.cod_fis,
-        farm_name=data.farmer.farm_name,
-        phone_number=data.farmer.phone_number,
-        province=data.farmer.province,
-        city=data.farmer.city,
-        address=data.farmer.address
-    )
-    db.add(farmer)
-
-    try:
-        await db.commit()
-        return {"message": "Registrazione completata"}
-    except Exception as e:
-        await db.rollback()
-        print(f"❌ Commit fallito: {e}")
-        raise HTTPException(status_code=500, detail="Errore durante la registrazione")
-
-@router.post("/register-society")
-async def register_farmer(data: SocietyRegistration, db: AsyncSession = Depends(get_db)):
-     # 1. Controllo esistenza email
-    result = await db.execute(select(User).where(User.email == data.user.email))
-    if result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email già usata")
-    # 2. Crea l'utente base
-    user = User(
-        email=data.user.email,
-        password=hash_password(data.user.password),
-        user_type=data.user.user_type
-    )
-    db.add(user)
-    await db.flush()
-
-    # 3. Crea il profilo Society
-    society = Society(
-        user_id=user.id,
-        username=data.society.username,
-        ragione_sociale=data.society.ragione_sociale,
-        sede_legale=data.society.sede_legale,
-        partita_iva=data.society.partita_iva,
-        province=data.society.province,
-        city=data.society.city,
-    )
-    db.add(society)
+@router.post("/register")
+async def register_user(data: dict, db: AsyncSession = Depends(get_db)):
+    """
+    Unified registration endpoint for all user types (farmer, society, agronomist).
     
+    Args:
+        data: Registration data containing user_type and profile details
+        db: Database session
+        
+    Returns:
+        dict: Success message
+        
+    Raises:
+        HTTPException: If email already exists, invalid user_type, or registration fails
+    """
     try:
+        user_data = data.get("user", {})
+        user_type = user_data.get("user_type")
+        
+        if user_type not in ["farmer", "society", "agronomist"]:
+            raise HTTPException(status_code=400, detail="Tipo utente non valido. Deve essere: farmer, society, o agronomist")
+        
+        # 1. Controllo esistenza email
+        result = await db.execute(select(User).where(User.email == user_data.get("email")))
+        if result.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Email già usata")
+        
+        # 2. Crea l'utente base
+        user = User(
+            email=user_data.get("email"),
+            password=hash_password(user_data.get("password")),
+            user_type=user_type
+        )
+        db.add(user)
+        await db.flush()
+        
+        # 3. Crea il profilo specifico in base al user_type
+        if user_type == "farmer":
+            farmer_data = data.get("farmer", {})
+            farmer = Farmer(
+                user_id=user.id,
+                username=farmer_data.get("username"),
+                first_name=farmer_data.get("first_name"),
+                last_name=farmer_data.get("last_name"),
+                cod_fis=farmer_data.get("cod_fis"),
+                farm_name=farmer_data.get("farm_name"),
+                phone_number=farmer_data.get("phone_number"),
+                province=farmer_data.get("province"),
+                city=farmer_data.get("city"),
+                address=farmer_data.get("address")
+            )
+            db.add(farmer)
+            
+        elif user_type == "society":
+            society_data = data.get("society", {})
+            society = Society(
+                user_id=user.id,
+                username=society_data.get("username"),
+                ragione_sociale=society_data.get("ragione_sociale"),
+                sede_legale=society_data.get("sede_legale"),
+                partita_iva=society_data.get("partita_iva"),
+                province=society_data.get("province"),
+                city=society_data.get("city")
+            )
+            db.add(society)
+            
+        elif user_type == "agronomist":
+            agronomist_data = data.get("agronomist", {})
+            agronomist = Agronomist(
+                user_id=user.id,
+                albo_number=agronomist_data.get("albo_number"),
+                specialization=agronomist_data.get("specialization")
+            )
+            db.add(agronomist)
+        
         await db.commit()
-        return {"message": "Registrazione completata"}
+        return {"message": "Registrazione completata", "user_type": user_type}
+        
+    except HTTPException:
+        raise
     except Exception as e:
         await db.rollback()
-        print(f"❌ Commit fallito: {e}")
-        raise HTTPException(status_code=500, detail="Errore durante la registrazione")
+        raise HTTPException(status_code=500, detail=f"Errore durante la registrazione: {str(e)}")
 
-@router.post("/register-agronomist")
-async def register_farmer(data: AgronomistRegistration, db: AsyncSession = Depends(get_db)):
-     # 1. Controllo esistenza email
-    result = await db.execute(select(User).where(User.email == data.user.email))
-    if result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email già usata")
-    # 2. Crea l'utente base
-    user = User(
-        email=data.user.email,
-        password=hash_password(data.user.password),
-        user_type=data.user.user_type
-    )
-    db.add(user)
-    await db.flush()
-
-    # 3. Crea il profilo Agronomist
-    agronomist = Agronomist(
-        user_id=user.id,
-        albo_number=data.agronomist.albo_number,
-        specialization=data.agronomist.specialization,
-    )
-    db.add(agronomist)
-
-    try:
-        await db.commit()
-        return {"message": "Registrazione completata"}
-    except Exception as e:
-        await db.rollback()
-        print(f"❌ Commit fallito: {e}")
-        raise HTTPException(status_code=500, detail="Errore durante la registrazione")
-    
 
 @router.post("/login", response_class=HTMLResponse)
 async def login(
@@ -205,16 +207,25 @@ async def login(
     loginPassword: str = Form(...),
     db: AsyncSession = Depends(get_db)
 ):
-    print("📥 Login ricevuto")
-    print("📧 Email:", loginEmail)
-    print("🔐 Password:", loginPassword)
-
+    """
+    Authenticate user with email and password.
+    
+    Args:
+        request: FastAPI request object
+        loginEmail: User's email address
+        loginPassword: User's password
+        db: Database session
+    
+    Returns:
+        HTMLResponse: Login success page with JWT token cookie
+        
+    Raises:
+        HTTPException: If credentials are invalid
+    """
     result = await db.execute(select(User).where(User.email == loginEmail))
     db_user = result.scalar_one_or_none()
-    print("👤 Utente trovato:", db_user)
 
     if not db_user or not verify_password(loginPassword, db_user.password):
-        print("❌ Password errata o utente non trovato")
         raise HTTPException(status_code=401, detail="Credenziali non valide")
     
     #-----------------------------#
@@ -242,7 +253,6 @@ async def login(
     # --- MODIFICA TOKEN: Aggiungi l'username al payload ---
     token_payload = {"id": db_user.id, "mail": db_user.email, "username": username}
     token = create_access_token(token_payload)
-    print("🔑 Token creato con payload:", token_payload)
 
     response = JSONResponse(content={"message": "Login OK"})
     response.set_cookie(
@@ -268,31 +278,38 @@ async def inserisciterreno(request: Request, user: dict = Depends(get_current_us
         "email": user.get("username")
     })
 
-@router.post("/rename-plot")
-async def rename_plot(payload: RenamePlotRequest):
-    try:
-        return await aggiorna_nome_plot(payload.user_id, payload.old_name, payload.new_name)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
-@router.post("/delete-plot")
-async def delete_plot(payload: DeletePlotRequest):
-    try:
-        return await elimina_plot(payload.user_id, payload.plot_name)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
-
 @router.post("/weather/{plot_id}")
-async def fetch_weather(plot_id: str):
-    success = fetch_and_save_weather_day(plot_id)
-    if not success:
-        raise HTTPException(status_code=404, detail=f"Plot {plot_id} non trovato o errore nella richiesta meteo.")
-    return {"detail": "Dati meteo salvati con successo."}
+async def fetch_weather(plot_id: int, user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    try:
+        # Verifica che il plot appartenga all'utente
+        user_id = user.get("id") or user.get("google_id")
+        plot_query = select(Plot).where(Plot.id == plot_id, Plot.user_id == user_id)
+        plot_result = await db.execute(plot_query)
+        plot = plot_result.scalar_one_or_none()
 
-@router.get("/home", response_class=HTMLResponse)
-async def home(request: Request):
-    return templates.TemplateResponse("homepagedefinitiva.html", {"request": request})
+        if not plot:
+            raise HTTPException(status_code=404, detail=f"Plot {plot_id} non trovato o non autorizzato.")
+
+        # Ottieni le coordinate del plot
+        if not plot.centroid:
+            raise HTTPException(status_code=400, detail=f"Plot {plot_id} non ha coordinate definite.")
+
+        centroid_point = to_shape(plot.centroid)
+        lat, lon = centroid_point.y, centroid_point.x
+
+        # Salva i dati meteo
+        success = await fetch_and_save_weather_day(db, plot_id, lat, lon)
+        if not success:
+            raise HTTPException(status_code=500, detail=f"Errore nel salvataggio dei dati meteo per plot {plot_id}.")
+
+        return {"detail": "Dati meteo salvati con successo."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Errore in fetch_weather per plot {plot_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Errore durante il recupero dei dati meteo: {str(e)}")
 
 @router.get("/profilo", response_class=HTMLResponse)
 async def profilo_utente(request: Request, user: dict = Depends(get_current_user)):
@@ -304,7 +321,17 @@ async def profilo_utente(request: Request, user: dict = Depends(get_current_user
 @router.get("/api/user/profile")
 async def get_user_profile(user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """
-    Restituisce i dati del profilo utente completo
+    Get complete user profile data including user info and associated entities.
+
+    Args:
+        user: Authenticated user data from JWT token
+        db: Database session
+
+    Returns:
+        dict: User profile data with farmer/society/agronomist details
+
+    Raises:
+        HTTPException: If user profile cannot be retrieved
     """
     try:
         user_id = user["id"]
@@ -411,22 +438,6 @@ async def get_user_profile(user: dict = Depends(get_current_user), db: AsyncSess
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Errore nel recupero profilo: {str(e)}")
 
-@router.get("/api/users/me/plots", response_model=List[PlotInfo])
-async def get_user_plots(user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    """
-    Restituisce una lista di tutti i terreni (plots)
-    appartenenti all'utente attualmente autenticato.
-    """
-    user_id = user["id"]
-    query = select(Plot).where(Plot.user_id == user_id).order_by(Plot.name)
-    result = await db.execute(query)
-    plots = result.scalars().all()
-    
-    if not plots:
-        return []
-        
-    return plots
-
 @router.get("/get-user-terreni/{user_id}")
 async def get_user_terreni(user_id: int, db: AsyncSession = Depends(get_db)):
     """
@@ -452,17 +463,12 @@ async def get_user_terreni(user_id: int, db: AsyncSession = Depends(get_db)):
         plots = plots_result.scalars().all()
         
         if not plots:
-            print(f"Nessun terreno trovato per utente {user_id}")
             return []
-        
-        print(f"Trovati {len(plots)} terreni per utente {user_id}")
         
         # Prepara i dati nel formato richiesto dal frontend
         terreni_data = []
         
         for plot in plots:
-            print(f"Elaborazione terreno {plot.id}: {plot.name}")
-            
             # Calcola l'area del poligono se disponibile
             area_ha = 0
             perimetro_m = 0
@@ -513,16 +519,13 @@ async def get_user_terreni(user_id: int, db: AsyncSession = Depends(get_db)):
                                 "lat": coord[1],  # latitudine
                                 "long": coord[0]  # longitudine
                             })
-                        
-                        print(f"  Geometria elaborata: area={area_ha:.2f} ha, perimetro={perimetro_m:.2f} m")
                 except Exception as e:
-                    print(f"Errore nel calcolo geometria per plot {plot.id}: {e}")
+                    pass
             
             # Recupera le specie associate al terreno (ora caricate in anticipo)
             species_data = []
             try:
                 if hasattr(plot, 'species_associations') and plot.species_associations:
-                    print(f"  Trovate {len(plot.species_associations)} associazioni specie")
                     for ps in plot.species_associations:
                         try:
                             # Le specie sono già caricate, non serve fare query aggiuntive
@@ -532,14 +535,10 @@ async def get_user_terreni(user_id: int, db: AsyncSession = Depends(get_db)):
                                     "quantity": ps.surface_area,
                                     "co2_absorption_rate": ps.species.co2_absorption_rate or 0
                                 })
-                                print(f"    Specie: {ps.species.name}, superficie: {ps.surface_area} m²")
                         except Exception as e:
-                            print(f"Errore nell'elaborazione specie per plot {plot.id}: {e}")
                             continue
-                else:
-                    print(f"  Nessuna specie associata trovata")
             except Exception as e:
-                print(f"Errore nell'accesso alle associazioni specie per plot {plot.id}: {e}")
+                pass
             
             terreno = {
                 "id": plot.id,
@@ -551,13 +550,10 @@ async def get_user_terreni(user_id: int, db: AsyncSession = Depends(get_db)):
             }
             
             terreni_data.append(terreno)
-            print(f"  Terreno {plot.id} elaborato con successo")
         
-        print(f"Elaborazione completata. Restituisco {len(terreni_data)} terreni per utente {user_id}")
         return terreni_data
         
     except Exception as e:
-        print(f"Errore nel recupero terreni per utente {user_id}: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
@@ -622,7 +618,6 @@ async def update_terrain(request: TerrainUpdateRequest, db: AsyncSession = Depen
         
     except Exception as e:
         await db.rollback()
-        print(f"Errore nell'aggiornamento del terreno {request.terrain_id}: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
@@ -630,7 +625,19 @@ async def update_terrain(request: TerrainUpdateRequest, db: AsyncSession = Depen
 
 @router.delete("/delete-terrain", response_model=TerrainDeleteResponse)
 async def delete_terrain(request: TerrainDeleteRequest, db: AsyncSession = Depends(get_db)):
-    """Elimina un terreno e tutte le sue associazioni"""
+    """
+    Delete a terrain and all its associated species and data.
+
+    Args:
+        request: TerrainDeleteRequest containing terrain_id
+        db: Database session
+
+    Returns:
+        dict: Success message
+
+    Raises:
+        HTTPException: If terrain not found or deletion fails
+    """
     try:
         # Verifica che il terreno esista
         plot_query = select(Plot).where(Plot.id == request.terrain_id)
@@ -659,7 +666,6 @@ async def delete_terrain(request: TerrainDeleteRequest, db: AsyncSession = Depen
         
     except Exception as e:
         await db.rollback()
-        print(f"Errore nell'eliminazione del terreno {request.terrain_id}: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
@@ -667,7 +673,19 @@ async def delete_terrain(request: TerrainDeleteRequest, db: AsyncSession = Depen
 
 @router.put("/update-species", response_model=TerrainUpdateResponse)
 async def update_species(request: SpeciesUpdateRequest, db: AsyncSession = Depends(get_db)):
-    """Aggiorna una singola specie di un terreno"""
+    """
+    Update a single species entry for a terrain plot.
+
+    Args:
+        request: SpeciesUpdateRequest containing terrain_id, species_id, and updated data
+        db: Database session
+
+    Returns:
+        dict: Success message with updated species data
+
+    Raises:
+        HTTPException: If species association not found or update fails
+    """
     try:
         # Verifica che l'associazione specie-terreno esista
         plot_species_query = select(PlotSpecies).where(
@@ -710,7 +728,6 @@ async def update_species(request: SpeciesUpdateRequest, db: AsyncSession = Depen
         
     except Exception as e:
         await db.rollback()
-        print(f"Errore nell'aggiornamento della specie per terreno {request.terrain_id}: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
@@ -718,7 +735,19 @@ async def update_species(request: SpeciesUpdateRequest, db: AsyncSession = Depen
 
 @router.put("/update-terrain-coordinates", response_model=TerrainUpdateResponse)
 async def update_terrain_coordinates(request: TerrainCoordinatesUpdateRequest, db: AsyncSession = Depends(get_db)):
-    """Aggiorna le coordinate di un terreno esistente"""
+    """
+    Update the geographical coordinates of an existing terrain plot.
+
+    Args:
+        request: TerrainCoordinatesUpdateRequest containing terrain_id and new coordinates
+        db: Database session
+
+    Returns:
+        dict: Success message
+
+    Raises:
+        HTTPException: If terrain not found or coordinates update fails
+    """
     try:
         # Verifica che il terreno esista
         plot_query = select(Plot).where(Plot.id == request.terrain_id)
@@ -755,7 +784,6 @@ async def update_terrain_coordinates(request: TerrainCoordinatesUpdateRequest, d
         
     except Exception as e:
         await db.rollback()
-        print(f"Errore nell'aggiornamento delle coordinate per terreno {request.terrain_id}: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
@@ -763,7 +791,19 @@ async def update_terrain_coordinates(request: TerrainCoordinatesUpdateRequest, d
 
 @router.delete("/delete-species", response_model=TerrainDeleteResponse)
 async def delete_species(request: SpeciesDeleteRequest, db: AsyncSession = Depends(get_db)):
-    """Elimina una singola specie da un terreno"""
+    """
+    Delete a single species association from a terrain plot.
+
+    Args:
+        request: SpeciesDeleteRequest containing terrain_id and species_id
+        db: Database session
+
+    Returns:
+        dict: Success message
+
+    Raises:
+        HTTPException: If species association not found or deletion fails
+    """
     try:
         # Verifica che l'associazione specie-terreno esista
         plot_species_query = select(PlotSpecies).where(
@@ -787,78 +827,9 @@ async def delete_species(request: SpeciesDeleteRequest, db: AsyncSession = Depen
         
     except Exception as e:
         await db.rollback()
-        print(f"Errore nell'eliminazione della specie per terreno {request.terrain_id}: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Errore interno del server: {str(e)}")
-
-# === ROUTE DI DEBUG ===
-@router.get("/debug/user/{user_id}/plots")
-async def debug_get_user_plots(user_id: int, db: AsyncSession = Depends(get_db)):
-    """
-    Endpoint di debug per ottenere i plot di un utente specifico senza autenticazione
-    """
-    try:
-        print(f"🔍 Debug: Recupero plot per utente {user_id}")
-        
-        # Query per ottenere tutti i plot dell'utente
-        query = select(Plot).where(Plot.user_id == user_id)
-        result = await db.execute(query)
-        plots = result.scalars().all()
-        
-        print(f"📊 Trovati {len(plots)} plot per utente {user_id}")
-        
-        plots_data = []
-        for plot in plots:
-            print(f"🌱 Elaboro plot {plot.id}: {plot.name}")
-            
-            # Ottieni le specie per questo plot
-            species_query = select(PlotSpecies, Species).join(Species).where(PlotSpecies.plot_id == plot.id)
-            species_result = await db.execute(species_query)
-            species_data = species_result.all()
-            
-            print(f"   - Specie trovate: {len(species_data)}")
-            
-            # Formatta le specie
-            species_list = []
-            for plot_species, species in species_data:
-                species_info = {
-                    "name": species.name,
-                    "quantity": plot_species.surface_area
-                }
-                species_list.append(species_info)
-                print(f"     * {species.name}: {plot_species.surface_area}m²")
-            
-            # Calcola area totale dal poligono se disponibile
-            area_ha = 0
-            if plot.geom:
-                try:
-                    shapely_geom = to_shape(plot.geom)
-                    area_ha = shapely_geom.area * 111.32 * 111.32 * 0.0001  # Converti in ettari
-                    print(f"   - Area calcolata: {area_ha:.2f} ha")
-                except Exception as geom_error:
-                    print(f"   - Errore calcolo area: {geom_error}")
-                    area_ha = 0
-            
-            plot_info = {
-                "id": plot.id,
-                "name": plot.name or f"Terreno {plot.id}",
-                "species": species_list,
-                "area_ha": round(area_ha, 2),
-                "perimetro_m": 0,
-                "coordinate": [],
-                "created_at": plot.created_at.isoformat() if plot.created_at else None
-            }
-            plots_data.append(plot_info)
-        
-        print(f"✅ Debug completato: {len(plots_data)} plot elaborati")
-        return {"plots": plots_data, "debug_info": f"Utente {user_id}, {len(plots_data)} plot trovati"}
-        
-    except Exception as e:
-        print(f"💥 ERRORE DEBUG per utente {user_id}: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Errore debug: {str(e)}")
 
 
 # === ROUTE PER SALVARE PLOT ===
@@ -866,8 +837,6 @@ async def debug_get_user_plots(user_id: int, db: AsyncSession = Depends(get_db))
 async def save_plot(plot_data: dict, db: AsyncSession = Depends(get_db)):
     """Salva un nuovo plot nel database"""
     try:
-        print(f"💾 Salvataggio plot: {plot_data}")
-        
         # Crea un nuovo plot
         new_plot = Plot(
             user_id=41,  # Per ora hardcoded, poi useremo l'utente autenticato
@@ -901,13 +870,11 @@ async def save_plot(plot_data: dict, db: AsyncSession = Depends(get_db)):
                 db.add(plot_species)
         
         await db.commit()
-        print(f"✅ Plot salvato con ID: {new_plot.id}")
         
         return {"success": True, "plot_id": new_plot.id, "message": "Plot salvato con successo"}
         
     except Exception as e:
         await db.rollback()
-        print(f"💥 ERRORE nel salvataggio del plot: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Errore nel salvataggio: {str(e)}")

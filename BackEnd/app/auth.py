@@ -25,9 +25,6 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 
-# DEBUG: controlla che SECRET_KEY sia correttamente letta
-print("DEBUG SECRET_KEY:", repr(SECRET_KEY))
-
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
@@ -62,10 +59,6 @@ async def get_current_user(request: Request):
      # 3. Prova a decodificare il token
     payload = decode_access_token(token)
     
-    # Log del token e del payload per debug
-    print("Token ricevuto:", token)
-    print("Payload decodificato:", payload)
-
     # 4. Se il token non è valido o scaduto, la decodifica fallisce
     if not payload:
         raise HTTPException(
@@ -128,7 +121,6 @@ async def google_callback(code: str, request: Request):
         google_hash = hashlib.md5(google_id.encode()).hexdigest()[:8]
         numeric_id = int(google_hash, 16) % 1000000  # Limita a 6 cifre per evitare overflow
         
-        print(f"🆔 Google ID: {google_id} mappato a numeric ID: {numeric_id}")
         # Assicura che l'utente esista nella tabella users (upsert)
         from .database import SessionLocal
         from .models import User

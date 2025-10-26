@@ -12,9 +12,15 @@ import psycopg2
 # Carica le variabili dal file .env
 load_dotenv()
 
+# Costanti per i calcoli CO2/O2
+DEFAULT_TEMPERATURE = 20  # °C
+DEFAULT_HUMIDITY = 60     # %
+RADIATION_NORMALIZER = 800  # W/m²
+TEMPERATURE_NORMALIZER = 25  # °C
+HUMIDITY_NORMALIZER = 60    # %
+
 # Usa DATABASE_URL_SYNC dal .env per connessioni psycopg2
 DATABASE_URL = os.getenv("DATABASE_URL_SYNC")
-print("Mi connetto a:", DATABASE_URL)
 conn = psycopg2.connect(
     host=os.getenv("DB_HOST"),
     user=os.getenv("DB_USER"),
@@ -42,11 +48,16 @@ async def get_coefficients_from_db(db: AsyncSession) -> Dict[str, Dict[str, floa
 async def get_weather_data_from_db(db: AsyncSession, plot_id: int, day: str) -> List[Dict[str, Any]]:
     target_date = datetime.strptime(day, "%Y-%m-%d").date()
 
+    # Modifica: usa una query più robusta che non dipende dal CAST
+    start_of_day = datetime.combine(target_date, datetime.min.time())
+    end_of_day = datetime.combine(target_date, datetime.max.time())
+    
     stmt = (
         select(WeatherData)
         .where(
             WeatherData.plot_id == plot_id,
-            cast(WeatherData.date_time, Date) == target_date
+            WeatherData.date_time >= start_of_day,
+            WeatherData.date_time <= end_of_day
         )
         .order_by(WeatherData.date_time.asc())
     )
@@ -91,7 +102,6 @@ def calculate_co2_o2_hourly(plants: List[Dict[str, Any]], hourly_weather: List[D
         area = plant.get("area_m2", 0)
 
         if species not in coefficients:
-            print(f"⚠️ Coefficienti mancanti per '{species}'")
             continue
 
         co2_factor = coefficients[species].get("co2", 0)
@@ -99,13 +109,13 @@ def calculate_co2_o2_hourly(plants: List[Dict[str, Any]], hourly_weather: List[D
 
         for hour in hourly_weather:
             radiation = hour.get("radiation", 0)
-            temperature = hour.get("temperature", 20)
-            humidity = hour.get("humidity", 60)
+            temperature = hour.get("temperature", DEFAULT_TEMPERATURE)
+            humidity = hour.get("humidity", DEFAULT_HUMIDITY)
             datetime_hour = hour.get("datetime")
 
-            rad_factor = min(radiation / 800, 1.0) if radiation is not None else 0
-            temp_factor = min(temperature / 25, 1.0) if temperature is not None else 0
-            hum_factor = min(humidity / 60, 1.0) if humidity is not None else 0
+            rad_factor = min(radiation / RADIATION_NORMALIZER, 1.0) if radiation is not None else 0
+            temp_factor = min(temperature / TEMPERATURE_NORMALIZER, 1.0) if temperature is not None else 0
+            hum_factor = min(humidity / HUMIDITY_NORMALIZER, 1.0) if humidity is not None else 0
 
             meteo_factor = rad_factor * temp_factor * hum_factor
             base = area
@@ -136,8 +146,6 @@ async def aggiorna_weatherdata_con_assorbimenti(db: AsyncSession, plot_id: int, 
         )
         # Aggiunto 'await' qui
         await db.execute(stmt)
-
-    print(f"✅ Dati CO₂/O₂ pronti per essere aggiornati nel DB per il plot {plot_id}.")
 
 
 def calcola_totale_orario(user_plants, weather, coefficients):
