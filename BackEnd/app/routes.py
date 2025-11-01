@@ -25,7 +25,10 @@ from pydantic import BaseModel
 from shapely.wkb import loads
 from shapely.geometry import Polygon
 from sqlalchemy import func
+from BackEnd.app.logger_config import setup_logger
 
+# Logger per questo modulo
+logger = setup_logger(__name__)
 
 # router = APIRouter()
 router = APIRouter()
@@ -246,11 +249,8 @@ async def login(
     if not username:
         username = db_user.email
     #-----------------------------#
-    
-    # token = create_access_token({"id": db_user.id, "mail": db_user.email})
-    # print("🔑 Token creato:", token)
 
-    # --- MODIFICA TOKEN: Aggiungi l'username al payload ---
+    # Crea token JWT con payload completo
     token_payload = {"id": db_user.id, "mail": db_user.email, "username": username}
     token = create_access_token(token_payload)
 
@@ -306,9 +306,7 @@ async def fetch_weather(plot_id: int, user: dict = Depends(get_current_user), db
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Errore in fetch_weather per plot {plot_id}: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Errore in fetch_weather per plot {plot_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Errore durante il recupero dei dati meteo: {str(e)}")
 
 @router.get("/profilo", response_class=HTMLResponse)

@@ -8,7 +8,11 @@ from BackEnd.app.models import WeatherData
 from BackEnd.app.parte_finale_connect_db import recupero_coords_geocentroide
 from BackEnd.app.co2_o2_calculator import aggiorna_weatherdata_con_assorbimenti
 from sqlalchemy.ext.asyncio import AsyncSession
-import asyncio 
+import asyncio
+from BackEnd.app.logger_config import setup_logger
+
+# Logger per questo modulo
+logger = setup_logger(__name__) 
 
 # # ✅ Carica solo il file locale con connessione SINCRONA
 # load_dotenv(dotenv_path=".env.local")
@@ -21,14 +25,24 @@ longitude = coords[2]
 
 oggi = datetime.today().strftime("%Y-%m-%d")
 
-print("Coordinate plot:", plot_id, latitude, longitude)
+logger.debug(f"Coordinate plot: plot_id={plot_id}, lat={latitude}, lon={longitude}")
 
 # === FETCH METEO E SALVATAGGIO ===
 async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float, lon: float) -> bool:
     """
     Versione asincrona che riceve la sessione DB da FastAPI.
+    Recupera dati meteo da Open-Meteo API e li salva nel database.
+
+    Args:
+        db: Sessione database asincrona
+        plot_id: ID del terreno
+        lat: Latitudine
+        lon: Longitudine
+
+    Returns:
+        bool: True se successo, False altrimenti
     """
-    print("📡 Chiamata a Open-Meteo...")
+    logger.info(f"Chiamata a Open-Meteo per plot {plot_id}")
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": lat,
@@ -37,18 +51,18 @@ async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float,
         "forecast_days": "1",
         "timezone": "auto"
     }
-    
+
     try:
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(
-            None, 
+            None,
             lambda: requests.get(url, params=params)
         )
         response.raise_for_status()  # Solleva un errore per status codes >= 400
-        
+
         hourly = response.json().get("hourly", {})
         if not hourly.get("time"):
-            print("❌ Nessun dato orario ricevuto da Open-Meteo")
+            logger.warning("Nessun dato orario ricevuto da Open-Meteo")
             return False
 
         count = 0
@@ -62,7 +76,7 @@ async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float,
             )
             existing = await db.execute(stmt)
             if existing.first():  # ✅ non lancia errore se ci sono più righe
-                print(f"⚠️ Dato già presente per ora {timestamp}, skip")
+                logger.debug(f"Dato già presente per ora {timestamp}, skip")
                 continue
 
 
@@ -79,21 +93,31 @@ async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float,
             )
             db.add(weather)
             count += 1
-        
-        # Il commit verrà gestito dall'endpoint di FastAPI, 
+
+        # Il commit verrà gestito dall'endpoint di FastAPI,
         # ma possiamo farlo anche qui per essere espliciti se necessario.
-        # await db.commit() 
-        
-        print(f"✅ Aggiunte {count} righe meteo nuove per il plot {plot_id} alla sessione.")
+        # await db.commit()
+
+        logger.info(f"Aggiunte {count} righe meteo nuove per il plot {plot_id}")
         return True
 
     except requests.RequestException as e:
-        print(f"❌ Errore nella richiesta meteo: {e}")
+        logger.error(f"Errore nella richiesta meteo: {e}")
         return False
 
 
 # === OPZIONALE: METEO SETTIMANALE ===
 def fetch_weather_week(lat, lon):
+    """
+    Recupera dati meteo settimanali da Open-Meteo API.
+
+    Args:
+        lat: Latitudine
+        lon: Longitudine
+
+    Returns:
+        list: Lista di dict con dati meteo giornalieri, False se errore
+    """
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": lat,
@@ -104,7 +128,7 @@ def fetch_weather_week(lat, lon):
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
-        print(f"❌ Errore nella richiesta meteo: {response.status_code}")
+        logger.error(f"Errore nella richiesta meteo settimanale: {response.status_code}")
         return False
 
     daily = response.json()["daily"]
@@ -119,11 +143,11 @@ def fetch_weather_week(lat, lon):
             "radiation": daily["shortwave_radiation_sum"][i]
         })
 
-    print("✅ Dati meteo settimanali ottenuti.")
+    logger.info(f"Dati meteo settimanali ottenuti per lat={lat}, lon={lon}")
     return data
 
 
 # === ESECUZIONE COMPLETA ===
 # fetch_and_save_weather_day(plot_id, latitude, longitude)
 # aggiorna_weatherdata_con_assorbimenti(plot_id, oggi)
-# print("✅ Meteo e CO₂/O₂ aggiornati con successo.")
+# logger.info("Meteo e CO₂/O₂ aggiornati con successo.")

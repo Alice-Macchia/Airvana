@@ -34,7 +34,6 @@ def recupero_coords_geocentroide():
             'latitudine': latitude,
             'longitudine': longitude
         }
-        #print(f"\nPlot ID: {plot_id}, Latitudine: {latitude}, Longitude: {longitude}")
 
     else:
         cur.close()

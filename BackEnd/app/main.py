@@ -14,6 +14,7 @@ from geoalchemy2.shape import to_shape
 from BackEnd.app.models import Base, Plot, PlotSpecies, Species
 from BackEnd.app.routes import router
 from BackEnd.app.auth import router as auth_router
+from BackEnd.app.marketplace.api_market import router as marketplace_router
 
 from BackEnd.app.schemas import (SaveCoordinatesRequest, SaveCoordinatesResponse, ClassificaRequest, ClassificaResponse, EsportaRequest, EsportaResponse)
 from BackEnd.app.utils import (inserisci_terreno, mostra_classifica, Esporta, get_species_distribution_by_plot)
@@ -22,12 +23,16 @@ from BackEnd.app.get_meteo import fetch_and_save_weather_day
 from BackEnd.app.auth import get_current_user
 from BackEnd.app.database import get_db
 from BackEnd.app.get_all_plots import get_all_plots_coords
+from BackEnd.app.logger_config import setup_logger
+from BackEnd.app.config import settings
 
-# .env
-load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL")
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
+# Logger per questo modulo
+logger = setup_logger(__name__)
+
+# Configurazioni da settings centralizzato
+DATABASE_URL = settings.DATABASE_URL
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
 
 # ENGINE ASYNC
 engine = create_async_engine(DATABASE_URL, echo=False)
@@ -45,7 +50,7 @@ templates = Jinja2Templates(directory="FrontEnd/templates")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:8000", "http://localhost:8000", "http://localhost:5173", "http://165.22.75.145:8001"],
+    allow_origins=settings.get_allowed_origins_list(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,13 +58,14 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(auth_router)
+app.include_router(marketplace_router)
 
 
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    print("✅ Database pronto")
+    logger.info("Database pronto e tabelle create")
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -81,25 +87,25 @@ def decode_token(token: str):
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, user=Depends(get_current_user)):
     try:
-        print(f"DEBUG: User data from token: {user}")
+        logger.debug(f"User data from token: {user}")
         # Controlla che le chiavi necessarie siano presenti nel payload
         required_keys = ["username"] #forse non serve, non viene utilizzata
         if "id" in user:
             # Usa l'ID numerico mappato se disponibile
             user_id = user["id"]
-            print(f"DEBUG: Using id: {user_id}")
+            logger.debug(f"Using id: {user_id}")
         elif "google_id" in user:
             # Fallback al google_id se l'ID non è disponibile
             user_id = user["google_id"]
-            print(f"DEBUG: Using google_id: {user_id}")
+            logger.debug(f"Using google_id: {user_id}")
         else:
-            print(f"DEBUG: No id or google_id found in user data")
+            logger.warning("No id or google_id found in user data")
             raise HTTPException(
                 status_code=400,
                 detail="Dati utente mancanti nel token"
             )
 
-        print(f"DEBUG: Rendering dashboard template for user_id: {user_id}")
+        logger.info(f"Rendering dashboard for user_id: {user_id}")
         return templates.TemplateResponse("index.html", {
             "request": request,
             "user_id": user_id,
@@ -107,9 +113,7 @@ async def dashboard(request: Request, user=Depends(get_current_user)):
             "user_email": user.get("mail", user.get("email", ""))
         })
     except Exception as e:
-        print(f"Errore nel caricamento della dashboard: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Errore nel caricamento della dashboard: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Errore nel caricamento della dashboard")
 
 @app.post("/save-coordinates", response_model=SaveCoordinatesResponse)
@@ -130,8 +134,8 @@ async def demo(request: Request):
 
 @app.get("/calcola_co2/{plot_id}")
 async def calcola_co2(plot_id: int, giorno: str = None, user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    print(f"🔍 DEBUG: Iniziando calcolo CO2 per plot_id={plot_id}, user_id={user.get('id')}")
-    
+    logger.info(f"Iniziando calcolo CO2 per plot_id={plot_id}, user_id={user.get('id')}")
+
     # --- 3. VERIFICA DI PROPRIETÀ ---
     user_id = user["id"]
     query = select(Plot).where(Plot.id == plot_id, Plot.user_id == user_id)
@@ -141,13 +145,13 @@ async def calcola_co2(plot_id: int, giorno: str = None, user: dict = Depends(get
     if not plot:
         # Se il plot non esiste O non appartiene all'utente, restituisci un errore.
         # Questo impedisce a un utente di vedere i dati di un altro.
-        print(f"❌ DEBUG: Plot {plot_id} non trovato o non appartiene all'utente {user_id}")
+        logger.warning(f"Plot {plot_id} non trovato o non appartiene all'utente {user_id}")
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail=f"Terreno con ID {plot_id} non trovato o non appartenente all'utente."
         )
-    
-    print(f"✅ DEBUG: Plot trovato: {plot.name}")
+
+    logger.debug(f"Plot trovato: {plot.name}")
     
     # Se non viene specificato un giorno, usa l'ultima data disponibile nel DB
     if not giorno:
@@ -159,48 +163,48 @@ async def calcola_co2(plot_id: int, giorno: str = None, user: dict = Depends(get
         last_date = result.scalar()
         if last_date:
             giorno = last_date.isoformat()
-            print(f"📅 DEBUG: Nessun giorno specificato, uso ultima data disponibile: {giorno}")
+            logger.debug(f"Nessun giorno specificato, uso ultima data disponibile: {giorno}")
         else:
             giorno = date.today().isoformat()
-            print(f"📅 DEBUG: Nessun dato meteo, uso oggi: {giorno}")
+            logger.debug(f"Nessun dato meteo, uso oggi: {giorno}")
     else:
-        print(f"📅 DEBUG: Giorno specificato: {giorno}")
-    
-    print(f"📅 DEBUG: Giorno finale usato per calcolo: {giorno}")
+        logger.debug(f"Giorno specificato: {giorno}")
+
+    logger.debug(f"Giorno finale usato per calcolo: {giorno}")
     
     try:
-        print("🔬 DEBUG: Recupero specie...")
+        logger.debug("Recupero specie dal database...")
         species = await get_species_from_db(db, plot_id)
-        print(f"🌱 DEBUG: Specie trovate: {len(species)} - {species}")
-        
-        print("🌤️ DEBUG: Recupero dati meteo...")
+        logger.debug(f"Specie trovate: {len(species)}")
+
+        logger.debug("Recupero dati meteo dal database...")
         weather = await get_weather_data_from_db(db, plot_id, giorno)
-        print(f"🌤️ DEBUG: Dati meteo trovati: {len(weather)}")
+        logger.debug(f"Dati meteo trovati: {len(weather)}")
         if len(weather) == 0:
             # Debug: vediamo se ci sono dati meteo per questo plot in generale
             from sqlalchemy import text
             result = await db.execute(text("SELECT COUNT(*) FROM weather_data WHERE plot_id = :plot_id"), {"plot_id": plot_id})
             total_count = result.scalar()
-            print(f"🌤️ DEBUG: Totale record meteo per plot {plot_id}: {total_count}")
-            
+            logger.warning(f"Totale record meteo per plot {plot_id}: {total_count}")
+
             # Debug: vediamo alcune date disponibili (semplificato)
             try:
                 result = await db.execute(text("SELECT date_time FROM weather_data WHERE plot_id = :plot_id ORDER BY date_time DESC LIMIT 3"), {"plot_id": plot_id})
                 dates = result.fetchall()
-                print(f"🌤️ DEBUG: Ultime date per plot {plot_id}: {[d[0] for d in dates]}")
+                logger.debug(f"Ultime date per plot {plot_id}: {[d[0] for d in dates]}")
             except Exception as e:
-                print(f"🌤️ DEBUG: Errore query date: {e}")
-        
-        print("⚙️ DEBUG: Recupero coefficienti...")
+                logger.error(f"Errore query date: {e}")
+
+        logger.debug("Recupero coefficienti dal database...")
         coefs = await get_coefficients_from_db(db)
-        print(f"⚙️ DEBUG: Coefficienti trovati: {len(coefs)} - primi 3: {dict(list(coefs.items())[:3])}")
-        
-        print("🧮 DEBUG: Calcolo CO2/O2...")
+        logger.debug(f"Coefficienti trovati: {len(coefs)}")
+
+        logger.debug("Calcolo CO2/O2 orario...")
         results = calculate_co2_o2_hourly(species, weather, coefs)
-        print(f"🧮 DEBUG: Risultati calcolati: {len(results)}")
+        logger.debug(f"Risultati calcolati: {len(results)}")
 
         if not results:
-            print("❌ DEBUG: Nessun risultato dal calcolo")
+            logger.warning("Nessun risultato dal calcolo CO2/O2")
             raise HTTPException(status_code=404, detail="Nessun dato CO₂/O₂ calcolato")
 
         df = pd.DataFrame(results)
@@ -220,18 +224,12 @@ async def calcola_co2(plot_id: int, giorno: str = None, user: dict = Depends(get
             row["umidita"]           = meteo.get("humidity")
             out.append(row)
 
-        print(f"✅ DEBUG: Restituzione {len(out)} record")
+        logger.info(f"Calcolo CO2 completato: {len(out)} record restituiti")
         return out
 
     except Exception as e:
-        error_msg = f"💥 ERRORE nel calcolo CO2: {str(e)}"
-        print(error_msg)
-        # Aggiungi questo per vedere il traceback completo nel log
-        import traceback
-        full_traceback = traceback.format_exc()
-        print(full_traceback)
-        # Restituisci errore dettagliato al frontend
-        raise HTTPException(status_code=500, detail=f"{error_msg}\n\nTraceback:\n{full_traceback}")
+        logger.error(f"Errore nel calcolo CO2: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Errore nel calcolo CO2. Riprova più tardi.")
 
 
 
@@ -290,11 +288,9 @@ async def get_user_plots(user: dict = Depends(get_current_user), db: AsyncSessio
             plots_data.append(plot_info)
         
         return {"plots": plots_data}
-        
+
     except Exception as e:
-        print(f"Errore nel recupero dei plot dell'utente: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Errore nel recupero dei plot dell'utente: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Errore nel recupero dei plot")
 
 
@@ -357,10 +353,10 @@ async def get_co2_by_species(plot_id: int, db: AsyncSession = Depends(get_db)):
         last_date = result.scalar()
         if last_date:
             giorno = last_date.isoformat()
-            print(f"📅 CO2_by_species: uso ultima data disponibile: {giorno}")
+            logger.debug(f"CO2_by_species: uso ultima data disponibile: {giorno}")
         else:
             giorno = datetime.today().strftime("%Y-%m-%d")
-            print(f"📅 CO2_by_species: nessun dato meteo, uso oggi: {giorno}")
+            logger.debug(f"CO2_by_species: nessun dato meteo, uso oggi: {giorno}")
         
         weather = await get_weather_data_from_db(db, plot_id, giorno)
         if not weather:

@@ -23,7 +23,15 @@ jobs:
           pip install -r requirements.txt
 
       - name: 🔐 Inject secrets
-        run: echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+        run: |
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+          echo "DATABASE_URL_SYNC=${{ secrets.DATABASE_URL_SYNC }}" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }}" >> .env
 
       - name: 🚀 Run pipeline
         run: python task_runner.py

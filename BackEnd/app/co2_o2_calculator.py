@@ -21,13 +21,26 @@ HUMIDITY_NORMALIZER = 60    # %
 
 # Usa DATABASE_URL_SYNC dal .env per connessioni psycopg2
 DATABASE_URL = os.getenv("DATABASE_URL_SYNC")
-conn = psycopg2.connect(
-    host=os.getenv("DB_HOST"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASS"),
-    dbname=os.getenv("DB_NAME"),
-    port=int(os.getenv("DB_PORT"))   # <-- Importante il cast a int!
-)
+
+# Connessione lazy - verrà creata solo quando serve
+conn = None
+
+def get_connection():
+    """Ottiene una connessione al database, creandola se necessario"""
+    global conn
+    if conn is None or conn.closed:
+        db_port = os.getenv("DB_PORT")
+        if not db_port:
+            raise ValueError("DB_PORT non configurato nelle variabili d'ambiente")
+
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASS"),
+            dbname=os.getenv("DB_NAME"),
+            port=int(db_port)
+        )
+    return conn
 
 
 async def get_coefficients_from_db(db: AsyncSession) -> Dict[str, Dict[str, float]]:
@@ -173,11 +186,10 @@ def convert_datetime_to_str(results):
 #     user_plants = get_species_from_db(1)
 
 
+    # Codice di esempio commentato:
     # results = calculate_co2_o2_hourly(user_plants, weather, coefficients)
     # results = convert_datetime_to_str(results)
     # df = pd.DataFrame(results)
-    # print("\nRisultato in DataFrame:")
     # pd.set_option('display.max_rows', None)  # Mostra tutte le righe
     # pd.set_option('display.max_columns', None)  # Mostra tutte le colonne (se servono)
     # df.to_json("co2_o2_results.json", orient="records", indent=4)
-    # print(df.to_json(orient="records", indent=4))
