@@ -31,6 +31,18 @@ jobs:
           echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "✅ File .env creato"
+
+      - name: 🔍 Verify .env file
+        run: |
+          if [ -f .env ]; then
+            echo "✅ File .env esiste"
+            echo "📝 Contenuto (mascherato):"
+            grep "DATABASE_URL=" .env | sed 's/=.*/=***MASKED***/'
+          else
+            echo "❌ File .env NON trovato!"
+            exit 1
+          fi
 
       - name: 🚀 Run pipeline
         run: python task_runner.py

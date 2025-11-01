@@ -11,6 +11,11 @@ load_dotenv(".env")
 DATABASE_URL = os.getenv("DATABASE_URL")
 today = datetime.today().strftime("%Y-%m-%d")
 
+# Debug e validazione
+print(f"Mi connetto a: {DATABASE_URL}")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL non configurato! Verifica che i secrets GitHub siano stati impostati correttamente.")
+
 engine = create_async_engine(DATABASE_URL)
 Session = async_sessionmaker(engine, expire_on_commit=False)
 
