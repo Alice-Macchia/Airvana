@@ -18,14 +18,14 @@ logger = setup_logger(__name__)
 # load_dotenv(dotenv_path=".env.local")
 
 # === COORDINATE DEL PLOT PRINCIPALE ===
-coords = list(recupero_coords_geocentroide().values())  # {'plot_id': 1, 'latitudine': ..., 'longitudine': ...}
-plot_id = coords[0]
-latitude = coords[1]
-longitude = coords[2]
-
-oggi = datetime.today().strftime("%Y-%m-%d")
-
-logger.debug(f"Coordinate plot: plot_id={plot_id}, lat={latitude}, lon={longitude}")
+# NOTA: Queste variabili globali non sono più utilizzate.
+# Le coordinate vengono passate dinamicamente da task_runner.py o dalle route API
+# coords = list(recupero_coords_geocentroide().values())
+# plot_id = coords[0]
+# latitude = coords[1]
+# longitude = coords[2]
+# oggi = datetime.today().strftime("%Y-%m-%d")
+# logger.debug(f"Coordinate plot: plot_id={plot_id}, lat={latitude}, lon={longitude}")
 
 # === FETCH METEO E SALVATAGGIO ===
 async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float, lon: float) -> bool:
