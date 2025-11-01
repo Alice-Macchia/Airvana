@@ -10,12 +10,26 @@ from BackEnd.app.co2_o2_calculator import aggiorna_weatherdata_con_assorbimenti
 from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
 from BackEnd.app.logger_config import setup_logger
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # Logger per questo modulo
 logger = setup_logger(__name__) 
 
-# # ✅ Carica solo il file locale con connessione SINCRONA
-# load_dotenv(dotenv_path=".env.local")
+# === RETRY STRATEGY PER API ===
+def get_session_with_retries():
+    """Crea una sessione requests con retry logic"""
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=3,  # numero totale di retry
+        backoff_factor=1,  # aspetta 1s, poi 2s, poi 4s
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"]
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
 
 # === COORDINATE DEL PLOT PRINCIPALE ===
 # NOTA: Queste variabili globali non sono più utilizzate.
@@ -54,9 +68,11 @@ async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float,
 
     try:
         loop = asyncio.get_running_loop()
+        # Usa sessione con retry strategy
+        session_with_retry = get_session_with_retries()
         response = await loop.run_in_executor(
             None,
-            lambda: requests.get(url, params=params, timeout=30)  # ⏰ Timeout 30 secondi
+            lambda: session_with_retry.get(url, params=params, timeout=15)  # ⏰ Timeout 15 secondi
         )
         response.raise_for_status()  # Solleva un errore per status codes >= 400
 
