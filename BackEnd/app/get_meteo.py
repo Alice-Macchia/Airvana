@@ -56,7 +56,7 @@ async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float,
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(
             None,
-            lambda: requests.get(url, params=params)
+            lambda: requests.get(url, params=params, timeout=30)  # ⏰ Timeout 30 secondi
         )
         response.raise_for_status()  # Solleva un errore per status codes >= 400
 
@@ -101,8 +101,14 @@ async def fetch_and_save_weather_day(db: AsyncSession, plot_id: int, lat: float,
         logger.info(f"Aggiunte {count} righe meteo nuove per il plot {plot_id}")
         return True
 
+    except requests.Timeout as e:
+        logger.error(f"Timeout nella richiesta meteo per plot {plot_id}: {e}")
+        return False
     except requests.RequestException as e:
-        logger.error(f"Errore nella richiesta meteo: {e}")
+        logger.error(f"Errore nella richiesta meteo per plot {plot_id}: {e}")
+        return False
+    except Exception as e:
+        logger.error(f"Errore generico nel processamento meteo per plot {plot_id}: {e}")
         return False
 
 
