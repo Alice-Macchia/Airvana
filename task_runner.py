@@ -41,5 +41,17 @@ async def run_meteo_pipeline():
             except Exception as e:
                 print(f"❌ Errore per plot {plot_id}: {e}")
 
+# Aggiungi cleanup esplicito
+async def cleanup():
+    """Chiude tutte le connessioni e risorse"""
+    if 'engine' in globals():
+        await engine.dispose()
+    print("🧹 Cleanup completato")
+
 if __name__ == "__main__":
-    asyncio.run(run_meteo_pipeline())
+    try:
+        asyncio.run(run_meteo_pipeline())
+    finally:
+        # Assicurati che il cleanup venga eseguito anche se ci sono errori
+        asyncio.run(cleanup())
+        print("🏁 Pipeline completata con successo!")
