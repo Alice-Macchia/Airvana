@@ -21,13 +21,13 @@ Questo perché mancavano le variabili d'ambiente necessarie per la connessione a
 
 ## 📋 Secrets da Configurare su GitHub
 
-Devi aggiungere i seguenti secrets nel repository GitHub:
+Devi aggiungere **7 secrets** nel repository GitHub:
 
 ### Come Aggiungere i Secrets:
-1. Vai su GitHub: `https://github.com/TUO_USERNAME/Airvana-clone`
+1. Vai su GitHub: `https://github.com/TUO_USERNAME/Airvana`
 2. Vai su **Settings** → **Secrets and variables** → **Actions**
 3. Click su **New repository secret**
-4. Aggiungi questi secrets uno per uno:
+4. Aggiungi questi 7 secrets uno per uno:
 
 ### Lista Secrets Necessari:
 
@@ -40,7 +40,8 @@ Devi aggiungere i seguenti secrets nel repository GitHub:
 | `DB_PASS` | Password database | `your_password` |
 | `DB_NAME` | Nome database | `co2app` |
 | `DB_PORT` | Porta database | `5432` |
-| `OPENWEATHER_API_KEY` | API Key OpenWeather | `your_api_key_here` |
+
+**Nota:** OPENWEATHER_API_KEY non è più necessario (OpenWeather free non richiede API key)
 
 ### 🔍 Come Trovare i Valori
 
@@ -111,12 +112,12 @@ Il workflow è configurato per eseguirsi automaticamente:
 Dopo aver aggiunto tutti i secrets, puoi verificare che siano stati configurati:
 
 1. Vai su **Settings** → **Secrets and variables** → **Actions**
-2. Dovresti vedere tutti gli 8 secrets elencati sopra
+2. Dovresti vedere tutti i 7 secrets elencati sopra
 3. ⚠️ Non puoi vedere i valori (per sicurezza), solo i nomi
 
 ## ✅ Checklist
 
-- [ ] Aggiunti tutti gli 8 secrets su GitHub
+- [ ] Aggiunti tutti i 7 secrets necessari su GitHub
 - [ ] File `.env` NON committato nel repository
 - [ ] Verificato che `.gitignore` contiene `.env`
 - [ ] Testato il workflow manualmente
