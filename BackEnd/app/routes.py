@@ -832,12 +832,16 @@ async def delete_species(request: SpeciesDeleteRequest, db: AsyncSession = Depen
 
 # === ROUTE PER SALVARE PLOT ===
 @router.post("/save-plot")
-async def save_plot(plot_data: dict, db: AsyncSession = Depends(get_db)):
+async def save_plot(
+    plot_data: dict, 
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     """Salva un nuovo plot nel database"""
     try:
-        # Crea un nuovo plot
+        # Crea un nuovo plot associato all'utente autenticato
         new_plot = Plot(
-            user_id=41,  # Per ora hardcoded, poi useremo l'utente autenticato
+            user_id=user["id"],  # Usa l'ID dell'utente autenticato dal token JWT
             name=plot_data.get("name"),
             geom=None,  # Per ora None, poi aggiungeremo la geometria
             created_at=datetime.now()
