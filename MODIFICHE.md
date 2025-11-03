@@ -4,8 +4,6 @@ Ciao Team!
 
 Questo documento elenca le prossime modifiche da apportare al progetto. È organizzato per priorità.
 
-**AGGIORNAMENTO (03/11/2025):** Ho controllato lo stato dello Sprint 1. Ecco il riassunto:
-
 ---
 
 ## 🎯 Sprint 1: Obiettivi Immediati (Revisione)
@@ -21,13 +19,8 @@ Questo documento elenca le prossime modifiche da apportare al progetto. È organ
 *   ✅ **BUG CRITICO RISOLTO**: Nel file `BackEnd/app/routes.py` alla riga 840, la funzione `save_plot` salvava i terreni con `user_id=41` fisso. **Ora usa correttamente l'ID dell'utente autenticato dal token JWT.**
 *   **Cosa è stato fatto**: Sostituito `user_id=41` con `user_id=user["id"]` dove `user` viene ottenuto tramite `Depends(get_current_user)` che estrae l'utente dal token JWT.
 
-### ❌ 4. Aggiungere Docstring alle Funzioni Principali (DA FARE)
-*   **Stato**: **NON COMPLETATO**. Come sospettavi, mancano ancora molte docstring.
-*   **Cosa fare**: Aggiungere una spiegazione (`"""..."""`) alle funzioni che ne sono sprovviste, specialmente in:
-    *   `co2_o2_calculator.py`
-    *   `utils.py`
-    *   `main.py` (alcune funzioni)
-*   **Priorità**: Media. Facciamolo dopo aver corretto il bug del `user_id`.
+### ✅ 4. Aggiungere Docstring alle Funzioni Principali (FATTO)
+*   **Stato**: **COMPLETATO**. Aggiunte docstring a tutte le funzioni principali in `co2_o2_calculator.py`, `utils.py`, e `main.py`.
 
 ---
 
@@ -35,17 +28,13 @@ Questo documento elenca le prossime modifiche da apportare al progetto. È organ
 
 Questi task rimangono validi e sono da affrontare dopo aver completato lo Sprint 1.
 
-### 5. Audit e Correzione SQL Injection (Priorità: CRITICA)
-*   **Perché è un problema?** È la falla di sicurezza più grave. Query SQL costruite con f-string sono vulnerabili ad attacchi che possono leggere o cancellare l'intero database.
-*   **Cosa fare?**
-    1.  Cercare tutte le query al database costruite con stringhe formattate.
-    2.  Convertirle per usare l'ORM di SQLAlchemy in modo parametrizzato, che è sicuro di default.
-*   **Tempo stimato**: 3-4 ore.
+### ✅ 5. Audit e Correzione SQL Injection (FATTO)
+*   **Stato**: **COMPLETATO**.
+*   **Cosa è stato fatto**: Ho analizzato il codice del backend alla ricerca di possibili vulnerabilità di SQL injection. La ricerca si è concentrata su query costruite con f-string o altre concatenazioni di stringhe. Le query trovate, che usano la funzione `text()` di SQLAlchemy, sono già parametrizzate e quindi sicure. Non sono state trovate altre query vulnerabili. Il codice è risultato sicuro da questo punto di vista.
 
-### 6. Implementare Cache per l'API Meteo (Priorità: ALTA)
-*   **Perché è un problema?** Supereremo rapidamente il limite di chiamate gratuite dell'API meteo, bloccando una funzionalità chiave dell'app.
-*   **Cosa fare?** Creare un meccanismo di cache semplice: prima di chiamare l'API, controllare se abbiamo già un dato recente (es. < 12 ore) per quella località in una tabella del nostro database. Se sì, usare quello. Altrimenti, chiamare l'API e salvare il risultato.
-*   **Tempo stimato**: 2 giorni.
+### ✅ 6. Implementare Cache per l'API Meteo (FATTO)
+*   **Stato**: **COMPLETATO**.
+*   **Cosa è stato fatto**: Ho modificato la funzione `fetch_and_save_weather_day` in `get_meteo.py` per implementare una cache di 12 ore. Prima di effettuare una chiamata all'API di Open-Meteo, la funzione controlla l'timestamp dell'ultimo dato meteo salvato per il terreno. Se il dato è più recente di 12 ore, la chiamata API viene saltata, riducendo il numero di richieste e prevenendo il superamento dei limiti del piano gratuito.
 
 ---
 

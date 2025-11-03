@@ -26,7 +26,17 @@ DATABASE_URL = os.getenv("DATABASE_URL_SYNC")
 conn = None
 
 def get_connection():
-    """Ottiene una connessione al database, creandola se necessario"""
+    """
+    Restituisce una connessione al database PostgreSQL.
+    Se una connessione valida esiste già, la riutilizza. Altrimenti, ne crea una nuova
+    utilizzando le credenziali definite nelle variabili d'ambiente.
+
+    Raises:
+        ValueError: Se la porta del database (DB_PORT) non è configurata.
+
+    Returns:
+        psycopg2.connection: Oggetto di connessione al database.
+    """
     global conn
     if conn is None or conn.closed:
         db_port = os.getenv("DB_PORT")
@@ -44,6 +54,7 @@ def get_connection():
 
 
 async def get_coefficients_from_db(db: AsyncSession) -> Dict[str, Dict[str, float]]:
+    """Recupera i coefficienti di assorbimento CO2 e produzione O2 per tutte le specie."""
     stmt = select(Species.name, Species.co2_absorption_rate, Species.o2_production_rate)
     # Aggiunto 'await' qui
     result = await db.execute(stmt)
@@ -59,6 +70,7 @@ async def get_coefficients_from_db(db: AsyncSession) -> Dict[str, Dict[str, floa
 
 
 async def get_weather_data_from_db(db: AsyncSession, plot_id: int, day: str) -> List[Dict[str, Any]]:
+    """Recupera i dati meteo orari per un dato terreno e giorno dal database."""
     target_date = datetime.strptime(day, "%Y-%m-%d").date()
 
     # Modifica: usa una query più robusta che non dipende dal CAST
@@ -90,6 +102,7 @@ async def get_weather_data_from_db(db: AsyncSession, plot_id: int, day: str) -> 
 
 
 async def get_species_from_db(db: AsyncSession, plot_id: int) -> List[Dict[str, Any]]:
+    """Recupera le specie e la loro area di superficie per un dato terreno."""
     stmt = (
         select(Species.name, PlotSpecies.surface_area)
         .join(Species, PlotSpecies.species_id == Species.id)
@@ -108,6 +121,16 @@ async def get_species_from_db(db: AsyncSession, plot_id: int) -> List[Dict[str, 
 
 
 def calculate_co2_o2_hourly(plants: List[Dict[str, Any]], hourly_weather: List[Dict[str, Any]], coefficients: Dict[str, Dict[str, float]]) -> List[Dict[str, Any]]:
+    """Calcola l'assorbimento di CO2 e la produzione di O2 oraria per ogni specie.
+
+    Args:
+        plants: Lista di piante con specie e area.
+        hourly_weather: Dati meteo orari.
+        coefficients: Coefficienti di assorbimento/produzione per specie.
+
+    Returns:
+        Lista di risultati orari con CO2 e O2 calcolati.
+    """
     # ... (questa funzione rimane invariata) ...
     results = []
     for plant in plants:
@@ -144,6 +167,18 @@ def calculate_co2_o2_hourly(plants: List[Dict[str, Any]], hourly_weather: List[D
     return results
 
 async def aggiorna_weatherdata_con_assorbimenti(db: AsyncSession, plot_id: int, giorno: str):
+    """
+    Calcola l'assorbimento orario di CO2 e la produzione di O2 per un dato terreno
+    e aggiorna i record corrispondenti nella tabella `weather_data`.
+
+    Il calcolo si basa sui dati delle specie presenti nel terreno, sulle condizioni
+    meteo orarie e sui coefficienti di assorbimento/produzione specifici per ogni specie.
+
+    Args:
+        db (AsyncSession): La sessione asincrona del database per eseguire le query.
+        plot_id (int): L'ID del terreno per cui effettuare il calcolo.
+        giorno (str): La data di riferimento nel formato "YYYY-MM-DD".
+    """
     # Chiama le funzioni 'await'ing per ottenere i risultati
     weather = await get_weather_data_from_db(db, plot_id, giorno)
     species = await get_species_from_db(db, plot_id)
@@ -161,14 +196,44 @@ async def aggiorna_weatherdata_con_assorbimenti(db: AsyncSession, plot_id: int, 
         await db.execute(stmt)
 
 
-def calcola_totale_orario(user_plants, weather, coefficients):
+def calcola_totale_orario(user_plants: List[Dict[str, Any]], weather: List[Dict[str, Any]], coefficients: Dict[str, Dict[str, float]]) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Aggrega i dati orari di assorbimento CO2 e produzione O2 per tutte le specie di un utente,
+    restituendo un totale complessivo per ogni ora.
+
+    Utilizza i risultati di `calculate_co2_o2_hourly` e li raggruppa per timestamp,
+    sommando i contributi di tutte le piante.
+
+    Args:
+        user_plants (List[Dict[str, Any]]): Lista delle piante dell'utente, con specie e area.
+        weather (List[Dict[str, Any]]): Dati meteo orari per il periodo di calcolo.
+        coefficients (Dict[str, Dict[str, float]]): Coefficienti di assorbimento/produzione.
+
+    Returns:
+        Dict[str, List[Dict[str, Any]]]: Un dizionario contenente la chiave "totale_orario",
+        a cui è associata una lista di dizionari, ciascuno con "datetime", "co2_kg_hour" e "o2_kg_hour".
+    """
     results = calculate_co2_o2_hourly(user_plants, weather, coefficients)
     df = pd.DataFrame(results)
     df_group = df.groupby("datetime")[["co2_kg_hour", "o2_kg_hour"]].sum().reset_index()
     orario = df_group.to_dict(orient="records")
     return {"totale_orario": orario}
 
-def convert_datetime_to_str(results):
+def convert_datetime_to_str(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Converte i valori `datetime` in stringhe formattate all'interno di una lista di risultati.
+
+    Questa funzione itera su una lista di dizionari e, se trova una chiave "datetime"
+    con un oggetto `datetime` o un timestamp numerico, la converte in una stringa
+    nel formato "YYYY-MM-DD HH:MM:SS".
+
+    Args:
+        results (List[Dict[str, Any]]): Una lista di dizionari, dove alcuni possono
+            contenere la chiave "datetime".
+
+    Returns:
+        List[Dict[str, Any]]: La stessa lista di dizionari con i valori "datetime" convertiti in stringhe.
+    """
     for elem in results:
         dt = elem["datetime"]
         if isinstance(dt, (int, float)):
